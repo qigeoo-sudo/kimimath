@@ -1,0 +1,1942 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pascal</title>
+</head>
+<body>
+    <!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dandelin Spheres & Conics</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { overflow: hidden; background: #0a0a0a; font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; }
+        #canvas-container { width: 100vw; height: 100vh; position: relative; }
+        .title-bar { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); background: rgba(10, 10, 20, 0.85); border: 1px solid rgba(100, 100, 150, 0.3); border-radius: 10px; padding: 6px 18px; color: #e0e0e0; backdrop-filter: blur(8px); z-index: 100; text-align: center; pointer-events: none; font-size: 16px; font-weight: bold; letter-spacing: 0.5px; white-space: nowrap; }
+        .controls-panel { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); background: rgba(10, 10, 20, 0.92); border: 1px solid rgba(100, 100, 150, 0.4); border-radius: 12px; padding: 8px 14px; display: flex; flex-direction: column; align-items: center; gap: 8px; z-index: 1000; backdrop-filter: blur(10px); box-shadow: 0 4px 20px rgba(0,0,0,0.6); width: auto; max-width: 98vw; overflow-x: auto; }
+        .controls-row { display: flex; gap: 12px; align-items: center; flex-wrap: nowrap; justify-content: center; }
+        button { background: transparent; border: none; color: white; padding: 4px 8px; cursor: pointer; font-size: 18px; font-weight: 600; transition: all 0.2s; min-width: 30px; text-align: center; line-height: 1.2; }
+        button:hover { transform: scale(1.1); }
+        .btn-p { color: #666; font-size: 16px; padding: 2px 8px; min-width: 28px; user-select: none; touch-action: manipulation; transition: all 0.2s; }
+        .btn-p.active { color: #ffd700; text-shadow: 0 0 10px rgba(255,215,0,0.6); }
+        #btn-play { color: #00bfff; }
+        #btn-reset { color: white; }
+        .btn-micro { color: #aaa; font-size: 16px; padding: 2px 6px; min-width: 24px; user-select: none; touch-action: manipulation; }
+        #btn-refresh { color: #888888; font-size: 16px; padding: 2px 8px; min-width: 28px; user-select: none; touch-action: manipulation; transition: all 0.2s; }
+        #btn-refresh.active { color: #ff69b4; text-shadow: 0 0 8px rgba(255,105,180,0.4); }
+        #btn-refresh:disabled { color: #444444; cursor: not-allowed; opacity: 0.5; }
+        #btn-reset { color: #888888; font-size: 16px; padding: 2px 8px; min-width: 28px; user-select: none; touch-action: manipulation; transition: all 0.2s; }
+        #btn-reset:hover { color: #cccccc; transform: scale(1.1); }
+        input[type="range"] { width: 80px; accent-color: #667eea; vertical-align: middle; flex-shrink: 0; }
+        .slider-label { font-size: 12px; color: #ccc; white-space: nowrap; }
+        .slider-value { font-size: 12px; color: #ffd700; font-weight: bold; min-width: 45px; display: inline-block; text-align: center; white-space: nowrap; }
+        .slider-value-tan { font-size: 12px; color: #88aaff; min-width: 65px; text-align: left; }
+        .label-3d { color: white; font-size: 12px; font-weight: bold; text-shadow: 0 0 10px rgba(0,0,0,0.9); background: rgba(0,0,0,0.6); padding: 2px 5px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.15); pointer-events: none; user-select: none; font-family: 'Segoe UI', sans-serif; transform: translate(-50%, -50%); white-space: nowrap; }
+        .label-focus { color: #ff4444; border-color: #ff444466; }
+        .label-focus2 { color: #4488ff; border-color: #4488ff66; }
+        .label-p { color: #00ff88; border-color: #00ff8866; font-size: 13px; background: rgba(0,0,0,0.7); }
+        .label-o1 { color: #ff6666; border-color: #ff666666; }
+        .label-o2 { color: #6666ff; border-color: #6666ff66; }
+        .label-t1 { color: #ffaa66; border-color: #ffaa6666; }
+        .label-t2 { color: #66aaff; border-color: #66aaff66; }
+        .status-hint { font-size: 12px; color: #ffaa66; margin-left: 5px; cursor: pointer; user-select: none; padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(255,170,102,0.3); transition: all 0.2s; }
+        .status-hint:hover { background: rgba(255,170,102,0.15); border-color: rgba(255,170,102,0.6); }
+        .status-hint:active { transform: scale(0.95); }
+        .info-panel { position: absolute; top: 48px; left: 50%; transform: translateX(-50%); background: rgba(10, 10, 20, 0.92); border: 1px solid rgba(100, 100, 150, 0.5); border-radius: 12px; padding: 10px 18px; z-index: 100; backdrop-filter: blur(10px); display: none; flex-direction: column; gap: 6px; min-width: 260px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+        .info-row { font-size: 13px; color: #ccc; font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 2px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .info-row:last-child { border-bottom: none; }
+        .info-val { color: #ffd700; font-weight: bold; min-width: 55px; text-align: right; font-family: 'Consolas', monospace; font-size: 12px; }
+        .info-const { color: #88ff88; font-size: 11px; margin-left: 4px; font-weight: 600; }
+        .info-row.red-group { border-left: 3px solid #ff4444; padding-left: 8px; }
+        .info-row.blue-group { border-left: 3px solid #4444ff; padding-left: 8px; }
+        .info-toggle { position: absolute; top: 10px; right: 10px; z-index: 200; background: rgba(10, 10, 20, 0.85); border: 1px solid rgba(100, 100, 150, 0.4); border-radius: 10px; padding: 6px 10px; font-size: 18px; cursor: pointer; color: #e0e0e0; backdrop-filter: blur(8px); transition: all 0.2s; user-select: none; }
+        .info-toggle:hover { background: rgba(30, 30, 60, 0.9); border-color: rgba(100, 100, 200, 0.6); transform: scale(1.05); }
+        .info-toggle:active { transform: scale(0.95); }
+        #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #88aaff; font-size: 24px; z-index: 2000; }
+    </style>
+    <script type="importmap">
+    { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js", "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/" } }
+    </script>
+</head>
+<body>
+    <div id="loading">加载中...</div>
+    <div id="canvas-container"></div>
+    <button id="info-toggle" class="info-toggle" title="显示/隐藏数值面板">📊</button>
+    <div class="title-bar">Dandelin Spheres &amp; Conics</div>
+    <div class="info-panel" id="info-panel">
+        <div class="info-row red-group">PF₁ = <span class="info-val" id="val-pf1">--</span> &nbsp; PT₁ = <span class="info-val" id="val-pt1">--</span></div>
+        <div class="info-row blue-group">PF₂ = <span class="info-val" id="val-pf2">--</span> &nbsp; PT₂ = <span class="info-val" id="val-pt2">--</span></div>
+        <div class="info-row" id="info-sum" style="margin-top:4px; padding-top:6px; border-top:1px solid rgba(255,255,255,0.1);">PF₁ + PF₂ = <span class="info-val" id="val-diff">--</span> <span class="info-const">定值</span></div>
+        <div class="info-row" id="info-tt">T₁T₂ = <span class="info-val" id="val-tt">--</span> <span class="info-const">定值</span></div>
+    </div>
+    <div class="controls-panel">
+        <div class="controls-row">
+            <span id="tan-display" class="slider-value-tan">e=cosγ/cosα=0.000</span>
+            <button id="btn-play">▶</button>
+            <button id="btn-p" class="btn-p" title="显示/隐藏六等分点">P</button>
+            <button id="btn-refresh">H</button>
+            <span id="status-hint" class="status-hint"></span>
+        </div>
+        <div class="controls-row">
+            <button id="btn-reset" title="重置视角与参数" style="color:#888888;font-size:16px;margin-right:4px;">↻</button>
+            <span class="slider-label">α</span>
+            <input type="range" id="alpha-slider" min="12" max="48" value="22" step="1">
+            <span id="alpha-angle" class="slider-value">22.00°</span>
+        </div>
+        <div class="controls-row">
+            <span class="slider-label">γ</span>
+            <button id="gamma-minus" class="btn-micro">−</button>
+            <input type="range" id="gamma-slider" min="0" max="90" value="68" step="1">
+            <button id="gamma-plus" class="btn-micro">+</button>
+            <button id="gamma-step" class="btn-micro" title="步进切换" style="color:#ffd700;font-size:11px;min-width:36px;">1°</button>
+            <span id="gamma-angle" class="slider-value">68.00°</span>
+        </div>
+        <div class="controls-row">
+            <span class="slider-label">P</span>
+            <input type="range" id="p-slider" min="0" max="360" value="0" step="1">
+            <span id="p-value" class="slider-value">0°</span>
+            <span class="slider-label">Speed</span>
+            <input type="range" id="speed-slider" min="1" max="10" value="3" step="1">
+            <span id="speed-value" class="slider-value">3</span>
+        </div>
+    </div>
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+        document.getElementById('loading').style.display = 'none';
+
+        const CONE_H = 25;
+        const INTERCEPT = 12;
+        let currentSemiAngleDeg = 22;
+        let currentGammaDeg = 68;
+
+        function getConeRadius(alphaRad) { return CONE_H * Math.tan(alphaRad); }
+
+        function computeDandelin(alphaRad, gammaRad) {
+            const H = CONE_H;
+            const h0 = INTERCEPT;
+            const sinA = Math.sin(alphaRad);
+            const cosA = Math.cos(alphaRad);
+            const betaRad = Math.PI / 2 - gammaRad;
+            const sinB = Math.sin(betaRad);
+            const cosB = Math.cos(betaRad);
+            const nUnit = new THREE.Vector3(sinB, -cosB, 0).normalize();
+            const P0 = new THREE.Vector3(0, h0, 0);
+
+            const isEllipse = gammaRad > alphaRad + 1e-6;
+            const isParabola = Math.abs(gammaRad - alphaRad) <= 1e-6;
+            const isHyperbola = gammaRad < alphaRad - 1e-6;
+            const isDegenerate = gammaRad < 1e-3;
+
+            const y1 = (H * sinA + h0 * cosB) / (sinA + cosB);
+            const R1 = (y1 - h0) * cosB;
+            const O1 = new THREE.Vector3(0, y1, 0);
+            const d1 = (O1.x - P0.x) * nUnit.x + (O1.y - P0.y) * nUnit.y + (O1.z - P0.z) * nUnit.z;
+            const F1 = O1.clone().sub(nUnit.clone().multiplyScalar(d1));
+            const y_t1 = H * sinA * sinA + y1 * cosA * cosA;
+            const r1_circle = (H - y_t1) * Math.tan(alphaRad);
+
+            let y2, R2, O2, F2, y_t2, r2_circle;
+            let lowerValid = true;
+            if (isParabola) {
+                lowerValid = false;
+                y2 = 0; R2 = 0; O2 = new THREE.Vector3(0,0,0); F2 = new THREE.Vector3(0,0,0);
+                y_t2 = 0; r2_circle = 0;
+            } else if (isHyperbola) {
+                const denom = cosB - sinA;
+                y2 = (h0 * cosB - H * sinA) / denom;
+                R2 = (y2 - H) * sinA;
+                if (R2 < 0.01 || y2 <= H) { lowerValid = false; y2 = H; R2 = 0; }
+                O2 = new THREE.Vector3(0, y2, 0);
+                const d2 = (O2.x - P0.x) * nUnit.x + (O2.y - P0.y) * nUnit.y + (O2.z - P0.z) * nUnit.z;
+                F2 = O2.clone().sub(nUnit.clone().multiplyScalar(d2));
+                y_t2 = H * sinA * sinA + y2 * cosA * cosA;
+                r2_circle = (y_t2 - H) * Math.tan(alphaRad);
+            } else {
+                const denom = sinA - cosB;
+                y2 = (H * sinA - h0 * cosB) / denom;
+                R2 = (h0 - y2) * cosB;
+                if (R2 <= 0.01) { lowerValid = false; y2 = 0; R2 = 0; }
+                O2 = new THREE.Vector3(0, y2, 0);
+                const d2 = (O2.x - P0.x) * nUnit.x + (O2.y - P0.y) * nUnit.y + (O2.z - P0.z) * nUnit.z;
+                F2 = O2.clone().sub(nUnit.clone().multiplyScalar(d2));
+                y_t2 = y2 + R2 * sinA;
+                r2_circle = (H - y_t2) * Math.tan(alphaRad);
+            }
+
+            let center, aLen, bLen, uDir, vDir;
+            let directrixPoint = null, directrixDir = null, vertex = null, focalParam = null;
+            let isCircle = false;
+            if (isEllipse) {
+                const F1F2 = new THREE.Vector3().subVectors(F2, F1);
+                const c = F1F2.length() / 2;
+                isCircle = c < 1e-6;
+                const a = Math.abs(y_t1 - y_t2) / (2 * cosA);
+                const b = Math.sqrt(Math.max(0, a * a - c * c));
+                center = new THREE.Vector3().addVectors(F1, F2).multiplyScalar(0.5);
+                if (F1F2.length() < 1e-6) {
+                    uDir = new THREE.Vector3(1, 0, 0);
+                } else {
+                    uDir = F1F2.clone().normalize();
+                }
+                vDir = new THREE.Vector3().crossVectors(nUnit, uDir).normalize();
+                aLen = a; bLen = b;
+            } else if (isHyperbola) {
+                const F1F2 = new THREE.Vector3().subVectors(F1, F2);
+                const c = F1F2.length() / 2;
+                const a = Math.abs(y_t1 - y_t2) / (2 * cosA);
+                const b = Math.sqrt(Math.max(0, c * c - a * a));
+                center = new THREE.Vector3().addVectors(F1, F2).multiplyScalar(0.5);
+                uDir = F1F2.clone().normalize();
+                vDir = new THREE.Vector3().crossVectors(nUnit, uDir).normalize();
+                aLen = a; bLen = b;
+            } else {
+                directrixDir = new THREE.Vector3().crossVectors(nUnit, new THREE.Vector3(0,1,0)).normalize();
+                if (directrixDir.length() < 0.001) directrixDir = new THREE.Vector3(1,0,0);
+                const xL = cosB * (y_t1 - h0) / sinB;
+                directrixPoint = new THREE.Vector3(xL, y_t1, 0);
+                uDir = directrixDir.clone();
+                vDir = new THREE.Vector3().crossVectors(uDir, nUnit).normalize();
+                const toFocus = new THREE.Vector3().subVectors(F1, directrixPoint);
+                const proj = toFocus.dot(vDir);
+                if (proj < 0) vDir.negate();
+                focalParam = Math.abs(toFocus.dot(vDir));
+                vertex = F1.clone().addScaledVector(vDir, -focalParam/2);
+                center = vertex.clone();
+                aLen = 0; bLen = 0;
+            }
+
+            const R_cone = getConeRadius(alphaRad);
+
+            function computeDirectrixForLevel(y_t, n, h0_val) {
+                const dir = new THREE.Vector3().crossVectors(n, new THREE.Vector3(0, 1, 0)).normalize();
+                if (dir.length() < 0.001) dir.set(1, 0, 0);
+                let pt;
+                if (Math.abs(n.z) > 0.001) {
+                    const z = -n.y * (y_t - h0_val) / n.z;
+                    pt = new THREE.Vector3(0, y_t, z);
+                } else if (Math.abs(n.x) > 0.001) {
+                    const x = -n.y * (y_t - h0_val) / n.x;
+                    pt = new THREE.Vector3(x, y_t, 0);
+                } else {
+                    pt = new THREE.Vector3(0, y_t, 0);
+                }
+                return { point: pt, dir: dir };
+            }
+
+            let directrixData = [];
+            if (isEllipse || isHyperbola) {
+                const d1 = computeDirectrixForLevel(y_t1, nUnit, h0);
+                directrixData.push({ point: d1.point, dir: d1.dir, label: 'K₁' });
+                if (lowerValid) {
+                    const d2 = computeDirectrixForLevel(y_t2, nUnit, h0);
+                    directrixData.push({ point: d2.point, dir: d2.dir, label: 'K₂' });
+                }
+            } else if (isParabola) {
+                const d = computeDirectrixForLevel(y_t1, nUnit, h0);
+                directrixData.push({ point: d.point, dir: d.dir, label: 'K' });
+                directrixPoint = d.point;
+                directrixDir = d.dir;
+            }
+
+            return {
+                center, aLen, bLen, uDir, vDir,
+                O1, R1, y_t1, r1: r1_circle, F1,
+                O2, R2, y_t2, r2: r2_circle, F2,
+                planeNormal: nUnit,
+                coneRadius: R_cone, coneHeight: H,
+                lowerValid, isEllipse, isParabola, isHyperbola,
+                directrixPoint, directrixDir, vertex, focalParam,
+                directrixData,
+                isDegenerate,
+                isCircle,
+                alphaRad
+            };
+        }
+
+        function getConicPoint(params, t, branch = 0) {
+            if (params.isDegenerate) {
+                const sign = (branch >= 0) ? 1 : -1;
+                const cosA = Math.cos(params.alphaRad);
+                const sinA = Math.sin(params.alphaRad);
+                const dir = new THREE.Vector3(0, -cosA, sign * sinA);
+                const apex = new THREE.Vector3(0, params.coneHeight, 0);
+                return apex.clone().addScaledVector(dir, t);
+            }
+            if (params.isEllipse) {
+                const cos_t = Math.cos(t), sin_t = Math.sin(t);
+                return new THREE.Vector3(
+                    params.center.x + params.aLen * cos_t * params.uDir.x + params.bLen * sin_t * params.vDir.x,
+                    params.center.y + params.aLen * cos_t * params.uDir.y + params.bLen * sin_t * params.vDir.y,
+                    params.center.z + params.aLen * cos_t * params.uDir.z + params.bLen * sin_t * params.vDir.z
+                );
+            } else if (params.isHyperbola) {
+                const cosh_t = Math.cosh(t), sinh_t = Math.sinh(t);
+                const sign = (branch >= 0) ? 1 : -1;
+                return new THREE.Vector3(
+                    params.center.x + sign * params.aLen * cosh_t * params.uDir.x + params.bLen * sinh_t * params.vDir.x,
+                    params.center.y + sign * params.aLen * cosh_t * params.uDir.y + params.bLen * sinh_t * params.vDir.y,
+                    params.center.z + sign * params.aLen * cosh_t * params.uDir.z + params.bLen * sinh_t * params.vDir.z
+                );
+            } else if (params.isParabola) {
+                const p = Math.max(params.focalParam, 0.1);
+                return params.vertex.clone()
+                    .addScaledVector(params.uDir, t)
+                    .addScaledVector(params.vDir, (t * t) / (2 * p));
+            }
+            return new THREE.Vector3();
+        }
+
+        function getConicPointFromGenerator(params, theta) {
+            const apex = new THREE.Vector3(0, params.coneHeight, 0);
+            const sinA = Math.sin(params.alphaRad);
+            const cosA = Math.cos(params.alphaRad);
+            const dir = new THREE.Vector3(
+                Math.cos(theta) * sinA,
+                -cosA,
+                Math.sin(theta) * sinA
+            );
+            const P0 = new THREE.Vector3(0, INTERCEPT, 0);
+            const dirDotN = dir.dot(params.planeNormal);
+            if (Math.abs(dirDotN) < 1e-10) return null;
+            const s = P0.clone().sub(apex).dot(params.planeNormal) / dirDotN;
+            return apex.clone().addScaledVector(dir, s);
+        }
+
+        function adjustHexGeneratorsToRedBranch(params) {
+            if (!params.isHyperbola) return;
+            const H = params.coneHeight;
+            const h0 = INTERCEPT;
+            const sinA = Math.sin(params.alphaRad);
+            const cosA = Math.cos(params.alphaRad);
+            for (let i = 0; i < 6; i++) {
+                let theta = hexGenerators[i];
+                const dir = new THREE.Vector3(
+                    Math.cos(theta) * sinA,
+                    -cosA,
+                    Math.sin(theta) * sinA
+                );
+                const P0 = new THREE.Vector3(0, h0, 0);
+                const apex = new THREE.Vector3(0, H, 0);
+                const dirDotN = dir.dot(params.planeNormal);
+                if (Math.abs(dirDotN) < 1e-10) continue;
+                const s = P0.clone().sub(apex).dot(params.planeNormal) / dirDotN;
+                // s <= 0 表示交点在蓝球支（上支），反方向母线 theta + π 必打到红球支（下支）
+                if (s <= 0) {
+                    hexGenerators[i] = theta + Math.PI;
+                }
+            }
+        }
+
+        function getGeneratorIntersections(params, P) {
+            const apex = new THREE.Vector3(0, params.coneHeight, 0);
+            const dir = new THREE.Vector3().subVectors(P, apex).normalize();
+            let A, B;
+            const s1 = (params.y_t1 - params.coneHeight) / dir.y;
+            A = apex.clone().add(dir.clone().multiplyScalar(s1));
+            if (params.lowerValid) {
+                const s2 = (params.y_t2 - params.coneHeight) / dir.y;
+                B = apex.clone().add(dir.clone().multiplyScalar(s2));
+            } else B = apex.clone();
+            return { A, B, dir };
+        }
+
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0a0a15);
+        const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(28, 20, 28);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+        const labelRenderer = new CSS2DRenderer();
+        labelRenderer.setSize(window.innerWidth, window.innerHeight);
+        labelRenderer.domElement.style.position = 'absolute';
+        labelRenderer.domElement.style.top = '0px';
+        labelRenderer.domElement.style.left = '0px';
+        labelRenderer.domElement.style.pointerEvents = 'none';
+        document.getElementById('canvas-container').appendChild(labelRenderer.domElement);
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.target.set(0, 12, 0);
+
+        const ambient = new THREE.AmbientLight(0x606080, 0.8);
+        scene.add(ambient);
+        const d1 = new THREE.DirectionalLight(0xffffff, 1.0);
+        d1.position.set(15, 30, 15); scene.add(d1);
+        const d2 = new THREE.DirectionalLight(0x88aaff, 0.5);
+        d2.position.set(-15, 25, -15); scene.add(d2);
+        const d3 = new THREE.DirectionalLight(0xffaa88, 0.3);
+        d3.position.set(0, 15, 25); scene.add(d3);
+        scene.add(new THREE.AxesHelper(4));
+        const grid = new THREE.GridHelper(40, 40, 0x333344, 0x222233);
+        grid.position.y = 0.01; scene.add(grid);
+
+        let coneMesh, coneMesh2, planeMesh, conicLine, conicLine2;
+        let sphere1, sphere2, sphereEdges1, sphereEdges2;
+        let circle1, circle2;
+        let focus1, focus2, center1, center2;
+        let pMesh, aMesh, bMesh;
+        let lineAP, lineBP, linePF1, linePF2, lineAB, lineGenerator;
+        let lineO1P, lineO2P, lineO1A, lineO2B, lineO1F1, lineO2F2;
+        let triAO1P, triF1O1P, triBO2P, triF2O2P;
+        let labelO1, labelO2, labelF1, labelF2, labelP, labelT1, labelT2;
+        let directrixLine, linePK, pointK, labelK;
+        let directrixLine1, directrixLine2;
+        let pointK1, pointK2;
+        let linePK1, linePK2;
+        let labelK1, labelK2;
+        let _directrixData = null;
+
+        let paraSquare, pointH, labelH;
+        let hexPoints = [], hexLabels = [];
+        let hexGenerators = [0, Math.PI/3, 2*Math.PI/3, Math.PI, 4*Math.PI/3, 5*Math.PI/3];
+let savedHexGenerators = null; // P 模式下的快照（存储母线角度）
+let hHexGenerators = null; // H 模式下最后一次快照（存储曲线参数）
+let savedHexMode = 'P'; // 标记 savedHexGenerators 的存储模式：'P' 或 'H' 
+        const HEX_NAMES = ['A','B','C','a','b','c'];
+        const HEX_COLORS = [0xff4444, 0xffdd44, 0x4488ff, 0xff4444, 0xffdd44, 0x4488ff];
+        let hexVisible = false;
+        let draggingHexIdx = -1;
+        const HEX_SIZE = 0.15;
+        const HEX_HIT_R = HEX_SIZE * 2;
+        let lineAb, lineBa, lineBc, lineCb, lineCa, lineAc;
+        let interAB, interBC, interCA;
+        let interLine;
+        let labelP1, labelP2, labelP3;
+        let linePH, lineHK, lineHT1;
+        let triKHP, triT1HP;
+
+        let generatrixLines = [];
+        let generatrixLines2 = [];
+
+        function buildScene(alphaRad, gammaRad) {
+            const toRemove = [coneMesh, coneMesh2, planeMesh, conicLine, conicLine2, sphere1, sphere2, sphereEdges1, sphereEdges2,
+                              circle1, circle2, focus1, focus2, center1, center2, pMesh, aMesh, bMesh,
+                              lineAP, lineBP, linePF1, linePF2, lineAB, lineGenerator,
+                              lineO1P, lineO2P, lineO1A, lineO2B, lineO1F1, lineO2F2,
+                              triAO1P, triF1O1P, triBO2P, triF2O2P,
+                              labelO1, labelO2, labelF1, labelF2, labelP, labelT1, labelT2,
+                              directrixLine, linePK, pointK, labelK,
+                              directrixLine1, directrixLine2, pointK1, pointK2,
+                              linePK1, linePK2, labelK1, labelK2,
+                              paraSquare, pointH, labelH,
+                              ...hexPoints, ...hexLabels,
+                              lineAb, lineBa, lineBc, lineCb, lineCa, lineAc,
+                              interAB, interBC, interCA,
+                              interLine,
+                              labelP1, labelP2, labelP3,
+                              linePH, lineHK, lineHT1,
+                              triKHP, triT1HP];
+            toRemove.forEach(obj => {
+                if (!obj) return;
+                scene.remove(obj);
+                if (obj.geometry) obj.geometry.dispose();
+                if (obj.material) {
+                    if (Array.isArray(obj.material)) obj.material.forEach(m => m.dispose());
+                    else obj.material.dispose();
+                }
+            });
+            generatrixLines.forEach(line => {
+                scene.remove(line);
+                if (line.geometry) line.geometry.dispose();
+                if (line.material) line.material.dispose();
+            });
+            generatrixLines = [];
+            generatrixLines2.forEach(line => {
+                scene.remove(line);
+                if (line.geometry) line.geometry.dispose();
+                if (line.material) line.material.dispose();
+            });
+            generatrixLines2 = [];
+            _directrixData = null;
+            directrixLine1 = directrixLine2 = null;
+            pointK1 = pointK2 = null;
+            linePK1 = linePK2 = null;
+            labelK1 = labelK2 = null;
+            paraSquare = pointH = labelH = null;
+            hexPoints.forEach(p => { if(p){ scene.remove(p); p.geometry?.dispose(); p.material?.dispose(); }});
+            hexLabels.forEach(l => { if(l) scene.remove(l); });
+            hexPoints = []; hexLabels = [];
+            [lineAb, lineBa, lineBc, lineCb, lineCa, lineAc].forEach(l => { if(l){ scene.remove(l); l.geometry?.dispose(); l.material?.dispose(); }});
+            [interAB, interBC, interCA].forEach(p => { if(p){ scene.remove(p); p.geometry?.dispose(); p.material?.dispose(); }});
+            if (interLine) { scene.remove(interLine); interLine.geometry?.dispose(); interLine.material?.dispose(); interLine = null; }
+            [labelP1, labelP2, labelP3].forEach(lbl => { if(lbl) { scene.remove(lbl); lbl = null; } });
+            lineAb = lineBa = lineBc = lineCb = lineCa = lineAc = null;
+            interAB = interBC = interCA = null;
+            linePH = lineHK = lineHT1 = null;
+            triKHP = triT1HP = null;
+
+            const params = computeDandelin(alphaRad, gammaRad);
+            const newType = params.isDegenerate ? 'degenerate' : (params.isCircle ? 'circle' : (params.isEllipse ? 'ellipse' : (params.isParabola ? 'parabola' : (params.isHyperbola ? 'hyperbola' : null))));
+            previousCurveType = newType;
+            const R_bottom = params.coneRadius;
+
+            const coneGeo = new THREE.CylinderGeometry(0, R_bottom, CONE_H, 64, 8, true);
+            coneMesh = new THREE.Mesh(coneGeo, new THREE.MeshPhongMaterial({ color: 0x888899, transparent: true, opacity: 0.12, side: THREE.DoubleSide, depthWrite: false }));
+            coneMesh.position.y = CONE_H / 2;
+            scene.add(coneMesh);
+
+            const lineMat = new THREE.LineBasicMaterial({ color: 0x666677, transparent: true, opacity: 0.48 });
+            for (let i = 0; i < 32; i++) {
+                const angle = (i / 32) * Math.PI * 2;
+                const geom = new THREE.BufferGeometry().setFromPoints([
+                    new THREE.Vector3(0, CONE_H, 0),
+                    new THREE.Vector3(R_bottom * Math.cos(angle), 0, R_bottom * Math.sin(angle))
+                ]);
+                const line = new THREE.Line(geom, lineMat);
+                scene.add(line);
+                generatrixLines.push(line);
+            }
+
+            const showOppositeCone = params.isDegenerate || (params.isHyperbola && params.lowerValid);
+            if (showOppositeCone) {
+                let topY, extHeight, R_ext;
+                if (params.isDegenerate) {
+                    extHeight = CONE_H;
+                    topY = CONE_H + extHeight;
+                    R_ext = extHeight * Math.tan(alphaRad);
+                } else {
+                    topY = params.O2.y + params.R2 + 1;
+                    extHeight = topY - CONE_H;
+                    R_ext = extHeight * Math.tan(alphaRad);
+                }
+                const coneGeo2 = new THREE.CylinderGeometry(0, R_ext, extHeight, 64, 8, true);
+                coneMesh2 = new THREE.Mesh(coneGeo2, new THREE.MeshPhongMaterial({ color: 0x998888, transparent: true, opacity: 0.08, side: THREE.DoubleSide, depthWrite: false }));
+                coneMesh2.position.y = CONE_H + extHeight / 2;
+                scene.add(coneMesh2);
+
+                const lineMat2 = new THREE.LineBasicMaterial({ color: 0x776666, transparent: true, opacity: 0.30 });
+                for (let i = 0; i < 32; i++) {
+                    const angle = (i / 32) * Math.PI * 2;
+                    const geom = new THREE.BufferGeometry().setFromPoints([
+                        new THREE.Vector3(0, CONE_H, 0),
+                        new THREE.Vector3(R_ext * Math.cos(angle), topY, R_ext * Math.sin(angle))
+                    ]);
+                    const line = new THREE.Line(geom, lineMat2);
+                    scene.add(line);
+                    generatrixLines2.push(line);
+                }
+            }
+
+            planeMesh = new THREE.Mesh(new THREE.PlaneGeometry(24, 24), new THREE.MeshPhongMaterial({ color: 0xffdd44, transparent: true, opacity: 0.08, side: THREE.DoubleSide, depthWrite: false }));
+            scene.add(planeMesh);
+            const conicColor = params.isEllipse ? 0x00ff88 : (params.isParabola ? 0xffaa00 : 0xff44ff);
+            conicLine = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: conicColor, linewidth: 3 }));
+            scene.add(conicLine);
+            conicLine2 = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: conicColor, linewidth: 3 }));
+            scene.add(conicLine2);
+
+            if (params.isParabola && params.directrixPoint && params.directrixDir) {
+                const pt1 = params.directrixPoint.clone().addScaledVector(params.directrixDir, -15);
+                const pt2 = params.directrixPoint.clone().addScaledVector(params.directrixDir, 15);
+                directrixLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints([pt1, pt2]), new THREE.LineBasicMaterial({ color: 0x008080, linewidth: 2 }));
+                scene.add(directrixLine);
+                pointK = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), new THREE.MeshPhongMaterial({ color: 0x008080 }));
+                scene.add(pointK);
+                linePK = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineDashedMaterial({ color: 0x008080, dashSize: 0.15, gapSize: 0.10, linewidth: 2 }));
+                scene.add(linePK);
+                const divK = document.createElement('div');
+                divK.textContent = 'K'; divK.className = 'label-3d'; divK.style.color = '#008080'; divK.style.borderColor = '#00808066';
+                labelK = new CSS2DObject(divK);
+                scene.add(labelK);
+                _directrixData = {
+                    type: 'parabola',
+                    lines: [{ point: params.directrixPoint, dir: params.directrixDir, label: 'K' }]
+                };
+            }
+
+            if ((params.isEllipse || params.isHyperbola) && !params.isCircle) {
+                const dataArr = params.directrixData || [];
+                if (dataArr.length >= 1) {
+                    const d1 = dataArr[0];
+                    const pt1_1 = d1.point.clone().addScaledVector(d1.dir, -15);
+                    const pt1_2 = d1.point.clone().addScaledVector(d1.dir, 15);
+                    directrixLine1 = new THREE.Line(new THREE.BufferGeometry().setFromPoints([pt1_1, pt1_2]), new THREE.LineBasicMaterial({ color: 0x008080, linewidth: 2 }));
+                    scene.add(directrixLine1);
+                    pointK1 = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), new THREE.MeshPhongMaterial({ color: 0x008080 }));
+                    scene.add(pointK1);
+                    linePK1 = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineDashedMaterial({ color: 0x008080, dashSize: 0.15, gapSize: 0.10, linewidth: 2 }));
+                    scene.add(linePK1);
+                    const divK1 = document.createElement('div');
+                    divK1.textContent = 'K₁'; divK1.className = 'label-3d'; divK1.style.color = '#008080'; divK1.style.borderColor = '#00808066';
+                    labelK1 = new CSS2DObject(divK1);
+                    scene.add(labelK1);
+
+                    if (dataArr.length >= 2 && params.lowerValid) {
+                        const d2 = dataArr[1];
+                        const pt2_1 = d2.point.clone().addScaledVector(d2.dir, -15);
+                        const pt2_2 = d2.point.clone().addScaledVector(d2.dir, 15);
+                        directrixLine2 = new THREE.Line(new THREE.BufferGeometry().setFromPoints([pt2_1, pt2_2]), new THREE.LineBasicMaterial({ color: 0x008080, linewidth: 2 }));
+                        scene.add(directrixLine2);
+                        pointK2 = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), new THREE.MeshPhongMaterial({ color: 0x008080 }));
+                        scene.add(pointK2);
+                        linePK2 = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineDashedMaterial({ color: 0x008080, dashSize: 0.15, gapSize: 0.10, linewidth: 2 }));
+                        scene.add(linePK2);
+                        const divK2 = document.createElement('div');
+                        divK2.textContent = 'K₂'; divK2.className = 'label-3d'; divK2.style.color = '#008080'; divK2.style.borderColor = '#00808066';
+                        labelK2 = new CSS2DObject(divK2);
+                        scene.add(labelK2);
+                    }
+                    _directrixData = {
+                        type: 'ellipse_hyperbola',
+                        lines: dataArr.map(d => ({ point: d.point, dir: d.dir, label: d.label }))
+                    };
+                }
+            }
+
+            const sphereMat1 = new THREE.MeshPhongMaterial({ color: 0xff4444, transparent: true, opacity: 0.40, depthWrite: false });
+            sphere1 = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 32), sphereMat1);
+            scene.add(sphere1);
+            sphereEdges1 = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.SphereGeometry(1, 32, 32)), new THREE.LineBasicMaterial({ color: 0xff6666, transparent: true, opacity: 0.4 }));
+            scene.add(sphereEdges1);
+            const sphereMat2 = new THREE.MeshPhongMaterial({ color: 0x4444ff, transparent: true, opacity: 0.40, depthWrite: false });
+            sphere2 = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 32), sphereMat2);
+            scene.add(sphere2);
+            sphereEdges2 = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.SphereGeometry(1, 32, 32)), new THREE.LineBasicMaterial({ color: 0x6666ff, transparent: true, opacity: 0.4 }));
+            scene.add(sphereEdges2);
+
+            circle1 = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0xff6666, linewidth: 2 }));
+            scene.add(circle1);
+            circle2 = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0x6666ff, linewidth: 2 }));
+            scene.add(circle2);
+
+            paraSquare = new THREE.Mesh(new THREE.BufferGeometry(), new THREE.MeshPhongMaterial({ color: 0x9944ff, transparent: true, opacity: 0.12, side: THREE.DoubleSide, depthWrite: false }));
+            scene.add(paraSquare);
+
+            focus1 = new THREE.Mesh(new THREE.OctahedronGeometry(0.14, 0), new THREE.MeshPhongMaterial({ color: 0xff0000, emissive: 0xff0000, emissiveIntensity: 0.5 }));
+            scene.add(focus1);
+            focus2 = new THREE.Mesh(new THREE.OctahedronGeometry(0.14, 0), new THREE.MeshPhongMaterial({ color: 0x0000ff, emissive: 0x0000ff, emissiveIntensity: 0.5 }));
+            scene.add(focus2);
+            center1 = new THREE.Mesh(new THREE.SphereGeometry(0.1, 16, 16), new THREE.MeshPhongMaterial({ color: 0xff4444 }));
+            scene.add(center1);
+            center2 = new THREE.Mesh(new THREE.SphereGeometry(0.1, 16, 16), new THREE.MeshPhongMaterial({ color: 0x4444ff }));
+            scene.add(center2);
+            pMesh = new THREE.Mesh(new THREE.SphereGeometry(0.13, 16, 16), new THREE.MeshPhongMaterial({ color: 0x00ff00, emissive: 0x00ff00, emissiveIntensity: 0.4 }));
+            scene.add(pMesh);
+            aMesh = new THREE.Mesh(new THREE.SphereGeometry(0.09, 16, 16), new THREE.MeshPhongMaterial({ color: 0xffaa66 }));
+            scene.add(aMesh);
+            bMesh = new THREE.Mesh(new THREE.SphereGeometry(0.09, 16, 16), new THREE.MeshPhongMaterial({ color: 0x66aaff }));
+            scene.add(bMesh);
+
+            function makeLine(color, width) { return new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color, linewidth: width || 2 })); }
+            lineAP = makeLine(0xff4444, 3);
+            lineBP = makeLine(0x4444ff, 3);
+            linePF1 = makeLine(0xff8888, 2);
+            linePF2 = makeLine(0x8888ff, 2);
+            lineAB = makeLine(0xffd700, 2);
+            lineGenerator = makeLine(0x00ff00, 1);
+            lineO1P = makeLine(0xff8888, 1);
+            lineO1A = makeLine(0xff8888, 1);
+            lineO1F1 = makeLine(0xff8888, 1);
+            lineO2P = makeLine(0x8888ff, 1);
+            lineO2B = makeLine(0x8888ff, 1);
+            lineO2F2 = makeLine(0x8888ff, 1);
+            [lineAP, lineBP, linePF1, linePF2, lineAB, lineGenerator, lineO1P, lineO1A, lineO1F1, lineO2P, lineO2B, lineO2F2].forEach(l => scene.add(l));
+
+            linePH = makeLine(0x6633cc, 2);
+            lineHK = makeLine(0x6633cc, 2);
+            lineHT1 = makeLine(0x6633cc, 2);
+            scene.add(linePH); scene.add(lineHK); scene.add(lineHT1);
+
+            function makeTri(color) { return new THREE.Mesh(new THREE.BufferGeometry(), new THREE.MeshPhongMaterial({ color, transparent: true, opacity: 0.25, side: THREE.DoubleSide, depthWrite: false })); }
+            triAO1P = makeTri(0xff4444); triF1O1P = makeTri(0xff4444);
+            triBO2P = makeTri(0x4444ff); triF2O2P = makeTri(0x4444ff);
+            scene.add(triAO1P); scene.add(triF1O1P); scene.add(triBO2P); scene.add(triF2O2P);
+            triKHP = makeTri(0x00cc66);
+            triT1HP = makeTri(0x00cc66);
+            scene.add(triKHP); scene.add(triT1HP);
+
+            function createLabel(text, className) {
+                const div = document.createElement('div');
+                div.textContent = text; div.className = `label-3d ${className}`; div.style.transform = 'translate(-50%, -50%)';
+                return new CSS2DObject(div);
+            }
+            labelO1 = createLabel('O₁', 'label-o1'); labelO2 = createLabel('O₂', 'label-o2');
+            labelF1 = createLabel('F₁', 'label-focus'); labelF2 = createLabel('F₂', 'label-focus2');
+            labelP = createLabel('P', 'label-p'); labelT1 = createLabel('T₁', 'label-t1'); labelT2 = createLabel('T₂', 'label-t2');
+            scene.add(labelO1); scene.add(labelO2); scene.add(labelF1); scene.add(labelF2);
+            scene.add(labelP); scene.add(labelT1); scene.add(labelT2);
+
+            pointH = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), new THREE.MeshPhongMaterial({ color: 0xcc66ff }));
+            scene.add(pointH);
+            const divH = document.createElement('div');
+            divH.textContent = 'H'; divH.className = 'label-3d'; divH.style.color = '#cc66ff'; divH.style.borderColor = '#cc66ff66';
+            labelH = new CSS2DObject(divH);
+            scene.add(labelH);
+
+            hexPoints = []; hexLabels = [];
+            for (let i = 0; i < 6; i++) {
+                const geo = new THREE.TetrahedronGeometry(HEX_SIZE, 0);
+                const mat = new THREE.MeshPhongMaterial({ color: HEX_COLORS[i], emissive: HEX_COLORS[i], emissiveIntensity: 0.3 });
+                const mesh = new THREE.Mesh(geo, mat);
+                mesh.userData.hexIndex = i;
+                mesh.visible = hexVisible;
+                scene.add(mesh);
+                hexPoints.push(mesh);
+
+                const div = document.createElement('div');
+                div.textContent = HEX_NAMES[i];
+                div.className = 'label-3d';
+                div.style.color = '#' + HEX_COLORS[i].toString(16).padStart(6,'0');
+                div.style.borderColor = '#' + HEX_COLORS[i].toString(16).padStart(6,'0') + '66';
+                div.style.fontSize = '11px';
+                div.style.transform = 'translate(-50%, -120%)';
+                const lbl = new CSS2DObject(div);
+                lbl.visible = hexVisible;
+                scene.add(lbl);
+                hexLabels.push(lbl);
+            }
+
+            function makeHexLine(color) {
+                return new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color, linewidth: 2 }));
+            }
+            lineAb = makeHexLine(0xff0000); lineBa = makeHexLine(0xff0000);
+            lineBc = makeHexLine(0xffff00); lineCb = makeHexLine(0xffff00);
+            lineCa = makeHexLine(0x00aaff); lineAc = makeHexLine(0x00aaff);
+            [lineAb, lineBa, lineBc, lineCb, lineCa, lineAc].forEach(l => { l.visible = hexVisible; scene.add(l); });
+
+            const interGeo = new THREE.TetrahedronGeometry(HEX_SIZE, 0);
+            const interMat = new THREE.MeshPhongMaterial({ color: 0xff66ff, emissive: 0xff44ff, emissiveIntensity: 1.0, transparent: true, opacity: 0.9 });
+            interAB = new THREE.Mesh(interGeo, interMat.clone()); interAB.visible = hexVisible; scene.add(interAB);
+            interBC = new THREE.Mesh(interGeo, interMat.clone()); interBC.visible = hexVisible; scene.add(interBC);
+            interCA = new THREE.Mesh(interGeo, interMat.clone()); interCA.visible = hexVisible; scene.add(interCA);
+            function createInterLabel(text, color) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                div.className = 'label-3d';
+                div.style.color = color;
+                div.style.borderColor = color + '66';
+                div.style.fontSize = '11px';
+                div.style.transform = 'translate(-50%, -120%)';
+                return new CSS2DObject(div);
+            }
+            labelP1 = createInterLabel('P₁', '#ff4444');
+            labelP2 = createInterLabel('P₂', '#ffdd44');
+            labelP3 = createInterLabel('P₃', '#4488ff');
+            [labelP1, labelP2, labelP3].forEach(lbl => { lbl.visible = hexVisible; scene.add(lbl); });
+            interLine = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineDashedMaterial({ color: 0xffffff, dashSize: 0.2, gapSize: 0.1, linewidth: 2 }));
+            interLine.visible = hexVisible;
+            scene.add(interLine);
+
+            updateGeometry(params);
+            updateScene(currentAngle);
+            applyHexVisibility();
+            const e_val = Math.cos(gammaRad) / Math.cos(alphaRad);
+            document.getElementById('tan-display').textContent = 'e=cosγ/cosα=' + e_val.toFixed(3);
+        }
+
+        let currentParams = null;
+        let currentAngle = 0;
+        let previousCurveType = null;
+
+        function updateGeometry(params) {
+            currentParams = params;
+            const quat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,0,1), params.planeNormal);
+            if (planeMesh.geometry) planeMesh.geometry.dispose();
+            planeMesh.geometry = new THREE.PlaneGeometry(24, 24);
+            planeMesh.geometry.applyQuaternion(quat);
+            planeMesh.geometry.translate(0, INTERCEPT, 0);
+
+            const pts = [];
+            if (params.isDegenerate) {
+                const range = params.coneHeight / Math.cos(params.alphaRad);
+                const apex = new THREE.Vector3(0, params.coneHeight, 0);
+                const cosA = Math.cos(params.alphaRad);
+                const sinA = Math.sin(params.alphaRad);
+                const down1 = apex.clone().add(new THREE.Vector3(0, -cosA * range, sinA * range));
+                const up1 = apex.clone().add(new THREE.Vector3(0, cosA * range, -sinA * range));
+                if (conicLine.geometry) conicLine.geometry.dispose();
+                conicLine.geometry = new THREE.BufferGeometry().setFromPoints([down1, apex, up1]);
+                const down2 = apex.clone().add(new THREE.Vector3(0, -cosA * range, -sinA * range));
+                const up2 = apex.clone().add(new THREE.Vector3(0, cosA * range, sinA * range));
+                if (conicLine2.geometry) conicLine2.geometry.dispose();
+                conicLine2.geometry = new THREE.BufferGeometry().setFromPoints([down2, apex, up2]);
+                conicLine2.visible = true;
+            } else if (params.isEllipse) {
+                for (let i = 0; i <= 200; i++) pts.push(getConicPoint(params, (i/200)*Math.PI*2));
+            } else if (params.isHyperbola) {
+                const range = 3.0, steps = 120;
+                const pts1 = [], pts2 = [];
+                for (let i = 0; i <= steps; i++) {
+                    const t = -range + (i/steps)*range*2;
+                    pts1.push(getConicPoint(params, t, 1));
+                }
+                for (let i = 0; i <= steps; i++) {
+                    const t = -range + (i/steps)*range*2;
+                    pts2.push(getConicPoint(params, t, -1));
+                }
+                if (conicLine.geometry) conicLine.geometry.dispose();
+                conicLine.geometry = new THREE.BufferGeometry().setFromPoints(pts1);
+                if (conicLine2.geometry) conicLine2.geometry.dispose();
+                conicLine2.geometry = new THREE.BufferGeometry().setFromPoints(pts2);
+            } else if (params.isParabola) {
+                for (let i = 0; i <= 200; i++) {
+                    const t = -8 + (i/200)*16;
+                    pts.push(getConicPoint(params, t));
+                }
+            }
+            if (params.isHyperbola || params.isDegenerate) {
+                conicLine2.visible = true;
+            } else {
+                conicLine2.visible = false;
+            }
+            if (!params.isHyperbola && !params.isDegenerate) {
+                if (conicLine.geometry) conicLine.geometry.dispose();
+                conicLine.geometry = new THREE.BufferGeometry().setFromPoints(pts);
+            }
+
+            const hBtnActive = document.getElementById('btn-refresh')?.classList.contains('active') || false;
+
+            if (params.isHyperbola && !hBtnActive) {
+                adjustHexGeneratorsToRedBranch(params);
+            }
+
+            if (hexPoints.length === 6) {
+                if (params.isHyperbola && hBtnActive) {
+                    // H 激活时 hexGenerators 存储的是曲线参数，用 getConicPoint 指定红球支（下支，branch=1）
+                    for (let i = 0; i < 6; i++) {
+                        const Pt = getConicPoint(params, hexGenerators[i], 1);
+                        if (Pt) { hexPoints[i].position.copy(Pt); hexLabels[i].position.copy(Pt); }
+                    }
+                } else {
+                    if (params.isHyperbola) {
+                        // P 模式下双曲线：hexGenerators 是母线角度，先用 getConicPointFromGenerator 得到点
+                        // 如果点在蓝球支，需要修正母线角度到红球支
+                        for (let i = 0; i < 6; i++) {
+                            const Pt = getConicPointFromGenerator(params, hexGenerators[i]);
+                            if (Pt) {
+                                // 检查点是否在红球支（下支）：与红球中心 O2 的 y 坐标比较
+                                // 红球支的点 y 应该接近 O2.y，蓝球支的点 y 应该接近 O1.y
+                                if (Pt.y > params.O2.y - 1) {
+                                    // 点在蓝球支（上支），修正母线角度
+                                    hexGenerators[i] += Math.PI;
+                                    const Pt2 = getConicPointFromGenerator(params, hexGenerators[i]);
+                                    if (Pt2) {
+                                        hexPoints[i].position.copy(Pt2);
+                                        hexLabels[i].position.copy(Pt2);
+                                    }
+                                } else {
+                                    hexPoints[i].position.copy(Pt);
+                                    hexLabels[i].position.copy(Pt);
+                                }
+                            }
+                        }
+                    } else {
+                        for (let i = 0; i < 6; i++) {
+                            const Pt = getConicPointFromGenerator(params, hexGenerators[i]);
+                            if (Pt) { hexPoints[i].position.copy(Pt); hexLabels[i].position.copy(Pt); }
+                        }
+                    }
+                }
+            }
+
+            const showHex = hexVisible && !params.isDegenerate;
+            [lineAb, lineBa, lineBc, lineCb, lineCa, lineAc].forEach(l => { if(l) l.visible = showHex; });
+            if (showHex && hexPoints.length === 6) {
+                const A = hexPoints[0].position, B = hexPoints[1].position, C = hexPoints[2].position;
+                const a = hexPoints[3].position, b = hexPoints[4].position, c = hexPoints[5].position;
+                updateHexLine(lineAb, A, b); updateHexLine(lineBa, B, a);
+                updateHexLine(lineBc, B, c); updateHexLine(lineCb, C, b);
+                updateHexLine(lineCa, C, a); updateHexLine(lineAc, A, c);
+                function lineIntersect(p1, p2, p3, p4) {
+                    const d1 = new THREE.Vector3().subVectors(p2, p1);
+                    const d2 = new THREE.Vector3().subVectors(p4, p3);
+                    const diff = new THREE.Vector3().subVectors(p3, p1);
+                    const crossD = new THREE.Vector3().crossVectors(d1, d2);
+                    const crossDiff = new THREE.Vector3().crossVectors(diff, d2);
+                    const lenSq = crossD.lengthSq();
+                    if (lenSq < 1e-8) return null;
+                    const t = crossDiff.dot(crossD) / lenSq;
+                    return p1.clone().addScaledVector(d1, t);
+                }
+                const iAB = lineIntersect(A, b, B, a);
+                const iBC = lineIntersect(B, c, C, b);
+                const iCA = lineIntersect(C, a, A, c);
+                if (iAB) { interAB.position.copy(iAB); interAB.visible = true; } else { interAB.visible = false; }
+                if (iBC) { interBC.position.copy(iBC); interBC.visible = true; } else { interBC.visible = false; }
+                if (iCA) { interCA.position.copy(iCA); interCA.visible = true; } else { interCA.visible = false; }
+                updateInterLine();
+            } else {
+                [interAB, interBC, interCA].forEach(p => { if(p) p.visible = false; });
+                if (interLine) interLine.visible = false;
+            }
+            [labelP1, labelP2, labelP3].forEach(lbl => { if(lbl) lbl.visible = showHex; });
+
+            if (params.isParabola && paraSquare) {
+                const sqHalf = params.r1 * 3;
+                const sqY = params.y_t1;
+                const sqGeo = new THREE.BufferGeometry();
+                const sqVerts = new Float32Array([
+                    -sqHalf, sqY, -sqHalf,   sqHalf, sqY, -sqHalf,
+                     sqHalf, sqY,  sqHalf,  -sqHalf, sqY,  sqHalf
+                ]);
+                const sqIndices = [0, 1, 2, 0, 2, 3];
+                sqGeo.setAttribute('position', new THREE.BufferAttribute(sqVerts, 3));
+                sqGeo.setIndex(sqIndices);
+                sqGeo.computeVertexNormals();
+                if (paraSquare.geometry) paraSquare.geometry.dispose();
+                paraSquare.geometry = sqGeo;
+                paraSquare.visible = true;
+            } else if (paraSquare) {
+                paraSquare.visible = false;
+            }
+
+            const showLower = params.lowerValid && !params.isDegenerate;
+            const showUpper = !params.isDegenerate;
+            sphere1.visible = showUpper; sphereEdges1.visible = showUpper;
+            if (showUpper) {
+                sphere1.position.copy(params.O1);
+                if (sphere1.geometry) sphere1.geometry.dispose();
+                sphere1.geometry = new THREE.SphereGeometry(Math.max(params.R1, 0.01), 32, 32);
+                sphereEdges1.position.copy(params.O1);
+                if (sphereEdges1.geometry) sphereEdges1.geometry.dispose();
+                sphereEdges1.geometry = new THREE.EdgesGeometry(new THREE.SphereGeometry(Math.max(params.R1, 0.01), 32, 32));
+            }
+            sphere2.visible = showLower; sphereEdges2.visible = showLower;
+            if (showLower) {
+                sphere2.position.copy(params.O2);
+                if (sphere2.geometry) sphere2.geometry.dispose();
+                sphere2.geometry = new THREE.SphereGeometry(Math.max(params.R2, 0.01), 32, 32);
+                sphereEdges2.position.copy(params.O2);
+                if (sphereEdges2.geometry) sphereEdges2.geometry.dispose();
+                sphereEdges2.geometry = new THREE.EdgesGeometry(new THREE.SphereGeometry(Math.max(params.R2, 0.01), 32, 32));
+            }
+
+            circle1.visible = showUpper;
+            circle2.visible = showLower;
+            if (showUpper) {
+                if (circle1.geometry) circle1.geometry.dispose();
+                circle1.geometry = new THREE.BufferGeometry().setFromPoints(Array.from({ length: 65 }, (_, i) => {
+                    const a = (i/64)*Math.PI*2;
+                    return new THREE.Vector3(params.r1 * Math.cos(a), params.y_t1, params.r1 * Math.sin(a));
+                }));
+            }
+            if (showLower) {
+                if (circle2.geometry) circle2.geometry.dispose();
+                circle2.geometry = new THREE.BufferGeometry().setFromPoints(Array.from({ length: 65 }, (_, i) => {
+                    const a = (i/64)*Math.PI*2;
+                    return new THREE.Vector3(params.r2 * Math.cos(a), params.y_t2, params.r2 * Math.sin(a));
+                }));
+            }
+
+            focus1.visible = showUpper; focus2.visible = showLower;
+            center1.visible = showUpper; center2.visible = showLower;
+            if (showUpper) {
+                focus1.position.copy(params.F1);
+                center1.position.copy(params.O1);
+                labelO1.position.copy(params.O1);
+                labelF1.position.copy(params.F1);
+            }
+            if (showLower) {
+                focus2.position.copy(params.F2);
+                center2.position.copy(params.O2);
+                labelO2.position.copy(params.O2);
+                labelF2.position.copy(params.F2);
+            }
+            labelT2.visible = showLower;
+
+            lineAP.visible = showUpper; linePF1.visible = showUpper; lineO1P.visible = showUpper; lineO1A.visible = showUpper; lineO1F1.visible = showUpper;
+            triAO1P.visible = showUpper; triF1O1P.visible = showUpper;
+            lineBP.visible = showLower; linePF2.visible = showLower; lineO2P.visible = showLower; lineO2B.visible = showLower; lineO2F2.visible = showLower;
+            triBO2P.visible = showLower; triF2O2P.visible = showLower;
+
+            const showParaHelpers = params.isParabola;
+            if (pointH) pointH.visible = showParaHelpers;
+            if (labelH) labelH.visible = showParaHelpers;
+            if (linePH) linePH.visible = showParaHelpers;
+            if (lineHK) lineHK.visible = showParaHelpers;
+            if (lineHT1) lineHT1.visible = showParaHelpers;
+            if (triKHP) triKHP.visible = showParaHelpers;
+            if (triT1HP) triT1HP.visible = showParaHelpers;
+
+            if (params.isCircle) {
+                if (directrixLine1) directrixLine1.visible = false;
+                if (pointK1) pointK1.visible = false;
+                if (linePK1) linePK1.visible = false;
+                if (labelK1) labelK1.visible = false;
+                if (directrixLine2) directrixLine2.visible = false;
+                if (pointK2) pointK2.visible = false;
+                if (linePK2) linePK2.visible = false;
+                if (labelK2) labelK2.visible = false;
+            }
+            const hint = params.isDegenerate ? 'Lin' : (params.isCircle ? 'Cir' : (params.isParabola ? 'Par' : (params.isHyperbola ? 'Hyp' : 'Ell')));
+            document.getElementById('status-hint').textContent = hint;
+            document.getElementById('status-hint').style.color = params.isEllipse ? '#88ff88' : (params.isParabola ? '#ffaa00' : '#ff88ff');
+        }
+
+        function setLine(line, p1, p2) {
+            if (!line) return;
+            if (line.geometry) line.geometry.dispose();
+            line.geometry = new THREE.BufferGeometry().setFromPoints([p1, p2]);
+        }
+
+        function updateHexLine(mesh, p1, p2) {
+            if (!mesh) return;
+            if (mesh.geometry) mesh.geometry.dispose();
+            mesh.geometry = new THREE.BufferGeometry().setFromPoints([p1, p2]);
+        }
+
+        function updateInterLine() {
+            if (!interLine) return;
+            const pts = [];
+            if (interAB && interAB.visible) pts.push(interAB.position.clone());
+            if (interBC && interBC.visible) pts.push(interBC.position.clone());
+            if (interCA && interCA.visible) pts.push(interCA.position.clone());
+            if (pts.length >= 2) {
+                let p1, p2;
+                if (pts.length === 3) {
+                    let maxDist = 0, i1 = 0, i2 = 1;
+                    for (let i = 0; i < 3; i++) {
+                        for (let j = i + 1; j < 3; j++) {
+                            const d = pts[i].distanceTo(pts[j]);
+                            if (d > maxDist) { maxDist = d; i1 = i; i2 = j; }
+                        }
+                    }
+                    p1 = pts[i1]; p2 = pts[i2];
+                } else {
+                    p1 = pts[0]; p2 = pts[1];
+                }
+                const dir = new THREE.Vector3().subVectors(p2, p1).normalize();
+                const ext = 15;
+                const start = p1.clone().sub(dir.clone().multiplyScalar(ext));
+                const end = p2.clone().add(dir.clone().multiplyScalar(ext));
+                if (interLine.geometry) interLine.geometry.dispose();
+                interLine.geometry = new THREE.BufferGeometry().setFromPoints([start, end]);
+                interLine.computeLineDistances();
+                interLine.visible = hexVisible && currentParams && !currentParams.isDegenerate;
+            } else {
+                interLine.visible = false;
+            }
+            if (labelP1) { labelP1.position.copy(interAB.position); labelP1.visible = interAB.visible; }
+            if (labelP2) { labelP2.position.copy(interBC.position); labelP2.visible = interBC.visible; }
+            if (labelP3) { labelP3.position.copy(interCA.position); labelP3.visible = interCA.visible; }
+        }
+
+        function setTri(mesh, p1, p2, p3) {
+            if (!mesh) return;
+            if (mesh.geometry) mesh.geometry.dispose();
+            mesh.geometry = new THREE.BufferGeometry();
+            mesh.geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array([p1.x, p1.y, p1.z, p2.x, p2.y, p2.z, p3.x, p3.y, p3.z]), 3));
+            mesh.geometry.setIndex([0,1,2]); mesh.geometry.computeVertexNormals();
+        }
+
+        function updateScene(angle) {
+            if (!currentParams) return;
+            try {
+                let t, P, branch = 0;
+                if (currentParams.isDegenerate) {
+                    const cosA = Math.cos(currentParams.alphaRad);
+                    const sinA = Math.sin(currentParams.alphaRad);
+                    const apex = new THREE.Vector3(0, currentParams.coneHeight, 0);
+                    const range = currentParams.coneHeight / cosA;
+                    if (angle <= 180) {
+                        const frac = angle / 180;
+                        const s = frac * (2 * range) - range;
+                        if (s < 0) {
+                            P = apex.clone().addScaledVector(new THREE.Vector3(0, -cosA, sinA), -s);
+                        } else {
+                            P = apex.clone().addScaledVector(new THREE.Vector3(0, cosA, -sinA), s);
+                        }
+                    } else {
+                        const frac = (angle - 180) / 180;
+                        const s = frac * (2 * range) - range;
+                        if (s < 0) {
+                            P = apex.clone().addScaledVector(new THREE.Vector3(0, -cosA, -sinA), -s);
+                        } else {
+                            P = apex.clone().addScaledVector(new THREE.Vector3(0, cosA, sinA), s);
+                        }
+                    }
+                } else if (currentParams.isEllipse) {
+                    t = angle * Math.PI / 180;
+                    P = getConicPoint(currentParams, t);
+                } else if (currentParams.isHyperbola) {
+                    const range = 2.5;
+                    if (angle <= 180) {
+                        branch = -1;
+                        t = -range + (angle / 180) * range * 2;
+                    } else {
+                        branch = 1;
+                        t = -range + ((angle - 180) / 180) * range * 2;
+                    }
+                    P = getConicPoint(currentParams, t, branch);
+                } else {
+                    t = (angle - 180) * 0.05;
+                    P = getConicPoint(currentParams, t);
+                }
+                pMesh.position.copy(P); labelP.position.copy(P);
+                if (currentParams.isDegenerate) {
+                    aMesh.position.copy(P); bMesh.position.copy(P);
+                    labelT1.position.copy(P); labelT2.position.copy(P);
+                    document.getElementById('p-value').textContent = angle.toFixed(0) + '°';
+                    document.getElementById('val-pf1').textContent = '--';
+                    document.getElementById('val-pt1').textContent = '--';
+                    document.getElementById('val-pf2').textContent = '--';
+                    document.getElementById('val-pt2').textContent = '--';
+                    document.getElementById('val-tt').textContent = '--';
+                    document.getElementById('info-sum').innerHTML = '退化：两条相交直线 <span class="info-const">母线</span>';
+                    const apex = new THREE.Vector3(0, currentParams.coneHeight, 0);
+                    const genDir = new THREE.Vector3().subVectors(P, apex);
+                    const genLen = genDir.length();
+                    if (genLen > 1e-6) {
+                        genDir.multiplyScalar(40 / genLen);
+                        setLine(lineGenerator, apex, apex.clone().add(genDir));
+                    }
+                    return;
+                }
+                const { A, B, dir } = getGeneratorIntersections(currentParams, P);
+                aMesh.position.copy(A); bMesh.position.copy(B);
+                labelT1.position.copy(A); labelT2.position.copy(B);
+
+                setLine(lineAP, A, P); if (currentParams.lowerValid) setLine(lineBP, B, P);
+                setLine(linePF1, P, currentParams.F1); if (currentParams.lowerValid) setLine(linePF2, P, currentParams.F2);
+                setLine(lineAB, A, B);
+                const apex = new THREE.Vector3(0, currentParams.coneHeight, 0);
+                const genLen = P.distanceTo(apex); setLine(lineGenerator, apex, apex.clone().add(dir.clone().multiplyScalar(genLen + 5)));
+
+                setLine(lineO1P, currentParams.O1, P); setLine(lineO1A, currentParams.O1, A); setLine(lineO1F1, currentParams.O1, currentParams.F1);
+                if (currentParams.lowerValid) {
+                    setLine(lineO2P, currentParams.O2, P); setLine(lineO2B, currentParams.O2, B); setLine(lineO2F2, currentParams.O2, currentParams.F2);
+                }
+
+                if (currentParams.isParabola) {
+                    if (pointK && linePK && labelK && _directrixData && _directrixData.lines.length > 0) {
+                        const d = _directrixData.lines[0];
+                        const L0 = d.point, dirL = d.dir;
+                        const K = L0.clone().addScaledVector(dirL, P.clone().sub(L0).dot(dirL));
+                        pointK.position.copy(K); labelK.position.copy(K);
+                        setLine(linePK, P, K);
+                        linePK.computeLineDistances();
+                    }
+                    if (pointH && labelH) {
+                        const H = new THREE.Vector3(P.x, currentParams.y_t1, P.z);
+                        pointH.position.copy(H); labelH.position.copy(H);
+                    }
+                    if (linePH && pointH) {
+                        const H = pointH.position;
+                        setLine(linePH, P, H);
+                    }
+                    if (pointK && lineHK && pointH && _directrixData && _directrixData.lines.length > 0) {
+                        const d = _directrixData.lines[0];
+                        const L0 = d.point, dirL = d.dir;
+                        const K = L0.clone().addScaledVector(dirL, P.clone().sub(L0).dot(dirL));
+                        setLine(lineHK, K, pointH.position);
+                    }
+                    if (lineHT1 && pointH) {
+                        setLine(lineHT1, A, pointH.position);
+                    }
+                    if (pointK && pointH && _directrixData && _directrixData.lines.length > 0) {
+                        const d = _directrixData.lines[0];
+                        const L0 = d.point, dirL = d.dir;
+                        const K = L0.clone().addScaledVector(dirL, P.clone().sub(L0).dot(dirL));
+                        setTri(triKHP, K, pointH.position, P);
+                        setTri(triT1HP, A, pointH.position, P);
+                    }
+                } else if (currentParams.isEllipse || currentParams.isHyperbola) {
+                    if (_directrixData && _directrixData.lines.length >= 1) {
+                        const d1 = _directrixData.lines[0];
+                        const L0_1 = d1.point, dirL_1 = d1.dir;
+                        const K1 = L0_1.clone().addScaledVector(dirL_1, P.clone().sub(L0_1).dot(dirL_1));
+                        if (pointK1) pointK1.position.copy(K1);
+                        if (labelK1) labelK1.position.copy(K1);
+                        if (linePK1) {
+                            setLine(linePK1, P, K1);
+                            linePK1.computeLineDistances();
+                        }
+                    }
+                    if (_directrixData && _directrixData.lines.length >= 2 && currentParams.lowerValid) {
+                        const d2 = _directrixData.lines[1];
+                        const L0_2 = d2.point, dirL_2 = d2.dir;
+                        const K2 = L0_2.clone().addScaledVector(dirL_2, P.clone().sub(L0_2).dot(dirL_2));
+                        if (pointK2) pointK2.position.copy(K2);
+                        if (labelK2) labelK2.position.copy(K2);
+                        if (linePK2) {
+                            setLine(linePK2, P, K2);
+                            linePK2.computeLineDistances();
+                        }
+                    }
+                }
+
+                setTri(triAO1P, A, currentParams.O1, P); setTri(triF1O1P, currentParams.F1, currentParams.O1, P);
+                if (currentParams.lowerValid) {
+                    setTri(triBO2P, B, currentParams.O2, P); setTri(triF2O2P, currentParams.F2, currentParams.O2, P);
+                }
+                document.getElementById('p-value').textContent = angle.toFixed(0) + '°';
+
+                if (draggingHexIdx >= 0 && hexPoints.length === 6) {
+                    const Pt = getConicPointFromGenerator(currentParams, hexGenerators[draggingHexIdx]);
+                    if (Pt) { hexPoints[draggingHexIdx].position.copy(Pt); hexLabels[draggingHexIdx].position.copy(Pt); }
+                }
+
+                if (hexVisible && hexPoints.length === 6 && !currentParams.isDegenerate) {
+                    const A = hexPoints[0].position, B = hexPoints[1].position, C = hexPoints[2].position;
+                    const a = hexPoints[3].position, b = hexPoints[4].position, c = hexPoints[5].position;
+                    updateHexLine(lineAb, A, b); updateHexLine(lineBa, B, a);
+                    updateHexLine(lineBc, B, c); updateHexLine(lineCb, C, b);
+                    updateHexLine(lineCa, C, a); updateHexLine(lineAc, A, c);
+                    function lineIntersect(p1, p2, p3, p4) {
+                        const d1 = new THREE.Vector3().subVectors(p2, p1);
+                        const d2 = new THREE.Vector3().subVectors(p4, p3);
+                        const diff = new THREE.Vector3().subVectors(p3, p1);
+                        const crossD = new THREE.Vector3().crossVectors(d1, d2);
+                        const crossDiff = new THREE.Vector3().crossVectors(diff, d2);
+                        const lenSq = crossD.lengthSq();
+                        if (lenSq < 1e-8) return null;
+                        const t = crossDiff.dot(crossD) / lenSq;
+                        return p1.clone().addScaledVector(d1, t);
+                    }
+                    const iAB = lineIntersect(A, b, B, a);
+                    const iBC = lineIntersect(B, c, C, b);
+                    const iCA = lineIntersect(C, a, A, c);
+                    if (iAB) { interAB.position.copy(iAB); interAB.visible = true; } else { interAB.visible = false; }
+                    if (iBC) { interBC.position.copy(iBC); interBC.visible = true; } else { interBC.visible = false; }
+                    if (iCA) { interCA.position.copy(iCA); interCA.visible = true; } else { interCA.visible = false; }
+                    updateInterLine();
+                }
+
+                const distPF1 = P.distanceTo(currentParams.F1);
+                const distPF2 = currentParams.lowerValid ? P.distanceTo(currentParams.F2) : 0;
+                const distPT1 = P.distanceTo(A);
+                const distPT2 = currentParams.lowerValid ? P.distanceTo(B) : 0;
+                const distT1T2 = currentParams.lowerValid ? A.distanceTo(B) : 0;
+                const hidePT1 = hexVisible && (currentParams.isEllipse || currentParams.isHyperbola || currentParams.isParabola);
+                const hidePT2 = hexVisible && (currentParams.isEllipse || currentParams.isHyperbola);
+                document.getElementById('val-pf1').textContent = distPF1.toFixed(3);
+                document.getElementById('val-pt1').textContent = hidePT1 ? '--' : distPT1.toFixed(3);
+                document.getElementById('val-pf2').textContent = currentParams.lowerValid ? distPF2.toFixed(3) : '--';
+                document.getElementById('val-pt2').textContent = hidePT2 ? '--' : (currentParams.lowerValid ? distPT2.toFixed(3) : '--');
+                document.getElementById('val-tt').textContent = currentParams.lowerValid ? distT1T2.toFixed(3) : '--';
+                const infoSum = document.getElementById('info-sum');
+                if (currentParams.isEllipse) {
+                    const sum = distPF1 + distPF2;
+                    infoSum.innerHTML = 'PF₁ + PF₂ = <span class="info-val" id="val-diff">' + sum.toFixed(3) + '</span> <span class="info-const">定值</span>';
+                } else if (currentParams.isHyperbola) {
+                    const diff = Math.abs(distPF2 - distPF1);
+                    infoSum.innerHTML = '|PF₂ − PF₁| = <span class="info-val" id="val-diff">' + diff.toFixed(3) + '</span> <span class="info-const">定值</span>';
+                } else if (currentParams.isParabola) {
+                    infoSum.innerHTML = 'PF = PK = <span class="info-val" id="val-diff">' + distPF1.toFixed(3) + '</span> <span class="info-const">定值</span>';
+                }
+
+                const time = Date.now() * 0.0015;
+                const pulse = (Math.sin(time) + 1) * 0.5;
+                const baseOp = 0.30;
+                const pulseOp = 0.35;
+                if (triAO1P && triF1O1P) {
+                    const redOp = baseOp + pulse * pulseOp;
+                    triAO1P.material.opacity = redOp;
+                    triF1O1P.material.opacity = redOp;
+                    triAO1P.material.color.setHex(0xff3333);
+                    triF1O1P.material.color.setHex(0xff3333);
+                }
+                if (currentParams.lowerValid && triBO2P && triF2O2P) {
+                    const blueOp = baseOp + (1 - pulse) * pulseOp;
+                    triBO2P.material.opacity = blueOp;
+                    triF2O2P.material.opacity = blueOp;
+                    triBO2P.material.color.setHex(0x3333ff);
+                    triF2O2P.material.color.setHex(0x3333ff);
+                }
+            } catch (e) {
+                console.error('updateScene error:', e);
+            }
+        }
+
+        buildScene(currentSemiAngleDeg * Math.PI / 180, currentGammaDeg * Math.PI / 180);
+
+        function updateAlpha(deg) {
+            currentSemiAngleDeg = deg;
+            const rad = deg * Math.PI / 180;
+            document.getElementById('alpha-angle').textContent = deg.toFixed(2) + '°';
+            const e_val = Math.cos(currentGammaDeg * Math.PI / 180) / Math.cos(rad);
+            document.getElementById('tan-display').textContent = 'e=cosγ/cosα=' + e_val.toFixed(3);
+            buildScene(rad, currentGammaDeg * Math.PI / 180);
+            updateScene(currentAngle);
+        }
+        function updateGamma(deg) {
+            currentGammaDeg = deg;
+            document.getElementById('gamma-angle').textContent = deg.toFixed(2) + '°';
+            document.getElementById('gamma-slider').value = Math.round(deg);
+            const e_val2 = Math.cos(deg * Math.PI / 180) / Math.cos(currentSemiAngleDeg * Math.PI / 180);
+            document.getElementById('tan-display').textContent = 'e=cosγ/cosα=' + e_val2.toFixed(3);
+            buildScene(currentSemiAngleDeg * Math.PI / 180, deg * Math.PI / 180);
+            updateScene(currentAngle);
+        }
+
+        document.getElementById('alpha-slider').addEventListener('input', e => updateAlpha(parseFloat(e.target.value)));
+        document.getElementById('gamma-slider').addEventListener('input', e => updateGamma(parseFloat(e.target.value)));
+
+        let repeatTimer = null;
+        let gammaStep = 1;
+        const GAMMA_STEPS = [0.01, 0.1, 1];
+        let gammaStepIndex = 2;
+        function startRepeat(change) {
+            if (repeatTimer) clearInterval(repeatTimer);
+            repeatTimer = setInterval(() => {
+                let newVal = currentGammaDeg + change * gammaStep;
+                if (newVal < 0) newVal = 0;
+                if (newVal > 90) newVal = 90;
+                updateGamma(newVal);
+            }, 80);
+        }
+        function stopRepeat() {
+            if (repeatTimer) { clearInterval(repeatTimer); repeatTimer = null; }
+        }
+
+        document.getElementById('gamma-plus').addEventListener('mousedown', e => { e.preventDefault(); startRepeat(1); });
+        document.getElementById('gamma-plus').addEventListener('touchstart', e => { e.preventDefault(); startRepeat(1); });
+        document.getElementById('gamma-minus').addEventListener('mousedown', e => { e.preventDefault(); startRepeat(-1); });
+        document.getElementById('gamma-minus').addEventListener('touchstart', e => { e.preventDefault(); startRepeat(-1); });
+        document.getElementById('gamma-step').addEventListener('click', () => {
+            gammaStepIndex = (gammaStepIndex + 1) % GAMMA_STEPS.length;
+            gammaStep = GAMMA_STEPS[gammaStepIndex];
+            const stepBtn = document.getElementById('gamma-step');
+            stepBtn.textContent = gammaStep === 1 ? '1°' : (gammaStep === 0.1 ? '0.1°' : '0.01°');
+        });
+
+        ['mouseup', 'mouseleave', 'touchend', 'touchcancel'].forEach(evt => {
+            document.getElementById('gamma-plus').addEventListener(evt, stopRepeat);
+            document.getElementById('gamma-minus').addEventListener(evt, stopRepeat);
+        });
+
+        let isProgrammatic = false;
+        document.getElementById('p-slider').addEventListener('input', e => {
+            if (isProgrammatic) return;
+            currentAngle = parseFloat(e.target.value);
+            updateScene(currentAngle);
+            if (isPlaying) {
+                isPlaying = false;
+                const btn = document.getElementById('btn-play');
+                btn.textContent = '▶'; btn.style.color = '#00bfff';
+                cancelAnimationFrame(animationId);
+            }
+        });
+        document.getElementById('speed-slider').addEventListener('input', e => document.getElementById('speed-value').textContent = e.target.value);
+        document.getElementById('btn-refresh').addEventListener('click', () => {
+            if (!hexVisible) return; // P 未激活时 H 无反应
+            const hBtn = document.getElementById('btn-refresh');
+            const isActive = hBtn.classList.contains('active');
+
+            if (isActive) {
+                // H 取消激活：保存当前 H 状态快照，切换到 P 存储
+                hHexGenerators = hexGenerators.slice();
+                hBtn.classList.remove('active');
+                hBtn.style.color = '#888888';
+                // 恢复 P 存储的最后一次快照
+                if (savedHexGenerators) {
+                    for (let i = 0; i < 6; i++) {
+                        hexGenerators[i] = savedHexGenerators[i];
+                    }
+                    // 根据 P 存储的模式选择正确的计算函数
+                    if (currentParams && !currentParams.isDegenerate) {
+                        if (savedHexMode === 'P') {
+                            for (let i = 0; i < 6; i++) {
+                                const Pt = getConicPointFromGenerator(currentParams, hexGenerators[i]);
+                                if (Pt) { hexPoints[i].position.copy(Pt); hexLabels[i].position.copy(Pt); }
+                            }
+                        } else {
+                            let branch = 0;
+                            if (currentParams.isHyperbola) branch = 1;
+                            for (let i = 0; i < 6; i++) {
+                                const Pt = getConicPoint(currentParams, hexGenerators[i], branch);
+                                if (Pt) { hexPoints[i].position.copy(Pt); hexLabels[i].position.copy(Pt); }
+                            }
+                        }
+                        const A = hexPoints[0].position, B = hexPoints[1].position, C = hexPoints[2].position;
+                        const a = hexPoints[3].position, b = hexPoints[4].position, c = hexPoints[5].position;
+                        updateHexLine(lineAb, A, b); updateHexLine(lineBa, B, a);
+                        updateHexLine(lineBc, B, c); updateHexLine(lineCb, C, b);
+                        updateHexLine(lineCa, C, a); updateHexLine(lineAc, A, c);
+                        function lineIntersect(p1, p2, p3, p4) {
+                            const d1 = new THREE.Vector3().subVectors(p2, p1);
+                            const d2 = new THREE.Vector3().subVectors(p4, p3);
+                            const diff = new THREE.Vector3().subVectors(p3, p1);
+                            const crossD = new THREE.Vector3().crossVectors(d1, d2);
+                            const crossDiff = new THREE.Vector3().crossVectors(diff, d2);
+                            const lenSq = crossD.lengthSq();
+                            if (lenSq < 1e-8) return null;
+                            const t = crossDiff.dot(crossD) / lenSq;
+                            return p1.clone().addScaledVector(d1, t);
+                        }
+                        const iAB = lineIntersect(A, b, B, a);
+                        const iBC = lineIntersect(B, c, C, b);
+                        const iCA = lineIntersect(C, a, A, c);
+                        if (iAB) { interAB.position.copy(iAB); interAB.visible = true; } else { interAB.visible = false; }
+                        if (iBC) { interBC.position.copy(iBC); interBC.visible = true; } else { interBC.visible = false; }
+                        if (iCA) { interCA.position.copy(iCA); interCA.visible = true; } else { interCA.visible = false; }
+                        updateInterLine();
+                    }
+                }
+            } else {
+                // H 激活：保存当前 P 状态快照（标记为 P 模式），切换到 H 存储
+                savedHexGenerators = hexGenerators.slice();
+                savedHexMode = 'P';
+                hBtn.classList.add('active');
+                hBtn.style.color = '#ff69b4';
+                // 初始化 H 存储（首次使用默认 Pascal 排列）
+                if (!hHexGenerators) {
+                    if (!currentParams || currentParams.isDegenerate) return;
+                    let base, step;
+                    if (currentParams.isEllipse) {
+                        base = 0; step = Math.PI / 3;
+                    } else if (currentParams.isHyperbola) {
+                        base = -2.5; step = 1.0;
+                    } else if (currentParams.isParabola) {
+                        base = -5.0; step = 2.0;
+                    } else {
+                        return;
+                    }
+                    hHexGenerators = new Array(6);
+                    hHexGenerators[0] = base;
+                    hHexGenerators[5] = base + step;
+                    hHexGenerators[1] = base + 2 * step;
+                    hHexGenerators[3] = base + 3 * step;
+                    hHexGenerators[2] = base + 4 * step;
+                    hHexGenerators[4] = base + 5 * step;
+                }
+                // 恢复 H 存储的最后一次快照
+                for (let i = 0; i < 6; i++) {
+                    hexGenerators[i] = hHexGenerators[i];
+                }
+                if (!currentParams || currentParams.isDegenerate) return;
+                let branch = 0;
+                if (currentParams.isHyperbola) {
+                    branch = 1; // 红球支（下支）
+                }
+                for (let i = 0; i < 6; i++) {
+                    const Pt = getConicPoint(currentParams, hexGenerators[i], branch);
+                    if (Pt) {
+                        hexPoints[i].position.copy(Pt);
+                        hexLabels[i].position.copy(Pt);
+                    }
+                }
+                const A = hexPoints[0].position, B = hexPoints[1].position, C = hexPoints[2].position;
+                const a = hexPoints[3].position, b = hexPoints[4].position, c = hexPoints[5].position;
+                updateHexLine(lineAb, A, b); updateHexLine(lineBa, B, a);
+                updateHexLine(lineBc, B, c); updateHexLine(lineCb, C, b);
+                updateHexLine(lineCa, C, a); updateHexLine(lineAc, A, c);
+                function lineIntersect(p1, p2, p3, p4) {
+                    const d1 = new THREE.Vector3().subVectors(p2, p1);
+                    const d2 = new THREE.Vector3().subVectors(p4, p3);
+                    const diff = new THREE.Vector3().subVectors(p3, p1);
+                    const crossD = new THREE.Vector3().crossVectors(d1, d2);
+                    const crossDiff = new THREE.Vector3().crossVectors(diff, d2);
+                    const lenSq = crossD.lengthSq();
+                    if (lenSq < 1e-8) return null;
+                    const t = crossDiff.dot(crossD) / lenSq;
+                    return p1.clone().addScaledVector(d1, t);
+                }
+                const iAB = lineIntersect(A, b, B, a);
+                const iBC = lineIntersect(B, c, C, b);
+                const iCA = lineIntersect(C, a, A, c);
+                if (iAB) { interAB.position.copy(iAB); interAB.visible = true; } else { interAB.visible = false; }
+                if (iBC) { interBC.position.copy(iBC); interBC.visible = true; } else { interBC.visible = false; }
+                if (iCA) { interCA.position.copy(iCA); interCA.visible = true; } else { interCA.visible = false; }
+                updateInterLine();
+            }
+        });
+
+        document.getElementById('btn-reset').addEventListener('click', () => {
+            // 重置 H 状态
+            const hBtn = document.getElementById('btn-refresh');
+            hBtn.classList.remove('active');
+            hBtn.style.color = '#888888';
+            // 清空 P 和 H 的独立存储
+            savedHexGenerators = null;
+            hHexGenerators = null;
+            savedHexMode = 'P';
+
+            // 重置六个点到默认值（根据曲线类型）
+            if (currentParams && (currentParams.isParabola || currentParams.isHyperbola)) {
+                // P 模式：使用与 H 模式 Pascal 排列对应的母线角度
+                // 先计算 H 模式 Pascal 参数对应的点，再反推母线角度
+                let pascalParams, branch;
+                if (currentParams.isParabola) {
+                    pascalParams = [-5.0, -3.0, -1.0, 1.0, 3.0, 5.0];
+                    branch = 0;
+                } else {
+                    // 双曲线 H 模式参数：[-2.5, -1.5, -0.5, 0.5, 1.5, 2.5]，红球支 branch=1
+                    pascalParams = [-2.5, -1.5, -0.5, 0.5, 1.5, 2.5];
+                    branch = 1;
+                }
+                for (let i = 0; i < 6; i++) {
+                    const Pt = getConicPoint(currentParams, pascalParams[i], branch);
+                    if (Pt) {
+                        // 反推母线角度：从顶点出发的射线方向
+                        const apex = new THREE.Vector3(0, currentParams.coneHeight, 0);
+                        const dir = new THREE.Vector3().subVectors(Pt, apex).normalize();
+                        // dir = (cos(theta)*sinA, -cosA, sin(theta)*sinA)
+                        // theta = atan2(dir.z, dir.x)
+                        let theta = Math.atan2(dir.z, dir.x);
+                        hexGenerators[i] = theta;
+                    }
+                }
+            } else {
+                hexGenerators = [0, Math.PI/3, 2*Math.PI/3, Math.PI, 4*Math.PI/3, 5*Math.PI/3];
+            }
+            if (hexPoints.length === 6 && currentParams) {
+                for (let i = 0; i < 6; i++) {
+                    const Pt = getConicPointFromGenerator(currentParams, hexGenerators[i]);
+                    if (Pt) { hexPoints[i].position.copy(Pt); hexLabels[i].position.copy(Pt); }
+                }
+            }
+
+            // 恢复圆锥曲线参数和相机到默认值
+            const actualType = getCurrentType();
+            let type = actualType;
+            if (type === 'circle') type = 'ellipse';
+            if (type === 'degenerate') type = 'hyperbola';
+            const def = DEFAULTS[type];
+            if (def) {
+                document.getElementById('alpha-slider').value = def.alpha;
+                document.getElementById('gamma-slider').value = def.gamma;
+                document.getElementById('p-slider').value = def.p;
+                currentSemiAngleDeg = def.alpha;
+                currentGammaDeg = def.gamma;
+                currentAngle = def.p;
+                document.getElementById('alpha-angle').textContent = def.alpha.toFixed(2) + '°';
+                document.getElementById('gamma-angle').textContent = def.gamma.toFixed(2) + '°';
+                const e_val = Math.cos(def.gamma * Math.PI / 180) / Math.cos(def.alpha * Math.PI / 180);
+                document.getElementById('tan-display').textContent = 'e=cosγ/cosα=' + e_val.toFixed(3);
+                buildScene(def.alpha * Math.PI / 180, def.gamma * Math.PI / 180);
+                updateScene(def.p);
+                camera.position.set(def.camX, def.camY, def.camZ);
+                controls.target.set(def.tX, def.tY, def.tZ);
+                controls.update();
+            }
+        });
+
+        const CYCLE = ['ellipse', 'parabola', 'hyperbola'];
+        const DEFAULTS = {
+            ellipse:    { alpha: 22, gamma: 68, p: 0,   camX: 28.00, camY: 20.00, camZ: 28.00, tX: 0.00,  tY: 12.00, tZ: 0.00 },
+            parabola:   { alpha: 22, gamma: 22, p: 108, camX: 13.17, camY: 11.80, camZ: 12.55, tX: 0.96,  tY: 17.03, tZ: 0.34 },
+            hyperbola:  { alpha: 48, gamma: 6,  p: 119, camX: 10.00, camY: 28.00, camZ: 10.00, tX: 0.00,  tY: 25.00, tZ: 0.00 }
+        };
+        let cycleIndex = 0;
+
+        function getCurrentType() {
+            if (!currentParams) return null;
+            if (currentParams.isDegenerate) return 'degenerate';
+            if (currentParams.isCircle)     return 'circle';
+            if (currentParams.isEllipse)    return 'ellipse';
+            if (currentParams.isParabola)   return 'parabola';
+            if (currentParams.isHyperbola)  return 'hyperbola';
+            return null;
+        }
+        function switchToNext() {
+            const actualType = getCurrentType();
+            if (actualType === 'circle' || actualType === 'degenerate') return;
+            cycleIndex = (cycleIndex + 1) % CYCLE.length;
+            const type = CYCLE[cycleIndex];
+            const def = DEFAULTS[type];
+            document.getElementById('alpha-slider').value = def.alpha;
+            document.getElementById('gamma-slider').value = def.gamma;
+            document.getElementById('p-slider').value = def.p;
+            currentSemiAngleDeg = def.alpha;
+            currentGammaDeg = def.gamma;
+            currentAngle = def.p;
+            document.getElementById('alpha-angle').textContent = def.alpha.toFixed(2) + '°';
+            document.getElementById('gamma-angle').textContent = def.gamma.toFixed(2) + '°';
+            const e_val = Math.cos(def.gamma * Math.PI / 180) / Math.cos(def.alpha * Math.PI / 180);
+            document.getElementById('tan-display').textContent = 'e=cosγ/cosα=' + e_val.toFixed(3);
+            buildScene(def.alpha * Math.PI / 180, def.gamma * Math.PI / 180);
+            updateScene(def.p);
+            camera.position.set(def.camX, def.camY, def.camZ);
+            controls.target.set(def.tX, def.tY, def.tZ);
+            controls.update();
+        }
+        document.getElementById('status-hint').addEventListener('click', switchToNext);
+
+        const infoPanel = document.getElementById('info-panel');
+        const infoToggle = document.getElementById('info-toggle');
+        let infoVisible = false;
+        infoToggle.addEventListener('click', () => {
+            infoVisible = !infoVisible;
+            infoPanel.style.display = infoVisible ? 'flex' : 'none';
+            infoToggle.style.opacity = infoVisible ? '1' : '0.6';
+        });
+
+        let isPlaying = false, animationId = null;
+        const playBtn = document.getElementById('btn-play');
+        playBtn.addEventListener('click', () => {
+            isPlaying = !isPlaying;
+            if (isPlaying) { playBtn.textContent = '⏸'; playBtn.style.color = '#ff8c00'; animate(); }
+            else { playBtn.textContent = '▶'; playBtn.style.color = '#00bfff'; cancelAnimationFrame(animationId); }
+        });
+
+        function getHexScreenPos(idx) {
+            if (!hexPoints[idx]) return null;
+            const pos = hexPoints[idx].position.clone();
+            pos.project(camera);
+            return {
+                x: (pos.x * 0.5 + 0.5) * window.innerWidth,
+                y: (-pos.y * 0.5 + 0.5) * window.innerHeight
+            };
+        }
+
+        function findHexAt(clientX, clientY) {
+            if (!hexVisible) return -1;
+            for (let i = 0; i < 6; i++) {
+                const sp = getHexScreenPos(i);
+                if (!sp) continue;
+                const dx = clientX - sp.x, dy = clientY - sp.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                const r = HEX_HIT_R * 80;
+                if (dist < r) return i;
+            }
+            return -1;
+        }
+
+        function tFromScreen(clientX, clientY, idx) {
+            if (!currentParams) return null;
+            const rect = renderer.domElement.getBoundingClientRect();
+            const mx = ((clientX - rect.left) / rect.width) * 2 - 1;
+            const my = -((clientY - rect.top) / rect.height) * 2 + 1;
+            const ray = new THREE.Raycaster();
+            ray.setFromCamera(new THREE.Vector2(mx, my), camera);
+            let planePoint;
+            if (currentParams.isEllipse || currentParams.isHyperbola) {
+                planePoint = currentParams.center;
+            } else if (currentParams.isParabola) {
+                planePoint = currentParams.vertex;
+            } else {
+                return null;
+            }
+            if (!planePoint) return null;
+            const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(currentParams.planeNormal, planePoint);
+            const target = new THREE.Vector3();
+            ray.ray.intersectPlane(plane, target);
+            if (!target) return null;
+
+            // 将 target 投影到曲线参数空间
+            const toCenter = new THREE.Vector3().subVectors(target, planePoint);
+            if (currentParams.isEllipse) {
+                const cos_t = toCenter.dot(currentParams.uDir) / currentParams.aLen;
+                const sin_t = toCenter.dot(currentParams.vDir) / currentParams.bLen;
+                let t = Math.atan2(sin_t, cos_t);
+                const currentT = hexGenerators[idx];
+                const diff = t - currentT;
+                if (diff > Math.PI) t -= 2 * Math.PI;
+                else if (diff < -Math.PI) t += 2 * Math.PI;
+                return t;
+            } else if (currentParams.isHyperbola) {
+                const x = toCenter.dot(currentParams.uDir) / currentParams.aLen;
+                const y = toCenter.dot(currentParams.vDir) / currentParams.bLen;
+                // 强制红球支（下支，branch=1）：x = cosh(t), y = sinh(t)
+                // 如果鼠标点在蓝球支（x < 0），取反得到红球支对应参数
+                let t;
+                if (x >= 0) {
+                    t = Math.asinh(y);
+                } else {
+                    t = Math.asinh(-y);
+                }
+                const currentT = hexGenerators[idx];
+                const diff = t - currentT;
+                if (diff > 2.5) t -= 5.0;
+                else if (diff < -2.5) t += 5.0;
+                return t;
+            } else if (currentParams.isParabola) {
+                const x = toCenter.dot(currentParams.uDir);
+                const y = toCenter.dot(currentParams.vDir);
+                // y = x^2 / (2p), so x = t, t = x
+                let t = x;
+                const currentT = hexGenerators[idx];
+                const diff = t - currentT;
+                if (diff > 10) t -= 20;
+                else if (diff < -10) t += 20;
+                return t;
+            }
+            return null;
+        }
+
+        function angleFromScreen(clientX, clientY, idx) {
+            const rect = renderer.domElement.getBoundingClientRect();
+            const mx = ((clientX - rect.left) / rect.width) * 2 - 1;
+            const my = -((clientY - rect.top) / rect.height) * 2 + 1;
+            const ray = new THREE.Raycaster();
+            ray.setFromCamera(new THREE.Vector2(mx, my), camera);
+            let planePoint;
+            if (currentParams.isEllipse || currentParams.isHyperbola) {
+                planePoint = currentParams.center;
+            } else if (currentParams.isParabola) {
+                planePoint = currentParams.vertex;
+            } else if (currentParams.isDegenerate) {
+                planePoint = new THREE.Vector3(0, currentParams.coneHeight, 0);
+            }
+            if (!planePoint) return hexGenerators[idx];
+            const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(currentParams.planeNormal, planePoint);
+            const target = new THREE.Vector3();
+            ray.ray.intersectPlane(plane, target);
+            if (!target) return hexGenerators[idx];
+            const apex = new THREE.Vector3(0, currentParams.coneHeight, 0);
+            const dx = target.x - apex.x;
+            const dz = target.z - apex.z;
+            let theta = Math.atan2(dz, dx);
+            const currentTheta = hexGenerators[idx];
+            const diff = theta - currentTheta;
+            if (diff > Math.PI) theta -= 2 * Math.PI;
+            else if (diff < -Math.PI) theta += 2 * Math.PI;
+            return theta;
+        }
+
+        const btnP = document.getElementById('btn-p');
+
+        function applyHexVisibility() {
+            const showHex = hexVisible && currentParams && !currentParams.isDegenerate;
+            const showOthers = !hexVisible;
+
+            hexPoints.forEach(p => { if(p) p.visible = hexVisible; });
+            hexLabels.forEach(l => { if(l) l.visible = hexVisible; });
+            [lineAb, lineBa, lineBc, lineCb, lineCa, lineAc].forEach(l => { if(l) l.visible = showHex; });
+            [interAB, interBC, interCA].forEach(p => { if(p) p.visible = showHex; });
+            if (showHex && hexPoints.length === 6 && currentParams && !currentParams.isDegenerate) {
+                const A = hexPoints[0].position, B = hexPoints[1].position, C = hexPoints[2].position;
+                const a = hexPoints[3].position, b = hexPoints[4].position, c = hexPoints[5].position;
+                updateHexLine(lineAb, A, b); updateHexLine(lineBa, B, a);
+                updateHexLine(lineBc, B, c); updateHexLine(lineCb, C, b);
+                updateHexLine(lineCa, C, a); updateHexLine(lineAc, A, c);
+                function lineIntersect(p1, p2, p3, p4) {
+                    const d1 = new THREE.Vector3().subVectors(p2, p1);
+                    const d2 = new THREE.Vector3().subVectors(p4, p3);
+                    const diff = new THREE.Vector3().subVectors(p3, p1);
+                    const crossD = new THREE.Vector3().crossVectors(d1, d2);
+                    const crossDiff = new THREE.Vector3().crossVectors(diff, d2);
+                    const lenSq = crossD.lengthSq();
+                    if (lenSq < 1e-8) return null;
+                    const t = crossDiff.dot(crossD) / lenSq;
+                    return p1.clone().addScaledVector(d1, t);
+                }
+                const iAB = lineIntersect(A, b, B, a);
+                const iBC = lineIntersect(B, c, C, b);
+                const iCA = lineIntersect(C, a, A, c);
+                if (iAB) { interAB.position.copy(iAB); interAB.visible = true; } else { interAB.visible = false; }
+                if (iBC) { interBC.position.copy(iBC); interBC.visible = true; } else { interBC.visible = false; }
+                if (iCA) { interCA.position.copy(iCA); interCA.visible = true; } else { interCA.visible = false; }
+                updateInterLine();
+            } else {
+                if (interLine) interLine.visible = false;
+            }
+
+            if (pMesh) pMesh.visible = showOthers;
+            if (aMesh) aMesh.visible = showOthers;
+            if (bMesh) bMesh.visible = showOthers;
+            if (labelP) labelP.visible = showOthers;
+            if (labelT1) labelT1.visible = showOthers;
+            if (labelT2) labelT2.visible = showOthers;
+            if (labelO1) labelO1.visible = showOthers;
+            if (labelO2) labelO2.visible = showOthers;
+            if (labelF1) labelF1.visible = showOthers;
+            if (labelF2) labelF2.visible = showOthers;
+            if (focus1) focus1.visible = showOthers;
+            if (focus2) focus2.visible = showOthers;
+            if (center1) center1.visible = showOthers;
+            if (center2) center2.visible = showOthers;
+            if (lineAP) lineAP.visible = showOthers;
+            if (lineBP) lineBP.visible = showOthers;
+            if (linePF1) linePF1.visible = showOthers;
+            if (linePF2) linePF2.visible = showOthers;
+            if (lineAB) lineAB.visible = showOthers;
+            if (lineGenerator) lineGenerator.visible = showOthers;
+            if (lineO1P) lineO1P.visible = showOthers;
+            if (lineO1A) lineO1A.visible = showOthers;
+            if (lineO1F1) lineO1F1.visible = showOthers;
+            if (lineO2P) lineO2P.visible = showOthers;
+            if (lineO2B) lineO2B.visible = showOthers;
+            if (lineO2F2) lineO2F2.visible = showOthers;
+            if (triAO1P) triAO1P.visible = showOthers;
+            if (triF1O1P) triF1O1P.visible = showOthers;
+            if (triBO2P) triBO2P.visible = showOthers;
+            if (triF2O2P) triF2O2P.visible = showOthers;
+            if (directrixLine) directrixLine.visible = showOthers;
+            if (linePK) linePK.visible = showOthers;
+            if (pointK) pointK.visible = showOthers;
+            if (labelK) labelK.visible = showOthers;
+            if (directrixLine1) directrixLine1.visible = showOthers;
+            if (linePK1) linePK1.visible = showOthers;
+            if (pointK1) pointK1.visible = showOthers;
+            if (labelK1) labelK1.visible = showOthers;
+            if (directrixLine2) directrixLine2.visible = showOthers;
+            if (linePK2) linePK2.visible = showOthers;
+            if (pointK2) pointK2.visible = showOthers;
+            if (labelK2) labelK2.visible = showOthers;
+            if (paraSquare) paraSquare.visible = showOthers;
+            if (pointH) pointH.visible = showOthers;
+            if (labelH) labelH.visible = showOthers;
+            if (linePH) linePH.visible = showOthers;
+            if (lineHK) lineHK.visible = showOthers;
+            if (lineHT1) lineHT1.visible = showOthers;
+            if (triKHP) triKHP.visible = showOthers;
+            if (triT1HP) triT1HP.visible = showOthers;
+            if (sphere1) sphere1.visible = true;
+            if (sphereEdges1) sphereEdges1.visible = true;
+            if (sphere2) sphere2.visible = currentParams && currentParams.lowerValid;
+            if (sphereEdges2) sphereEdges2.visible = currentParams && currentParams.lowerValid;
+            if (circle1) circle1.visible = true;
+            if (circle2) circle2.visible = currentParams && currentParams.lowerValid;
+            if (conicLine) conicLine.visible = true;
+            if (conicLine2) conicLine2.visible = true;
+            if (planeMesh) planeMesh.visible = true;
+
+            const hBtn = document.getElementById('btn-refresh');
+            if (hBtn) {
+                if (hexVisible) {
+                    hBtn.textContent = 'H';
+                    // P 激活时：如果 H 未激活，保存当前 P 状态快照
+                    if (!hBtn.classList.contains('active')) {
+                        savedHexGenerators = hexGenerators.slice();
+                        savedHexMode = 'P';
+                    }
+                } else {
+                    // P 不激活时：H 强制变灰且不激活，保存当前 P 状态
+                    hBtn.textContent = 'H';
+                    hBtn.classList.remove('active');
+                    hBtn.style.color = '#888888';
+                    savedHexGenerators = hexGenerators.slice();
+                    savedHexMode = 'P';
+                }
+            }
+        }
+
+        btnP.addEventListener('click', () => {
+            hexVisible = !hexVisible;
+            btnP.classList.toggle('active', hexVisible);
+            applyHexVisibility();
+        });
+
+        const canvasEl = renderer.domElement;
+
+        function onPointerDown(e) {
+            if (!hexVisible) return;
+            const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+            const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+            const idx = findHexAt(clientX, clientY);
+            if (idx >= 0) {
+                draggingHexIdx = idx;
+                controls.enabled = false;
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        }
+
+        function onPointerMove(e) {
+            if (draggingHexIdx < 0) return;
+            const hBtnActive = document.getElementById('btn-refresh').classList.contains('active');
+            const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+            const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+
+            if (hBtnActive) {
+                // H 激活时：hexGenerators 存储曲线参数，用鼠标在平面上的位置反推曲线参数
+                const newT = tFromScreen(clientX, clientY, draggingHexIdx);
+                if (newT !== null) {
+                    hexGenerators[draggingHexIdx] = newT;
+                    let branch = 0;
+                    if (currentParams.isHyperbola) branch = 1;
+                    const Pt = getConicPoint(currentParams, hexGenerators[draggingHexIdx], branch);
+                    if (Pt) {
+                        hexPoints[draggingHexIdx].position.copy(Pt);
+                        hexLabels[draggingHexIdx].position.copy(Pt);
+                    }
+                }
+            } else {
+                // P 模式时：hexGenerators 存储母线角度
+                const newTheta = angleFromScreen(clientX, clientY, draggingHexIdx);
+                if (newTheta !== null) {
+                    hexGenerators[draggingHexIdx] = newTheta;
+                    const Pt = getConicPointFromGenerator(currentParams, hexGenerators[draggingHexIdx]);
+                    if (Pt) {
+                        hexPoints[draggingHexIdx].position.copy(Pt);
+                        hexLabels[draggingHexIdx].position.copy(Pt);
+                    }
+                }
+            }
+
+            if (hexVisible && hexPoints.length === 6 && currentParams && !currentParams.isDegenerate) {
+                const A = hexPoints[0].position, B = hexPoints[1].position, C = hexPoints[2].position;
+                const a = hexPoints[3].position, b = hexPoints[4].position, c = hexPoints[5].position;
+                updateHexLine(lineAb, A, b); updateHexLine(lineBa, B, a);
+                updateHexLine(lineBc, B, c); updateHexLine(lineCb, C, b);
+                updateHexLine(lineCa, C, a); updateHexLine(lineAc, A, c);
+                function lineIntersect(p1, p2, p3, p4) {
+                    const d1 = new THREE.Vector3().subVectors(p2, p1);
+                    const d2 = new THREE.Vector3().subVectors(p4, p3);
+                    const diff = new THREE.Vector3().subVectors(p3, p1);
+                    const crossD = new THREE.Vector3().crossVectors(d1, d2);
+                    const crossDiff = new THREE.Vector3().crossVectors(diff, d2);
+                    const lenSq = crossD.lengthSq();
+                    if (lenSq < 1e-8) return null;
+                    const t = crossDiff.dot(crossD) / lenSq;
+                    return p1.clone().addScaledVector(d1, t);
+                }
+                const iAB = lineIntersect(A, b, B, a);
+                const iBC = lineIntersect(B, c, C, b);
+                const iCA = lineIntersect(C, a, A, c);
+                if (iAB) { interAB.position.copy(iAB); interAB.visible = true; } else { interAB.visible = false; }
+                if (iBC) { interBC.position.copy(iBC); interBC.visible = true; } else { interBC.visible = false; }
+                if (iCA) { interCA.position.copy(iCA); interCA.visible = true; } else { interCA.visible = false; }
+                updateInterLine();
+            }
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        function onPointerUp(e) {
+            draggingHexIdx = -1;
+            controls.enabled = true;
+        }
+
+        canvasEl.addEventListener('mousedown', onPointerDown);
+        canvasEl.addEventListener('mousemove', onPointerMove);
+        canvasEl.addEventListener('mouseup', onPointerUp);
+        canvasEl.addEventListener('mouseleave', onPointerUp);
+        canvasEl.addEventListener('touchstart', onPointerDown, { passive: false });
+        canvasEl.addEventListener('touchmove', onPointerMove, { passive: false });
+        canvasEl.addEventListener('touchend', onPointerUp);
+        canvasEl.addEventListener('touchcancel', onPointerUp);
+
+        function animate() {
+            if (!isPlaying) return;
+            try {
+                const speed = parseInt(document.getElementById('speed-slider').value);
+                currentAngle += speed * 0.3;
+                if (currentAngle >= 360) currentAngle -= 360;
+                isProgrammatic = true;
+                document.getElementById('p-slider').value = currentAngle;
+                isProgrammatic = false;
+                updateScene(currentAngle);
+            } catch (e) {
+                console.error('Animation error:', e);
+            } finally {
+                if (isPlaying) {
+                    animationId = requestAnimationFrame(animate);
+                }
+            }
+        }
+
+        function render() {
+            requestAnimationFrame(render);
+            try {
+                controls.update();
+                renderer.render(scene, camera);
+                labelRenderer.render(scene, camera);
+            } catch (e) {
+                console.error('Render error:', e);
+            }
+        }
+        render();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            labelRenderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
+</body>
+</html>

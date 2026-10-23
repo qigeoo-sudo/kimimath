@@ -1,0 +1,2646 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Desargues Theorem - Three.js</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+( function () {
+
+	// Unlike TrackballControls, it maintains the "up" direction object.up (+Y by default).
+	//
+	//    Orbit - left mouse / touch: one-finger move
+	//    Zoom - middle mouse, or mousewheel / touch: two-finger spread or squish
+	//    Pan - right mouse, or left mouse + ctrl/meta/shiftKey, or arrow keys / touch: two-finger move
+
+	const _changeEvent = {
+		type: 'change'
+	};
+	const _startEvent = {
+		type: 'start'
+	};
+	const _endEvent = {
+		type: 'end'
+	};
+
+	class OrbitControls extends THREE.EventDispatcher {
+
+		constructor( object, domElement ) {
+
+			super();
+			if ( domElement === undefined ) console.warn( 'THREE.OrbitControls: The second parameter "domElement" is now mandatory.' );
+			if ( domElement === document ) console.error( 'THREE.OrbitControls: "document" should not be used as the target "domElement". Please use "renderer.domElement" instead.' );
+			this.object = object;
+			this.domElement = domElement; // Set to false to disable this control
+
+			this.enabled = true; // "target" sets the location of focus, where the object orbits around
+
+			this.target = new THREE.Vector3(); // How far you can dolly in and out ( PerspectiveCamera only )
+
+			this.minDistance = 0;
+			this.maxDistance = Infinity; // How far you can zoom in and out ( OrthographicCamera only )
+
+			this.minZoom = 0;
+			this.maxZoom = Infinity; // How far you can orbit vertically, upper and lower limits.
+			// Range is 0 to Math.PI radians.
+
+			this.minPolarAngle = 0; // radians
+
+			this.maxPolarAngle = Math.PI; // radians
+			// How far you can orbit horizontally, upper and lower limits.
+			// If set, the interval [ min, max ] must be a sub-interval of [ - 2 PI, 2 PI ], with ( max - min < 2 PI )
+
+			this.minAzimuthAngle = - Infinity; // radians
+
+			this.maxAzimuthAngle = Infinity; // radians
+			// Set to true to enable damping (inertia)
+			// If damping is enabled, you must call controls.update() in your animation loop
+
+			this.enableDamping = false;
+			this.dampingFactor = 0.05; // This option actually enables dollying in and out; left as "zoom" for backwards compatibility.
+			// Set to false to disable zooming
+
+			this.enableZoom = true;
+			this.zoomSpeed = 1.0; // Set to false to disable rotating
+
+			this.enableRotate = true;
+			this.rotateSpeed = 1.0; // Set to false to disable panning
+
+			this.enablePan = true;
+			this.panSpeed = 1.0;
+			this.screenSpacePanning = true; // if false, pan orthogonal to world-space direction camera.up
+
+			this.keyPanSpeed = 7.0; // pixels moved per arrow key push
+			// Set to true to automatically rotate around the target
+			// If auto-rotate is enabled, you must call controls.update() in your animation loop
+
+			this.autoRotate = false;
+			this.autoRotateSpeed = 2.0; // 30 seconds per orbit when fps is 60
+			// The four arrow keys
+
+			this.keys = {
+				LEFT: 'ArrowLeft',
+				UP: 'ArrowUp',
+				RIGHT: 'ArrowRight',
+				BOTTOM: 'ArrowDown'
+			}; // Mouse buttons
+
+			this.mouseButtons = {
+				LEFT: THREE.MOUSE.ROTATE,
+				MIDDLE: THREE.MOUSE.DOLLY,
+				RIGHT: THREE.MOUSE.PAN
+			}; // Touch fingers
+
+			this.touches = {
+				ONE: THREE.TOUCH.ROTATE,
+				TWO: THREE.TOUCH.DOLLY_PAN
+			}; // for reset
+
+			this.target0 = this.target.clone();
+			this.position0 = this.object.position.clone();
+			this.zoom0 = this.object.zoom; // the target DOM element for key events
+
+			this._domElementKeyEvents = null; //
+			// public methods
+			//
+
+			this.getPolarAngle = function () {
+
+				return spherical.phi;
+
+			};
+
+			this.getAzimuthalAngle = function () {
+
+				return spherical.theta;
+
+			};
+
+			this.listenToKeyEvents = function ( domElement ) {
+
+				domElement.addEventListener( 'keydown', onKeyDown );
+				this._domElementKeyEvents = domElement;
+
+			};
+
+			this.saveState = function () {
+
+				scope.target0.copy( scope.target );
+				scope.position0.copy( scope.object.position );
+				scope.zoom0 = scope.object.zoom;
+
+			};
+
+			this.reset = function () {
+
+				scope.target.copy( scope.target0 );
+				scope.object.position.copy( scope.position0 );
+				scope.object.zoom = scope.zoom0;
+				scope.object.updateProjectionMatrix();
+				scope.dispatchEvent( _changeEvent );
+				scope.update();
+				state = STATE.NONE;
+
+			}; // this method is exposed, but perhaps it would be better if we can make it private...
+
+
+			this.update = function () {
+
+				const offset = new THREE.Vector3(); // so camera.up is the orbit axis
+
+				const quat = new THREE.Quaternion().setFromUnitVectors( object.up, new THREE.Vector3( 0, 1, 0 ) );
+				const quatInverse = quat.clone().invert();
+				const lastPosition = new THREE.Vector3();
+				const lastQuaternion = new THREE.Quaternion();
+				const twoPI = 2 * Math.PI;
+				return function update() {
+
+					const position = scope.object.position;
+					offset.copy( position ).sub( scope.target ); // rotate offset to "y-axis-is-up" space
+
+					offset.applyQuaternion( quat ); // angle from z-axis around y-axis
+
+					spherical.setFromVector3( offset );
+
+					if ( scope.autoRotate && state === STATE.NONE ) {
+
+						rotateLeft( getAutoRotationAngle() );
+
+					}
+
+					if ( scope.enableDamping ) {
+
+						spherical.theta += sphericalDelta.theta * scope.dampingFactor;
+						spherical.phi += sphericalDelta.phi * scope.dampingFactor;
+
+					} else {
+
+						spherical.theta += sphericalDelta.theta;
+						spherical.phi += sphericalDelta.phi;
+
+					} // restrict theta to be between desired limits
+
+
+					let min = scope.minAzimuthAngle;
+					let max = scope.maxAzimuthAngle;
+
+					if ( isFinite( min ) && isFinite( max ) ) {
+
+						if ( min < - Math.PI ) min += twoPI; else if ( min > Math.PI ) min -= twoPI;
+						if ( max < - Math.PI ) max += twoPI; else if ( max > Math.PI ) max -= twoPI;
+
+						if ( min <= max ) {
+
+							spherical.theta = Math.max( min, Math.min( max, spherical.theta ) );
+
+						} else {
+
+							spherical.theta = spherical.theta > ( min + max ) / 2 ? Math.max( min, spherical.theta ) : Math.min( max, spherical.theta );
+
+						}
+
+					} // restrict phi to be between desired limits
+
+
+					spherical.phi = Math.max( scope.minPolarAngle, Math.min( scope.maxPolarAngle, spherical.phi ) );
+					spherical.makeSafe();
+					spherical.radius *= scale; // restrict radius to be between desired limits
+
+					spherical.radius = Math.max( scope.minDistance, Math.min( scope.maxDistance, spherical.radius ) ); // move target to panned location
+
+					if ( scope.enableDamping === true ) {
+
+						scope.target.addScaledVector( panOffset, scope.dampingFactor );
+
+					} else {
+
+						scope.target.add( panOffset );
+
+					}
+
+					offset.setFromSpherical( spherical ); // rotate offset back to "camera-up-vector-is-up" space
+
+					offset.applyQuaternion( quatInverse );
+					position.copy( scope.target ).add( offset );
+					scope.object.lookAt( scope.target );
+
+					if ( scope.enableDamping === true ) {
+
+						sphericalDelta.theta *= 1 - scope.dampingFactor;
+						sphericalDelta.phi *= 1 - scope.dampingFactor;
+						panOffset.multiplyScalar( 1 - scope.dampingFactor );
+
+					} else {
+
+						sphericalDelta.set( 0, 0, 0 );
+						panOffset.set( 0, 0, 0 );
+
+					}
+
+					scale = 1; // update condition is:
+					// min(camera displacement, camera rotation in radians)^2 > EPS
+					// using small-angle approximation cos(x/2) = 1 - x^2 / 8
+
+					if ( zoomChanged || lastPosition.distanceToSquared( scope.object.position ) > EPS || 8 * ( 1 - lastQuaternion.dot( scope.object.quaternion ) ) > EPS ) {
+
+						scope.dispatchEvent( _changeEvent );
+						lastPosition.copy( scope.object.position );
+						lastQuaternion.copy( scope.object.quaternion );
+						zoomChanged = false;
+						return true;
+
+					}
+
+					return false;
+
+				};
+
+			}();
+
+			this.dispose = function () {
+
+				scope.domElement.removeEventListener( 'contextmenu', onContextMenu );
+				scope.domElement.removeEventListener( 'pointerdown', onPointerDown );
+				scope.domElement.removeEventListener( 'wheel', onMouseWheel );
+				scope.domElement.removeEventListener( 'touchstart', onTouchStart );
+				scope.domElement.removeEventListener( 'touchend', onTouchEnd );
+				scope.domElement.removeEventListener( 'touchmove', onTouchMove );
+				scope.domElement.ownerDocument.removeEventListener( 'pointermove', onPointerMove );
+				scope.domElement.ownerDocument.removeEventListener( 'pointerup', onPointerUp );
+
+				if ( scope._domElementKeyEvents !== null ) {
+
+					scope._domElementKeyEvents.removeEventListener( 'keydown', onKeyDown );
+
+				} //scope.dispatchEvent( { type: 'dispose' } ); // should this be added here?
+
+			}; //
+			// internals
+			//
+
+
+			const scope = this;
+			const STATE = {
+				NONE: - 1,
+				ROTATE: 0,
+				DOLLY: 1,
+				PAN: 2,
+				TOUCH_ROTATE: 3,
+				TOUCH_PAN: 4,
+				TOUCH_DOLLY_PAN: 5,
+				TOUCH_DOLLY_ROTATE: 6
+			};
+			let state = STATE.NONE;
+			const EPS = 0.000001; // current position in spherical coordinates
+
+			const spherical = new THREE.Spherical();
+			const sphericalDelta = new THREE.Spherical();
+			let scale = 1;
+			const panOffset = new THREE.Vector3();
+			let zoomChanged = false;
+			const rotateStart = new THREE.Vector2();
+			const rotateEnd = new THREE.Vector2();
+			const rotateDelta = new THREE.Vector2();
+			const panStart = new THREE.Vector2();
+			const panEnd = new THREE.Vector2();
+			const panDelta = new THREE.Vector2();
+			const dollyStart = new THREE.Vector2();
+			const dollyEnd = new THREE.Vector2();
+			const dollyDelta = new THREE.Vector2();
+
+			function getAutoRotationAngle() {
+
+				return 2 * Math.PI / 60 / 60 * scope.autoRotateSpeed;
+
+			}
+
+			function getZoomScale() {
+
+				return Math.pow( 0.95, scope.zoomSpeed );
+
+			}
+
+			function rotateLeft( angle ) {
+
+				sphericalDelta.theta -= angle;
+
+			}
+
+			function rotateUp( angle ) {
+
+				sphericalDelta.phi -= angle;
+
+			}
+
+			const panLeft = function () {
+
+				const v = new THREE.Vector3();
+				return function panLeft( distance, objectMatrix ) {
+
+					v.setFromMatrixColumn( objectMatrix, 0 ); // get X column of objectMatrix
+
+					v.multiplyScalar( - distance );
+					panOffset.add( v );
+
+				};
+
+			}();
+
+			const panUp = function () {
+
+				const v = new THREE.Vector3();
+				return function panUp( distance, objectMatrix ) {
+
+					if ( scope.screenSpacePanning === true ) {
+
+						v.setFromMatrixColumn( objectMatrix, 1 );
+
+					} else {
+
+						v.setFromMatrixColumn( objectMatrix, 0 );
+						v.crossVectors( scope.object.up, v );
+
+					}
+
+					v.multiplyScalar( distance );
+					panOffset.add( v );
+
+				};
+
+			}(); // deltaX and deltaY are in pixels; right and down are positive
+
+
+			const pan = function () {
+
+				const offset = new THREE.Vector3();
+				return function pan( deltaX, deltaY ) {
+
+					const element = scope.domElement;
+
+					if ( scope.object.isPerspectiveCamera ) {
+
+						// perspective
+						const position = scope.object.position;
+						offset.copy( position ).sub( scope.target );
+						let targetDistance = offset.length(); // half of the fov is center to top of screen
+
+						targetDistance *= Math.tan( scope.object.fov / 2 * Math.PI / 180.0 ); // we use only clientHeight here so aspect ratio does not distort speed
+
+						panLeft( 2 * deltaX * targetDistance / element.clientHeight, scope.object.matrix );
+						panUp( 2 * deltaY * targetDistance / element.clientHeight, scope.object.matrix );
+
+					} else if ( scope.object.isOrthographicCamera ) {
+
+						// orthographic
+						panLeft( deltaX * ( scope.object.right - scope.object.left ) / scope.object.zoom / element.clientWidth, scope.object.matrix );
+						panUp( deltaY * ( scope.object.top - scope.object.bottom ) / scope.object.zoom / element.clientHeight, scope.object.matrix );
+
+					} else {
+
+						// camera neither orthographic nor perspective
+						console.warn( 'WARNING: OrbitControls.js encountered an unknown camera type - pan disabled.' );
+						scope.enablePan = false;
+
+					}
+
+				};
+
+			}();
+
+			function dollyOut( dollyScale ) {
+
+				if ( scope.object.isPerspectiveCamera ) {
+
+					scale /= dollyScale;
+
+				} else if ( scope.object.isOrthographicCamera ) {
+
+					scope.object.zoom = Math.max( scope.minZoom, Math.min( scope.maxZoom, scope.object.zoom * dollyScale ) );
+					scope.object.updateProjectionMatrix();
+					zoomChanged = true;
+
+				} else {
+
+					console.warn( 'WARNING: OrbitControls.js encountered an unknown camera type - dolly/zoom disabled.' );
+					scope.enableZoom = false;
+
+				}
+
+			}
+
+			function dollyIn( dollyScale ) {
+
+				if ( scope.object.isPerspectiveCamera ) {
+
+					scale *= dollyScale;
+
+				} else if ( scope.object.isOrthographicCamera ) {
+
+					scope.object.zoom = Math.max( scope.minZoom, Math.min( scope.maxZoom, scope.object.zoom / dollyScale ) );
+					scope.object.updateProjectionMatrix();
+					zoomChanged = true;
+
+				} else {
+
+					console.warn( 'WARNING: OrbitControls.js encountered an unknown camera type - dolly/zoom disabled.' );
+					scope.enableZoom = false;
+
+				}
+
+			} //
+			// event callbacks - update the object state
+			//
+
+
+			function handleMouseDownRotate( event ) {
+
+				rotateStart.set( event.clientX, event.clientY );
+
+			}
+
+			function handleMouseDownDolly( event ) {
+
+				dollyStart.set( event.clientX, event.clientY );
+
+			}
+
+			function handleMouseDownPan( event ) {
+
+				panStart.set( event.clientX, event.clientY );
+
+			}
+
+			function handleMouseMoveRotate( event ) {
+
+				rotateEnd.set( event.clientX, event.clientY );
+				rotateDelta.subVectors( rotateEnd, rotateStart ).multiplyScalar( scope.rotateSpeed );
+				const element = scope.domElement;
+				rotateLeft( 2 * Math.PI * rotateDelta.x / element.clientHeight ); // yes, height
+
+				rotateUp( 2 * Math.PI * rotateDelta.y / element.clientHeight );
+				rotateStart.copy( rotateEnd );
+				scope.update();
+
+			}
+
+			function handleMouseMoveDolly( event ) {
+
+				dollyEnd.set( event.clientX, event.clientY );
+				dollyDelta.subVectors( dollyEnd, dollyStart );
+
+				if ( dollyDelta.y > 0 ) {
+
+					dollyOut( getZoomScale() );
+
+				} else if ( dollyDelta.y < 0 ) {
+
+					dollyIn( getZoomScale() );
+
+				}
+
+				dollyStart.copy( dollyEnd );
+				scope.update();
+
+			}
+
+			function handleMouseMovePan( event ) {
+
+				panEnd.set( event.clientX, event.clientY );
+				panDelta.subVectors( panEnd, panStart ).multiplyScalar( scope.panSpeed );
+				pan( panDelta.x, panDelta.y );
+				panStart.copy( panEnd );
+				scope.update();
+
+			}
+
+			function handleMouseUp( ) { // no-op
+			}
+
+			function handleMouseWheel( event ) {
+
+				if ( event.deltaY < 0 ) {
+
+					dollyIn( getZoomScale() );
+
+				} else if ( event.deltaY > 0 ) {
+
+					dollyOut( getZoomScale() );
+
+				}
+
+				scope.update();
+
+			}
+
+			function handleKeyDown( event ) {
+
+				let needsUpdate = false;
+
+				switch ( event.code ) {
+
+					case scope.keys.UP:
+						pan( 0, scope.keyPanSpeed );
+						needsUpdate = true;
+						break;
+
+					case scope.keys.BOTTOM:
+						pan( 0, - scope.keyPanSpeed );
+						needsUpdate = true;
+						break;
+
+					case scope.keys.LEFT:
+						pan( scope.keyPanSpeed, 0 );
+						needsUpdate = true;
+						break;
+
+					case scope.keys.RIGHT:
+						pan( - scope.keyPanSpeed, 0 );
+						needsUpdate = true;
+						break;
+
+				}
+
+				if ( needsUpdate ) {
+
+					// prevent the browser from scrolling on cursor keys
+					event.preventDefault();
+					scope.update();
+
+				}
+
+			}
+
+			function handleTouchStartRotate( event ) {
+
+				if ( event.touches.length == 1 ) {
+
+					rotateStart.set( event.touches[ 0 ].pageX, event.touches[ 0 ].pageY );
+
+				} else {
+
+					const x = 0.5 * ( event.touches[ 0 ].pageX + event.touches[ 1 ].pageX );
+					const y = 0.5 * ( event.touches[ 0 ].pageY + event.touches[ 1 ].pageY );
+					rotateStart.set( x, y );
+
+				}
+
+			}
+
+			function handleTouchStartPan( event ) {
+
+				if ( event.touches.length == 1 ) {
+
+					panStart.set( event.touches[ 0 ].pageX, event.touches[ 0 ].pageY );
+
+				} else {
+
+					const x = 0.5 * ( event.touches[ 0 ].pageX + event.touches[ 1 ].pageX );
+					const y = 0.5 * ( event.touches[ 0 ].pageY + event.touches[ 1 ].pageY );
+					panStart.set( x, y );
+
+				}
+
+			}
+
+			function handleTouchStartDolly( event ) {
+
+				const dx = event.touches[ 0 ].pageX - event.touches[ 1 ].pageX;
+				const dy = event.touches[ 0 ].pageY - event.touches[ 1 ].pageY;
+				const distance = Math.sqrt( dx * dx + dy * dy );
+				dollyStart.set( 0, distance );
+
+			}
+
+			function handleTouchStartDollyPan( event ) {
+
+				if ( scope.enableZoom ) handleTouchStartDolly( event );
+				if ( scope.enablePan ) handleTouchStartPan( event );
+
+			}
+
+			function handleTouchStartDollyRotate( event ) {
+
+				if ( scope.enableZoom ) handleTouchStartDolly( event );
+				if ( scope.enableRotate ) handleTouchStartRotate( event );
+
+			}
+
+			function handleTouchMoveRotate( event ) {
+
+				if ( event.touches.length == 1 ) {
+
+					rotateEnd.set( event.touches[ 0 ].pageX, event.touches[ 0 ].pageY );
+
+				} else {
+
+					const x = 0.5 * ( event.touches[ 0 ].pageX + event.touches[ 1 ].pageX );
+					const y = 0.5 * ( event.touches[ 0 ].pageY + event.touches[ 1 ].pageY );
+					rotateEnd.set( x, y );
+
+				}
+
+				rotateDelta.subVectors( rotateEnd, rotateStart ).multiplyScalar( scope.rotateSpeed );
+				const element = scope.domElement;
+				rotateLeft( 2 * Math.PI * rotateDelta.x / element.clientHeight ); // yes, height
+
+				rotateUp( 2 * Math.PI * rotateDelta.y / element.clientHeight );
+				rotateStart.copy( rotateEnd );
+
+			}
+
+			function handleTouchMovePan( event ) {
+
+				if ( event.touches.length == 1 ) {
+
+					panEnd.set( event.touches[ 0 ].pageX, event.touches[ 0 ].pageY );
+
+				} else {
+
+					const x = 0.5 * ( event.touches[ 0 ].pageX + event.touches[ 1 ].pageX );
+					const y = 0.5 * ( event.touches[ 0 ].pageY + event.touches[ 1 ].pageY );
+					panEnd.set( x, y );
+
+				}
+
+				panDelta.subVectors( panEnd, panStart ).multiplyScalar( scope.panSpeed );
+				pan( panDelta.x, panDelta.y );
+				panStart.copy( panEnd );
+
+			}
+
+			function handleTouchMoveDolly( event ) {
+
+				const dx = event.touches[ 0 ].pageX - event.touches[ 1 ].pageX;
+				const dy = event.touches[ 0 ].pageY - event.touches[ 1 ].pageY;
+				const distance = Math.sqrt( dx * dx + dy * dy );
+				dollyEnd.set( 0, distance );
+				dollyDelta.set( 0, Math.pow( dollyEnd.y / dollyStart.y, scope.zoomSpeed ) );
+				dollyOut( dollyDelta.y );
+				dollyStart.copy( dollyEnd );
+
+			}
+
+			function handleTouchMoveDollyPan( event ) {
+
+				if ( scope.enableZoom ) handleTouchMoveDolly( event );
+				if ( scope.enablePan ) handleTouchMovePan( event );
+
+			}
+
+			function handleTouchMoveDollyRotate( event ) {
+
+				if ( scope.enableZoom ) handleTouchMoveDolly( event );
+				if ( scope.enableRotate ) handleTouchMoveRotate( event );
+
+			}
+
+			function handleTouchEnd( ) { // no-op
+			} //
+			// event handlers - FSM: listen for events and reset state
+			//
+
+
+			function onPointerDown( event ) {
+
+				if ( scope.enabled === false ) return;
+
+				switch ( event.pointerType ) {
+
+					case 'mouse':
+					case 'pen':
+						onMouseDown( event );
+						break;
+        // TODO touch
+
+				}
+
+			}
+
+			function onPointerMove( event ) {
+
+				if ( scope.enabled === false ) return;
+
+				switch ( event.pointerType ) {
+
+					case 'mouse':
+					case 'pen':
+						onMouseMove( event );
+						break;
+        // TODO touch
+
+				}
+
+			}
+
+			function onPointerUp( event ) {
+
+				switch ( event.pointerType ) {
+
+					case 'mouse':
+					case 'pen':
+						onMouseUp( event );
+						break;
+        // TODO touch
+
+				}
+
+			}
+
+			function onMouseDown( event ) {
+
+				// Prevent the browser from scrolling.
+				event.preventDefault(); // Manually set the focus since calling preventDefault above
+				// prevents the browser from setting it automatically.
+
+				scope.domElement.focus ? scope.domElement.focus() : window.focus();
+				let mouseAction;
+
+				switch ( event.button ) {
+
+					case 0:
+						mouseAction = scope.mouseButtons.LEFT;
+						break;
+
+					case 1:
+						mouseAction = scope.mouseButtons.MIDDLE;
+						break;
+
+					case 2:
+						mouseAction = scope.mouseButtons.RIGHT;
+						break;
+
+					default:
+						mouseAction = - 1;
+
+				}
+
+				switch ( mouseAction ) {
+
+					case THREE.MOUSE.DOLLY:
+						if ( scope.enableZoom === false ) return;
+						handleMouseDownDolly( event );
+						state = STATE.DOLLY;
+						break;
+
+					case THREE.MOUSE.ROTATE:
+						if ( event.ctrlKey || event.metaKey || event.shiftKey ) {
+
+							if ( scope.enablePan === false ) return;
+							handleMouseDownPan( event );
+							state = STATE.PAN;
+
+						} else {
+
+							if ( scope.enableRotate === false ) return;
+							handleMouseDownRotate( event );
+							state = STATE.ROTATE;
+
+						}
+
+						break;
+
+					case THREE.MOUSE.PAN:
+						if ( event.ctrlKey || event.metaKey || event.shiftKey ) {
+
+							if ( scope.enableRotate === false ) return;
+							handleMouseDownRotate( event );
+							state = STATE.ROTATE;
+
+						} else {
+
+							if ( scope.enablePan === false ) return;
+							handleMouseDownPan( event );
+							state = STATE.PAN;
+
+						}
+
+						break;
+
+					default:
+						state = STATE.NONE;
+
+				}
+
+				if ( state !== STATE.NONE ) {
+
+					scope.domElement.ownerDocument.addEventListener( 'pointermove', onPointerMove );
+					scope.domElement.ownerDocument.addEventListener( 'pointerup', onPointerUp );
+					scope.dispatchEvent( _startEvent );
+
+				}
+
+			}
+
+			function onMouseMove( event ) {
+
+				if ( scope.enabled === false ) return;
+				event.preventDefault();
+
+				switch ( state ) {
+
+					case STATE.ROTATE:
+						if ( scope.enableRotate === false ) return;
+						handleMouseMoveRotate( event );
+						break;
+
+					case STATE.DOLLY:
+						if ( scope.enableZoom === false ) return;
+						handleMouseMoveDolly( event );
+						break;
+
+					case STATE.PAN:
+						if ( scope.enablePan === false ) return;
+						handleMouseMovePan( event );
+						break;
+
+				}
+
+			}
+
+			function onMouseUp( event ) {
+
+				scope.domElement.ownerDocument.removeEventListener( 'pointermove', onPointerMove );
+				scope.domElement.ownerDocument.removeEventListener( 'pointerup', onPointerUp );
+				if ( scope.enabled === false ) return;
+				handleMouseUp( event );
+				scope.dispatchEvent( _endEvent );
+				state = STATE.NONE;
+
+			}
+
+			function onMouseWheel( event ) {
+
+				if ( scope.enabled === false || scope.enableZoom === false || state !== STATE.NONE && state !== STATE.ROTATE ) return;
+				event.preventDefault();
+				scope.dispatchEvent( _startEvent );
+				handleMouseWheel( event );
+				scope.dispatchEvent( _endEvent );
+
+			}
+
+			function onKeyDown( event ) {
+
+				if ( scope.enabled === false || scope.enablePan === false ) return;
+				handleKeyDown( event );
+
+			}
+
+			function onTouchStart( event ) {
+
+				if ( scope.enabled === false ) return;
+				event.preventDefault(); // prevent scrolling
+
+				switch ( event.touches.length ) {
+
+					case 1:
+						switch ( scope.touches.ONE ) {
+
+							case THREE.TOUCH.ROTATE:
+								if ( scope.enableRotate === false ) return;
+								handleTouchStartRotate( event );
+								state = STATE.TOUCH_ROTATE;
+								break;
+
+							case THREE.TOUCH.PAN:
+								if ( scope.enablePan === false ) return;
+								handleTouchStartPan( event );
+								state = STATE.TOUCH_PAN;
+								break;
+
+							default:
+								state = STATE.NONE;
+
+						}
+
+						break;
+
+					case 2:
+						switch ( scope.touches.TWO ) {
+
+							case THREE.TOUCH.DOLLY_PAN:
+								if ( scope.enableZoom === false && scope.enablePan === false ) return;
+								handleTouchStartDollyPan( event );
+								state = STATE.TOUCH_DOLLY_PAN;
+								break;
+
+							case THREE.TOUCH.DOLLY_ROTATE:
+								if ( scope.enableZoom === false && scope.enableRotate === false ) return;
+								handleTouchStartDollyRotate( event );
+								state = STATE.TOUCH_DOLLY_ROTATE;
+								break;
+
+							default:
+								state = STATE.NONE;
+
+						}
+
+						break;
+
+					default:
+						state = STATE.NONE;
+
+				}
+
+				if ( state !== STATE.NONE ) {
+
+					scope.dispatchEvent( _startEvent );
+
+				}
+
+			}
+
+			function onTouchMove( event ) {
+
+				if ( scope.enabled === false ) return;
+				event.preventDefault(); // prevent scrolling
+
+				switch ( state ) {
+
+					case STATE.TOUCH_ROTATE:
+						if ( scope.enableRotate === false ) return;
+						handleTouchMoveRotate( event );
+						scope.update();
+						break;
+
+					case STATE.TOUCH_PAN:
+						if ( scope.enablePan === false ) return;
+						handleTouchMovePan( event );
+						scope.update();
+						break;
+
+					case STATE.TOUCH_DOLLY_PAN:
+						if ( scope.enableZoom === false && scope.enablePan === false ) return;
+						handleTouchMoveDollyPan( event );
+						scope.update();
+						break;
+
+					case STATE.TOUCH_DOLLY_ROTATE:
+						if ( scope.enableZoom === false && scope.enableRotate === false ) return;
+						handleTouchMoveDollyRotate( event );
+						scope.update();
+						break;
+
+					default:
+						state = STATE.NONE;
+
+				}
+
+			}
+
+			function onTouchEnd( event ) {
+
+				if ( scope.enabled === false ) return;
+				handleTouchEnd( event );
+				scope.dispatchEvent( _endEvent );
+				state = STATE.NONE;
+
+			}
+
+			function onContextMenu( event ) {
+
+				if ( scope.enabled === false ) return;
+				event.preventDefault();
+
+			} //
+
+
+			scope.domElement.addEventListener( 'contextmenu', onContextMenu );
+			scope.domElement.addEventListener( 'pointerdown', onPointerDown );
+			scope.domElement.addEventListener( 'wheel', onMouseWheel, {
+				passive: false
+			} );
+			scope.domElement.addEventListener( 'touchstart', onTouchStart, {
+				passive: false
+			} );
+			scope.domElement.addEventListener( 'touchend', onTouchEnd );
+			scope.domElement.addEventListener( 'touchmove', onTouchMove, {
+				passive: false
+			} ); // force an update at start
+
+			this.update();
+
+		}
+
+	} // This set of controls performs orbiting, dollying (zooming), and panning.
+	// Unlike TrackballControls, it maintains the "up" direction object.up (+Y by default).
+	// This is very similar to OrbitControls, another set of touch behavior
+	//
+	//    Orbit - right mouse, or left mouse + ctrl/meta/shiftKey / touch: two-finger rotate
+	//    Zoom - middle mouse, or mousewheel / touch: two-finger spread or squish
+	//    Pan - left mouse, or arrow keys / touch: one-finger move
+
+
+	class MapControls extends OrbitControls {
+
+		constructor( object, domElement ) {
+
+			super( object, domElement );
+			this.screenSpacePanning = false; // pan orthogonal to world-space direction camera.up
+
+			this.mouseButtons.LEFT = THREE.MOUSE.PAN;
+			this.mouseButtons.RIGHT = THREE.MOUSE.ROTATE;
+			this.touches.ONE = THREE.TOUCH.PAN;
+			this.touches.TWO = THREE.TOUCH.DOLLY_ROTATE;
+
+		}
+
+	}
+
+	THREE.MapControls = MapControls;
+	THREE.OrbitControls = OrbitControls;
+
+} )();
+
+</script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100%; overflow: hidden; background: #0a0a0f; font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; touch-action: none; }
+
+        #main-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #canvas-wrapper {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        #control-panel {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 130px;
+            max-height: 65vh;
+            overflow-y: auto;
+            overflow-x: hidden;
+            background: transparent;
+            border: 1px solid rgba(148, 163, 184, 0.15);
+            border-radius: 10px;
+            padding: 8px 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 6px;
+            z-index: 100;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        /* 自定义滚动条 */
+        #control-panel::-webkit-scrollbar {
+            width: 4px;
+        }
+        #control-panel::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        #control-panel::-webkit-scrollbar-thumb {
+            background: rgba(148, 163, 184, 0.3);
+            border-radius: 2px;
+        }
+        #control-panel::-webkit-scrollbar-thumb:hover {
+            background: rgba(148, 163, 184, 0.5);
+        }
+
+        #control-panel.hidden-ui {
+            opacity: 0;
+            pointer-events: none;
+            transform: translateX(20px);
+        }
+
+        .slider-track {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 5px;
+            border-radius: 3px;
+            outline: none;
+            cursor: pointer;
+            margin: 4px 0;
+        }
+        .slider-track::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+            box-shadow: 0 0 6px rgba(139, 92, 246, 0.5);
+        }
+
+        .float-panel {
+            position: absolute;
+            background: rgba(15, 23, 42, 0.92);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 10px;
+            padding: 10px 14px;
+            z-index: 10;
+            font-size: 11px;
+            transition: opacity 0.3s ease;
+        }
+
+        .float-panel.hidden-ui {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .label-tag {
+            display: inline-block;
+            padding: 1px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: 600;
+            margin-right: 4px;
+        }
+
+        #stats-panel {
+            position: absolute;
+            bottom: 60px;
+            left: 10px;
+            background: rgba(15, 23, 42, 0.92);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 10px;
+            padding: 10px 14px;
+            z-index: 10;
+            width: auto;
+            transition: all 0.3s ease;
+        }
+
+        #stats-panel.collapsed {
+            width: auto;
+            padding: 6px 12px;
+            background: transparent;
+            border: none;
+            backdrop-filter: none;
+        }
+        #stats-panel.collapsed .stats-toggle {
+            background: rgba(15, 23, 42, 0.92);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 10px;
+            padding: 6px 12px;
+        }
+
+        #stats-panel.collapsed .stats-content {
+            display: none;
+        }
+
+        #stats-panel.hidden-ui {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .stats-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .stats-arrow {
+            transition: transform 0.3s ease;
+            font-size: 11px;
+            color: #94a3b8;
+        }
+
+        #stats-panel.collapsed .stats-arrow {
+            transform: rotate(-90deg);
+        }
+
+        #legend-panel {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(15, 23, 42, 0.92);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 10px;
+            padding: 10px 14px;
+            z-index: 10;
+            transition: all 0.3s ease;
+        }
+
+        #legend-panel.collapsed {
+            padding: 6px 12px;
+            background: transparent;
+            border: none;
+            backdrop-filter: none;
+        }
+        #legend-panel.collapsed .legend-toggle {
+            background: rgba(15, 23, 42, 0.92);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 10px;
+            padding: 6px 12px;
+        }
+
+        #legend-panel.collapsed .legend-content {
+            display: none;
+        }
+
+        #legend-panel.hidden-ui {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .legend-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .legend-arrow {
+            transition: transform 0.3s ease;
+            font-size: 11px;
+            color: #94a3b8;
+            margin-left: 8px;
+        }
+
+        #legend-panel.collapsed .legend-arrow {
+            transform: rotate(-90deg);
+        }
+
+        /* ===== Circle of Fifths ===== */
+        #circle-of-fifths {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            width: 199px;
+            height: 199px;
+            z-index: 200;
+            transition: opacity 0.5s ease, transform 0.5s ease;
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.9);
+        }
+        #circle-of-fifths.visible {
+            opacity: 1;
+            pointer-events: auto;
+            transform: scale(1);
+        }
+        #circle-of-fifths svg {
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(0 4px 20px rgba(0,0,0,0.6));
+        }
+        .cof-sector {
+            transition: all 0.2s ease;
+        }
+        .cof-sector:hover {
+            filter: brightness(1.3);
+        }
+        .cof-sector.active-major {
+            stroke: #fff;
+            stroke-width: 2.5;
+            filter: drop-shadow(0 0 8px rgba(251,191,36,0.8));
+        }
+        .cof-sector.active-minor {
+            stroke: #fff;
+            stroke-width: 2.5;
+            filter: drop-shadow(0 0 8px rgba(96,165,250,0.8));
+        }
+        .cof-center-btn {
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .cof-center-btn:hover {
+            filter: brightness(1.2);
+            transform-origin: center;
+        }
+
+        /* Corner timbre buttons */
+        .cof-corner-btn {
+            position: absolute;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            border: 1.5px solid rgba(148,163,184,0.4);
+            background: rgba(15,23,42,0.85);
+            color: #cbd5e1;
+            font-size: 11px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            z-index: 201;
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.8);
+        }
+        #circle-of-fifths.visible .cof-corner-btn {
+            opacity: 1;
+            pointer-events: auto;
+            transform: scale(1);
+        }
+        .cof-corner-btn:hover {
+            border-color: rgba(251,191,36,0.8);
+            background: rgba(30,41,59,0.95);
+            transform: scale(1.15);
+        }
+        .cof-corner-btn.active {
+            border-color: #fbbf24;
+            background: rgba(251,191,36,0.2);
+            box-shadow: 0 0 8px rgba(251,191,36,0.4);
+        }
+        .cof-corner-btn .timbre-label {
+            position: absolute;
+            bottom: -14px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 7px;
+            color: #94a3b8;
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            pointer-events: none;
+        }
+        .cof-corner-btn:hover .timbre-label,
+        .cof-corner-btn.active .timbre-label {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div id="main-container">
+        <div id="canvas-wrapper"></div>
+
+            <div id="control-panel">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 4px; border-bottom: 1px solid rgba(148,163,184,0.15);">
+                <span style="font-size: 11px; font-weight: 600; color: #fff;">Control</span>
+                <span id="panel-hide-btn" style="cursor: pointer; font-size: 11px; color: #94a3b8; user-select: none; padding: 2px 4px;">🙈</span>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 2px;">
+                <span style="font-size: 10px; color: #cbd5e1;">Tilt X <span id="val-tiltX" style="color: #60a5fa; float: right;">15°</span></span>
+                <input type="range" id="tiltX" min="-70" max="70" value="15" class="slider-track" style="width: 100%; background: linear-gradient(90deg, #3b82f6, #8b5cf6);">
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 2px;">
+                <span style="font-size: 10px; color: #cbd5e1;">Tilt Y <span id="val-tiltY" style="color: #60a5fa; float: right;">10°</span></span>
+                <input type="range" id="tiltY" min="-70" max="70" value="10" class="slider-track" style="width: 100%; background: linear-gradient(90deg, #3b82f6, #8b5cf6);">
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 2px;">
+                <span style="font-size: 10px; color: #cbd5e1;">Tilt Z <span id="val-tiltZ" style="color: #60a5fa; float: right;">5°</span></span>
+                <input type="range" id="tiltZ" min="-70" max="70" value="5" class="slider-track" style="width: 100%; background: linear-gradient(90deg, #3b82f6, #8b5cf6);">
+            </div>
+
+            <div style="height: 1px; background: #334155; margin: 4px 0;"></div>
+
+            <div style="display: flex; flex-direction: column; gap: 2px;">
+                <span style="font-size: 10px; color: #cbd5e1;">Pos Z <span id="val-posZ" style="color: #4ade80; float: right;">0.50</span></span>
+                <input type="range" id="posZ" min="-10" max="10" step="0.05" value="0.5" class="slider-track" style="width: 100%; background: linear-gradient(90deg, #22c55e, #14b8a6);">
+            </div>
+
+            <div style="height: 1px; background: #334155; margin: 4px 0;"></div>
+
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+                <button id="btn-reset" style="background: #475569; color: #fff; border: none; border-radius: 6px; padding: 6px 0; font-size: 11px; cursor: pointer; width: 100%;">🔄 Reset</button>
+                <button id="btn-projection" style="background: #7c3aed; color: #fff; border: none; border-radius: 6px; padding: 6px 0; font-size: 11px; cursor: pointer; width: 100%;">📽️ Project</button>
+                <button id="btn-animate" style="background: #2563eb; color: #fff; border: none; border-radius: 6px; padding: 6px 0; font-size: 11px; cursor: pointer; width: 100%;">▶️ Animate</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 悬浮面板 -->
+    <div id="title-panel" class="float-panel" style="top: 10px; left: 10px;">
+        <div style="font-size: 15px; font-weight: 700; color: #fff; white-space: nowrap;">Desargues Theorem</div>
+        <div style="font-size: 10px; color: #94a3b8; margin-top: 2px;">Triangular Pyramid Section · Perspective Axis</div>
+    </div>
+
+    <div id="legend-panel" class="collapsed" style="position: absolute; bottom: 10px; left: 10px;">
+        <div class="legend-toggle" id="legend-toggle">
+            <div style="font-size: 11px; font-weight: 600; color: #fff;">📐 Legend</div>
+            <span class="legend-arrow" id="legend-arrow">▶</span>
+        </div>
+        <div class="legend-content" style="margin-top: 6px;">
+            <div style="line-height: 1.6;">
+                <div><span class="label-tag" style="background: rgba(239,68,68,0.3); color: #fca5a5;">A,B,C</span><span style="color: #cbd5e1;">Base Triangle</span></div>
+                <div><span class="label-tag" style="background: rgba(234,179,8,0.3); color: #fde047;">A',B',C'</span><span style="color: #cbd5e1;">Section Triangle</span></div>
+                <div><span class="label-tag" style="background: rgba(168,85,247,0.3); color: #d8b4fe;">S</span><span style="color: #cbd5e1;">Apex (Center)</span></div>
+                <div><span class="label-tag" style="background: rgba(6,182,212,0.3); color: #67e8f9;">P,Q,R</span><span style="color: #cbd5e1;">Intersections</span></div>
+                <div><span class="label-tag" style="background: rgba(16,185,129,0.3); color: #6ee7b7;">——</span><span style="color: #cbd5e1;">Perspective Axis</span></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="stats-panel" class="collapsed">
+        <div class="stats-toggle" id="stats-toggle">
+            <div style="font-size: 11px; font-weight: 600; color: #fff;">📊 Live Data</div>
+            <span class="stats-arrow" id="stats-arrow">▶</span>
+        </div>
+        <div class="stats-content" style="margin-top: 6px;">
+            <div style="line-height: 1.6;">
+                <div style="display: flex; justify-content: space-between;"><span style="color: #94a3b8;">P = AB∩A'B'</span><span id="coord-P" style="color: #67e8f9; font-family: monospace;">--</span></div>
+                <div style="display: flex; justify-content: space-between;"><span style="color: #94a3b8;">Q = BC∩B'C'</span><span id="coord-Q" style="color: #67e8f9; font-family: monospace;">--</span></div>
+                <div style="display: flex; justify-content: space-between;"><span style="color: #94a3b8;">R = CA∩C'A'</span><span id="coord-R" style="color: #67e8f9; font-family: monospace;">--</span></div>
+                <div style="border-top: 1px solid #334155; padding-top: 4px; margin-top: 4px; display: flex; justify-content: space-between;">
+                    <span style="color: #94a3b8;">Collinearity</span><span id="collinearity" style="color: #4ade80; font-family: monospace; font-weight: 700;">--</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- Circle of Fifths -->
+    <div id="circle-of-fifths">
+        <!-- SVG generated by JS -->
+        <div class="cof-corner-btn active" data-timbre="cello" style="top:3px;right:3px;" title="Cello">🎻<span class="timbre-label">Cello</span></div>
+        <div class="cof-corner-btn" data-timbre="flute" style="top:3px;left:3px;" title="Flute">🪈<span class="timbre-label">Flute</span></div>
+        <div class="cof-corner-btn" data-timbre="organ" style="bottom:3px;right:3px;" title="Organ">🎹<span class="timbre-label">Organ</span></div>
+        <div class="cof-corner-btn" data-timbre="bee" style="bottom:3px;left:3px;" title="Bee">🐝<span class="timbre-label">Bee</span></div>
+    </div>
+
+    <script>
+        // ==================== 3D 数学工具 ====================
+        const Vec3 = {
+            add: (a, b) => new THREE.Vector3(a.x + b.x, a.y + b.y, a.z + b.z),
+            sub: (a, b) => new THREE.Vector3(a.x - b.x, a.y - b.y, a.z - b.z),
+            mul: (a, s) => new THREE.Vector3(a.x * s, a.y * s, a.z * s),
+            dot: (a, b) => a.x * b.x + a.y * b.y + a.z * b.z,
+            cross: (a, b) => new THREE.Vector3(
+                a.y * b.z - a.z * b.y,
+                a.z * b.x - a.x * b.z,
+                a.x * b.y - a.y * b.x
+            ),
+            len: (a) => Math.sqrt(a.x * a.x + a.y * a.y + a.z * a.z),
+            normalize: (a) => {
+                const l = Math.sqrt(a.x * a.x + a.y * a.y + a.z * a.z);
+                return l > 1e-10 ? new THREE.Vector3(a.x / l, a.y / l, a.z / l) : new THREE.Vector3(0, 0, 0);
+            }
+        };
+
+        function rotateX(v, angle) {
+            const c = Math.cos(angle), s = Math.sin(angle);
+            return new THREE.Vector3(v.x, v.y * c - v.z * s, v.y * s + v.z * c);
+        }
+
+        function rotateY(v, angle) {
+            const c = Math.cos(angle), s = Math.sin(angle);
+            return new THREE.Vector3(v.x * c + v.z * s, v.y, -v.x * s + v.z * c);
+        }
+
+        function rotateZ(v, angle) {
+            const c = Math.cos(angle), s = Math.sin(angle);
+            return new THREE.Vector3(v.x * c - v.y * s, v.x * s + v.y * c, v.z);
+        }
+
+        function linePlaneIntersect(lineStart, lineEnd, planeNormal, planePoint) {
+            const dir = Vec3.sub(lineEnd, lineStart);
+            const denom = Vec3.dot(planeNormal, dir);
+            if (Math.abs(denom) < 1e-10) return null;
+            const t = Vec3.dot(Vec3.sub(planePoint, lineStart), planeNormal) / denom;
+            return Vec3.add(lineStart, Vec3.mul(dir, t));
+        }
+
+        function lineIntersection3D(p1, p2, p3, p4) {
+            const dx1 = p2.x - p1.x, dy1 = p2.y - p1.y, dz1 = p2.z - p1.z;
+            const dx2 = p4.x - p3.x, dy2 = p4.y - p3.y, dz2 = p4.z - p3.z;
+            const A = [[dx1, -dx2], [dy1, -dy2], [dz1, -dz2]];
+            const b = [p3.x - p1.x, p3.y - p1.y, p3.z - p1.z];
+            const AtA = [
+                [A[0][0]*A[0][0] + A[1][0]*A[1][0] + A[2][0]*A[2][0],
+                 A[0][0]*A[0][1] + A[1][0]*A[1][1] + A[2][0]*A[2][1]],
+                [A[0][0]*A[0][1] + A[1][0]*A[1][1] + A[2][0]*A[2][1],
+                 A[0][1]*A[0][1] + A[1][1]*A[1][1] + A[2][1]*A[2][1]]
+            ];
+            const Atb = [
+                A[0][0]*b[0] + A[1][0]*b[1] + A[2][0]*b[2],
+                A[0][1]*b[0] + A[1][1]*b[1] + A[2][1]*b[2]
+            ];
+            const det = AtA[0][0]*AtA[1][1] - AtA[0][1]*AtA[1][0];
+            if (Math.abs(det) < 1e-12) return null;
+            const t1 = (AtA[1][1]*Atb[0] - AtA[0][1]*Atb[1]) / det;
+            return new THREE.Vector3(p1.x + t1 * dx1, p1.y + t1 * dy1, p1.z + t1 * dz1);
+        }
+
+        function pointToLineDistance(point, lineStart, lineEnd) {
+            const line = Vec3.sub(lineEnd, lineStart);
+            const toPoint = Vec3.sub(point, lineStart);
+            const cross = Vec3.cross(line, toPoint);
+            return Vec3.len(cross) / Vec3.len(line);
+        }
+
+        function projectToSigma(P, O_center, sigma_y) {
+            const dir = Vec3.sub(P, O_center);
+            if (Math.abs(dir.y) < 1e-10) return null;
+            const t = (sigma_y - O_center.y) / dir.y;
+            return Vec3.add(O_center, Vec3.mul(dir, t));
+        }
+
+        // ==================== Three.js 场景设置 ====================
+        const wrapper = document.getElementById('canvas-wrapper');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0a0a0f);
+        scene.fog = new THREE.Fog(0x0a0a0f, 20, 60);
+
+        const camera = new THREE.PerspectiveCamera(45, wrapper.clientWidth / wrapper.clientHeight, 0.1, 1000);
+        camera.position.set(8, 6, 10);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(wrapper.clientWidth, wrapper.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        wrapper.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.target.set(0, 2, 0);
+        controls.minDistance = 3;
+        controls.maxDistance = 30;
+
+        // 灯光
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(5, 10, 5);
+        dirLight.castShadow = true;
+        scene.add(dirLight);
+
+        const dirLight2 = new THREE.DirectionalLight(0x4444ff, 0.3);
+        dirLight2.position.set(-5, 5, -5);
+        scene.add(dirLight2);
+
+        // ==================== 音频系统 ====================
+        let audioCtx = null, celloOsc = null, celloGain = null, celloFilter = null;
+        // Tonality state for Circle of Fifths
+        let currentTonality = { root: 'C', mode: 'major', rootIndex: 0 };
+        let currentTimbre = 'cello';
+        let noiseGainNode = null;
+
+        // 多振荡器音色定义
+        // oscs: [{type, detune, gain}]  detune单位:音分(cents)  gain:相对增益0~1
+        const TIMBRES = {
+            cello: {
+                oscs: [
+                    { type: 'sawtooth', detune: 0,    gain: 0.70 },  // 主音：丰富谐波
+                    { type: 'sine',     detune: -1200, gain: 0.40 },  // 低八度：增加厚度
+                    { type: 'triangle', detune: 1200,  gain: 0.15 },  // 高八度：增加明亮度
+                ],
+                filterType: 'lowpass', filterQ: 2, baseFilter: 450,
+                masterGain: 0.14,
+                vibratoRate: 4.5, vibratoDepth: 3.0,
+                label: '🎻 Cello'
+            },
+            flute: {
+                oscs: [
+                    { type: 'sine',     detune: 0,    gain: 0.85 },  // 主音：纯净
+                    { type: 'triangle', detune: 1200,  gain: 0.20 },  // 高八度泛音
+                    { type: 'sine',     detune: 2400,  gain: 0.08 },  // 双高八度：气息感
+                ],
+                filterType: 'bandpass', filterQ: 2.5, baseFilter: 1800,
+                masterGain: 0.32,
+                vibratoRate: 5.5, vibratoDepth: 1.2,
+                label: '🪈 Flute'
+            },
+            organ: {
+                oscs: [
+                    { type: 'square',   detune: 0,    gain: 0.60 },  // 主音：奇次谐波
+                    { type: 'square',   detune: -1200, gain: 0.55 },  // 低八度：低音管
+                    { type: 'sawtooth', detune: 0,    gain: 0.25 },  // 叠加：增加偶次谐波
+                    { type: 'square',   detune: 1200,  gain: 0.20 },  // 高八度：明亮管
+                ],
+                filterType: 'lowpass', filterQ: 0.3, baseFilter: 1200,
+                masterGain: 0.09,
+                vibratoRate: 0, vibratoDepth: 0,  // 管风琴无颤音
+                label: '🎹 Organ'
+            },
+            bee: {
+                oscs: [
+                    { type: 'sawtooth', detune: 0,    gain: 0.60 },  // 主音：丰富谐波模拟翅膀
+                    { type: 'square',   detune: 700,   gain: 0.35 },  // 轻微失谐：拍频效果
+                    { type: 'sawtooth', detune: -700,  gain: 0.35 },  // 反向失谐：立体嗡嗡感
+                ],
+                filterType: 'bandpass', filterQ: 3.0, baseFilter: 350,
+                masterGain: 0.18,
+                vibratoRate: 28, vibratoDepth: 12.0,  // 超快颤音 ≈ 蜜蜂翅膀 200-250Hz 拍动
+                buzzNoise: true,  // 额外嗡嗡噪声层
+                label: '🐝 Bee'
+            }
+        };
+        const NOTE_FREQS = {
+            'C': 261.63, 'C#': 277.18, 'Db': 277.18, 'D': 293.66, 'D#': 311.13, 'Eb': 311.13,
+            'E': 329.63, 'F': 349.23, 'F#': 369.99, 'Gb': 369.99, 'G': 392.00,
+            'G#': 415.30, 'Ab': 415.30, 'A': 440.00, 'A#': 466.16, 'Bb': 466.16, 'B': 493.88
+        };
+        const MAJOR_PENTATONIC = [0, 2, 4, 7, 9, 12, 14, 16, 19, 21];
+        const MINOR_PENTATONIC = [0, 3, 5, 7, 10, 12, 15, 17, 19, 22];
+        const COF_MAJOR = ['C','G','D','A','E','B','F#','C#','Ab','Eb','Bb','F'];
+        const COF_MINOR = ['a','e','b','f#','c#','g#','d#','a#','f','c','g','d'];
+        const COF_MAJOR_ALT = ['','','','','','','Gb','Db','G#','D#','A#',''];
+        const COF_MINOR_ALT = ['','','','','','','eb','bb','','','',''];
+        const COF_CLICKABLE_MAJOR = {0:true,1:true,2:true,3:true,4:true,5:true,6:true,7:true,8:true,9:true,10:true,11:true};
+        const COF_CLICKABLE_MINOR = {0:true,1:true,2:true,3:true,4:true,5:true,6:true,7:true,8:true,9:true,10:true,11:true};
+
+        let isPlaying = false;
+
+        function initAudio() {
+            if (audioCtx) return;
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            applyTimbre(TIMBRES[currentTimbre]);
+        }
+
+        let oscNodes = [];      // 振荡器数组
+        let oscGainNodes = [];  // 各振荡器增益
+        let masterGainNode = null;
+        let filterNode = null;
+
+        function applyTimbre(t) {
+            if (!audioCtx) return;
+            // 清理旧节点
+            oscNodes.forEach(o => { try { o.stop(); o.disconnect(); } catch(e) {} });
+            oscGainNodes.forEach(g => { try { g.disconnect(); } catch(e) {} });
+            if (filterNode) { try { filterNode.disconnect(); } catch(e) {} }
+            if (masterGainNode) { try { masterGainNode.disconnect(); } catch(e) {} }
+            if (noiseGainNode) { try { noiseGainNode.disconnect(); } catch(e) {} }
+            oscNodes = []; oscGainNodes = [];
+
+            // 创建主滤波器
+            filterNode = audioCtx.createBiquadFilter();
+            filterNode.type = t.filterType;
+            filterNode.frequency.value = t.baseFilter;
+            filterNode.Q.value = t.filterQ;
+
+            // 创建主增益
+            masterGainNode = audioCtx.createGain();
+            masterGainNode.gain.value = 0;
+
+            // 创建多个振荡器
+            t.oscs.forEach((oscDef, i) => {
+                const osc = audioCtx.createOscillator();
+                osc.type = oscDef.type;
+                osc.frequency.value = 65.41;
+                osc.detune.value = oscDef.detune;
+
+                const g = audioCtx.createGain();
+                g.gain.value = oscDef.gain;
+
+                osc.connect(g);
+                g.connect(filterNode);
+                osc.start();
+
+                oscNodes.push(osc);
+                oscGainNodes.push(g);
+            });
+
+            // Bee buzz noise layer
+            if (t.buzzNoise) {
+                const noise = audioCtx.createBufferSource();
+                const bufferSize = audioCtx.sampleRate * 2;
+                const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = (Math.random() * 2 - 1);
+                }
+                noise.buffer = buffer;
+                noise.loop = true;
+
+                const noiseFilter = audioCtx.createBiquadFilter();
+                noiseFilter.type = 'bandpass';
+                noiseFilter.frequency.value = 400;
+                noiseFilter.Q.value = 2.5;
+
+                noiseGainNode = audioCtx.createGain();
+                noiseGainNode.gain.value = 0.06; // 持续的轻微嗡嗡底噪
+
+                noise.connect(noiseFilter);
+                noiseFilter.connect(noiseGainNode);
+                noiseGainNode.connect(audioCtx.destination);
+                noise.start();
+            }
+
+            filterNode.connect(masterGainNode);
+            masterGainNode.connect(audioCtx.destination);
+
+            // 兼容旧变量名
+            celloOsc = oscNodes[0];
+            celloFilter = filterNode;
+            celloGain = masterGainNode;
+        }
+
+        function switchTimbre(name) {
+            if (!TIMBRES[name]) return;
+            currentTimbre = name;
+            if (isPlaying && audioCtx) {
+                const t = TIMBRES[name];
+                // 平滑切换：短暂淡出再重建
+                masterGainNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.05);
+                setTimeout(() => {
+                    applyTimbre(t);
+                    masterGainNode.gain.setTargetAtTime(t.masterGain, audioCtx.currentTime, 0.3);
+                }, 80);
+            } else if (audioCtx) {
+                applyTimbre(TIMBRES[name]);
+            }
+            updateTimbreButtons();
+        }
+
+        function updateAudio() {
+            if (!audioCtx || !isPlaying) return;
+            const t = animationTime;
+            const timbre = TIMBRES[currentTimbre];
+
+            // Map 1: Section Z position → pitch range around root
+            const posZ = parseFloat(document.getElementById('posZ').value);
+            const rootFreq = NOTE_FREQS[currentTonality.root];
+            const baseFreq = rootFreq * (0.5 + (posZ + 10) / 20);
+
+            // Map 2: Animation time → melody contour
+            const melodyPhase = (t * 0.5) % 10;
+            const scale = currentTonality.mode === 'major' ? MAJOR_PENTATONIC : MINOR_PENTATONIC;
+            const noteIndex = Math.floor(melodyPhase) % scale.length;
+            const noteOffset = scale[noteIndex];
+            const targetFreq = baseFreq * Math.pow(2, noteOffset / 12);
+
+            // Map 3: Total tilt → filter brightness
+            const tiltSum = Math.abs(parseFloat(document.getElementById('tiltX').value)) +
+                           Math.abs(parseFloat(document.getElementById('tiltY').value)) +
+                           Math.abs(parseFloat(document.getElementById('tiltZ').value));
+            const brightness = timbre.baseFilter * 0.5 + (tiltSum / 210) * timbre.baseFilter * 2.5;
+
+            // Map 4: Vibrato (各乐器不同)
+            let vibrato = 0;
+            if (timbre.vibratoRate > 0) {
+                vibrato = Math.sin(t * timbre.vibratoRate) * timbre.vibratoDepth;
+            }
+
+            const finalFreq = Math.max(20, targetFreq + vibrato);
+            const now = audioCtx.currentTime;
+
+            // 同步更新所有振荡器频率
+            oscNodes.forEach(osc => {
+                osc.frequency.setTargetAtTime(finalFreq, now, 0.05);
+            });
+            filterNode.frequency.setTargetAtTime(Math.max(100, brightness), now, 0.1);
+
+            // Bee buzz modulation: 快速振幅颤动模拟翅膀拍动
+            if (timbre.buzzNoise && noiseGainNode) {
+                const buzz = 0.04 + 0.03 * Math.sin(t * 35); // 35Hz 振幅调制
+                noiseGainNode.gain.setTargetAtTime(buzz, now, 0.02);
+            }
+        }
+
+        function startMusic() {
+            initAudio();
+            // 确保当前音色节点已创建
+            if (!oscNodes.length || oscNodes[0].context !== audioCtx) {
+                applyTimbre(TIMBRES[currentTimbre]);
+            }
+            isPlaying = true;
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            masterGainNode.gain.setTargetAtTime(TIMBRES[currentTimbre].masterGain, audioCtx.currentTime, 1.0);
+        }
+
+        function stopMusic() {
+            isPlaying = false;
+            if (masterGainNode) masterGainNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.8);
+            if (noiseGainNode) noiseGainNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.1);
+        }
+
+        // ==================== 场景数据 ====================
+        const S = new THREE.Vector3(0, 4, 0);
+        const A = new THREE.Vector3(-3, 0, -2);
+        const B = new THREE.Vector3(3, 0, -2);
+        const C = new THREE.Vector3(0, 0, 3);
+        const O = new THREE.Vector3(0, 8, 0);
+        const sigmaY = -3;
+
+        // State
+        let projectionMode = false;
+        let hideOthersMode = false;
+        let animating = false;
+        let animationTime = 0;
+        let animStartState = {};
+        let animParams = null;
+
+        function generateAnimParams() {
+            return {
+                txAmp: 15 + Math.random() * 30,
+                txFreq: 0.6 + Math.random() * 1.0,
+                txPhase: Math.random() * Math.PI * 2,
+                tyAmp: 15 + Math.random() * 30,
+                tyFreq: 0.5 + Math.random() * 1.0,
+                tyPhase: Math.random() * Math.PI * 2,
+                tzAmp: 10 + Math.random() * 25,
+                tzFreq: 0.4 + Math.random() * 0.8,
+                tzPhase: Math.random() * Math.PI * 2,
+                pzAmp: 2.0 + Math.random() * 5.0,
+                pzFreq: 0.2 + Math.random() * 0.5,
+                pzPhase: Math.random() * Math.PI * 2,
+            };
+        }
+
+        // Object containers
+        const mainGroup = new THREE.Group();
+        scene.add(mainGroup);
+        const projectionGroup = new THREE.Group();
+        scene.add(projectionGroup);
+        const desarguesLineGroup = new THREE.Group();
+        scene.add(desarguesLineGroup);
+
+        // Material cache
+        const materials = {};
+        function getMat(color, transparent, opacity, line) {
+            const key = color + '-' + transparent + '-' + opacity + '-' + line;
+            if (!materials[key]) {
+                if (line) {
+                    materials[key] = new THREE.LineBasicMaterial({
+                        color: color,
+                        transparent: transparent,
+                        opacity: opacity
+                    });
+                } else {
+                    materials[key] = new THREE.MeshPhongMaterial({
+                        color: color,
+                        transparent: transparent,
+                        opacity: opacity,
+                        side: THREE.DoubleSide,
+                        depthWrite: !transparent
+                    });
+                }
+            }
+            return materials[key];
+        }
+
+        // Label system
+        const labels = [];
+        function createLabel(text, position, color, size = 0.25) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256;
+            canvas.height = 128;
+            const ctx = canvas.getContext('2d', { alpha: true });
+            // 必须显式清除为透明
+            ctx.clearRect(0, 0, 256, 128);
+            ctx.fillStyle = color;
+            ctx.font = 'bold 48px Arial, "Microsoft YaHei"';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(text, 128, 64);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.needsUpdate = true;
+            const spriteMat = new THREE.SpriteMaterial({
+                map: texture,
+                transparent: true,
+                alphaTest: 0.01,
+                depthWrite: false
+            });
+            const sprite = new THREE.Sprite(spriteMat);
+            sprite.position.copy(position);
+            sprite.position.y += size * 0.8;
+            sprite.scale.set(size * 4, size * 2, 1);
+            return sprite;
+        }
+
+        function clearLabels() {
+            labels.forEach(l => {
+                if (l.parent) l.parent.remove(l);
+            });
+            labels.length = 0;
+        }
+
+        function addLabel(sprite, parent) {
+            labels.push(sprite);
+            parent.add(sprite);
+        }
+
+        // Drawing helpers
+        function createLine(p1, p2, color, opacity = 1, dashed = false) {
+            const geometry = new THREE.BufferGeometry().setFromPoints([p1, p2]);
+            const material = getMat(color, opacity < 1, opacity, true);
+            const line = new THREE.Line(geometry, material);
+            return line;
+        }
+
+        function createPointMesh(position, color, size = 0.08) {
+            const geometry = new THREE.SphereGeometry(size, 16, 16);
+            const material = new THREE.MeshPhongMaterial({ color: color, emissive: color, emissiveIntensity: 0.3 });
+            const mesh = new THREE.Mesh(geometry, material);
+            mesh.position.copy(position);
+            return mesh;
+        }
+
+        function createTriangle(p1, p2, p3, color, opacity) {
+            const geometry = new THREE.BufferGeometry();
+            const vertices = new Float32Array([
+                p1.x, p1.y, p1.z,
+                p2.x, p2.y, p2.z,
+                p3.x, p3.y, p3.z
+            ]);
+            geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+            geometry.computeVertexNormals();
+            const material = getMat(color, true, opacity, false);
+            return new THREE.Mesh(geometry, material);
+        }
+
+        function createPlaneMesh(normal, point, size = 15, color = 0x888888, opacity = 0.15) {
+            const planeGeometry = new THREE.PlaneGeometry(size * 2, size * 2);
+            const planeMaterial = new THREE.MeshPhongMaterial({
+                color: color,
+                transparent: true,
+                opacity: opacity,
+                side: THREE.DoubleSide,
+                depthWrite: false
+            });
+            const mesh = new THREE.Mesh(planeGeometry, planeMaterial);
+
+            // 对齐平面：PlaneGeometry 默认法向为 +Z，用 lookAt 使其指向目标法向
+            mesh.position.copy(point);
+            mesh.lookAt(point.clone().add(normal));
+            return mesh;
+        }
+
+
+
+        // Grid floor
+        const gridHelper = new THREE.GridHelper(20, 20, 0x1a1a2e, 0x1a1a2e);
+        gridHelper.position.y = 0;
+        scene.add(gridHelper);
+
+        // Coordinate axes
+        const axesGroup = new THREE.Group();
+        axesGroup.add(createLine(new THREE.Vector3(0,0,0), new THREE.Vector3(0.67,0,0), 0xff0000));
+        axesGroup.add(createLine(new THREE.Vector3(0,0,0), new THREE.Vector3(0,0.67,0), 0x00ff00));
+        axesGroup.add(createLine(new THREE.Vector3(0,0,0), new THREE.Vector3(0,0,0.67), 0x0000ff));
+        scene.add(axesGroup);
+
+        // ==================== 获取平面参数 ====================
+        function getPlane() {
+            const tx = parseFloat(document.getElementById('tiltX').value) * Math.PI / 180;
+            const ty = parseFloat(document.getElementById('tiltY').value) * Math.PI / 180;
+            const tz = parseFloat(document.getElementById('tiltZ').value) * Math.PI / 180;
+            const pz = parseFloat(document.getElementById('posZ').value);
+            let n = new THREE.Vector3(0, 1, 0);
+            n = rotateX(n, tx);
+            n = rotateY(n, ty);
+            n = rotateZ(n, tz);
+            return { normal: Vec3.normalize(n), point: new THREE.Vector3(0, 2 + pz, 0) };
+        }
+
+        // ==================== 主绘制 ====================
+        function updateScene() {
+            // Clear old objects
+            while (mainGroup.children.length > 0) {
+                const child = mainGroup.children[0];
+                mainGroup.remove(child);
+                if (child.geometry) child.geometry.dispose();
+            }
+
+            // Project模式下隐藏坐标轴；hideOthersMode 时隐藏网格
+            axesGroup.visible = !projectionMode;
+            gridHelper.visible = !(projectionMode && hideOthersMode);
+            while (projectionGroup.children.length > 0) {
+                const child = projectionGroup.children[0];
+                projectionGroup.remove(child);
+                if (child.geometry) child.geometry.dispose();
+            }
+            while (desarguesLineGroup.children.length > 0) {
+                const child = desarguesLineGroup.children[0];
+                desarguesLineGroup.remove(child);
+                if (child.geometry) child.geometry.dispose();
+            }
+            clearLabels();
+
+            const plane = getPlane();
+
+            // Calculate section points
+            const secPts = [];
+            [[S, A], [S, B], [S, C]].forEach(([s, e]) => {
+                const ip = linePlaneIntersect(s, e, plane.normal, plane.point);
+                if (ip) secPts.push(ip);
+            });
+
+            if (secPts.length < 3) return;
+
+            const Ap = secPts[0], Bp = secPts[1], Cp = secPts[2];
+
+            // Base Triangle
+            if (!hideOthersMode || !projectionMode) {
+                mainGroup.add(createTriangle(A, B, C, 0xff4444, 0.12));
+                mainGroup.add(createLine(A, B, 0xff4444, 1));
+                mainGroup.add(createLine(B, C, 0xff4444, 1));
+                mainGroup.add(createLine(C, A, 0xff4444, 1));
+
+                // Pyramid edges
+                mainGroup.add(createLine(S, A, 0x666666, 1));
+                mainGroup.add(createLine(S, B, 0x666666, 1));
+                mainGroup.add(createLine(S, C, 0x666666, 1));
+
+                // Section Triangle
+                mainGroup.add(createTriangle(Ap, Bp, Cp, 0xffcc00, 0.25));
+                mainGroup.add(createLine(Ap, Bp, 0xffcc00, 1));
+                mainGroup.add(createLine(Bp, Cp, 0xffcc00, 1));
+                mainGroup.add(createLine(Cp, Ap, 0xffcc00, 1));
+
+                // Section plane visualization
+                mainGroup.add(createPlaneMesh(plane.normal, plane.point, 8, 0x3b82f6, 0.08));
+
+                // Vertices
+                mainGroup.add(createPointMesh(S, 0xff66ff, 0.12));
+                mainGroup.add(createPointMesh(A, 0xff4444, 0.08));
+                mainGroup.add(createPointMesh(B, 0xff4444, 0.08));
+                mainGroup.add(createPointMesh(C, 0xff4444, 0.08));
+                mainGroup.add(createPointMesh(Ap, 0xffcc00, 0.08));
+                mainGroup.add(createPointMesh(Bp, 0xffcc00, 0.08));
+                mainGroup.add(createPointMesh(Cp, 0xffcc00, 0.08));
+
+                addLabel(createLabel('S', S, '#ff66ff'), mainGroup);
+                addLabel(createLabel('A', A, '#ff4444'), mainGroup);
+                addLabel(createLabel('B', B, '#ff4444'), mainGroup);
+                addLabel(createLabel('C', C, '#ff4444'), mainGroup);
+                addLabel(createLabel("A'", Ap, '#ffcc00'), mainGroup);
+                addLabel(createLabel("B'", Bp, '#ffcc00'), mainGroup);
+                addLabel(createLabel("C'", Cp, '#ffcc00'), mainGroup);
+
+                // Extension lines
+                function drawExtension(p1, p2, color) {
+                    const dir = Vec3.normalize(Vec3.sub(p2, p1));
+                    const far1 = Vec3.sub(p1, Vec3.mul(dir, 15));
+                    const far2 = Vec3.add(p2, Vec3.mul(dir, 15));
+                    const line = createLine(far1, far2, color, 0.6);
+                    line.material.dashSize = 0.2;
+                    line.material.gapSize = 0.1;
+                    // Three.js LineBasicMaterial doesn't support dash natively easily, use opacity instead
+                    line.material.opacity = 0.4;
+                    mainGroup.add(line);
+                }
+
+                drawExtension(A, B, 0x00aaff);
+                drawExtension(Ap, Bp, 0x00aaff);
+                drawExtension(B, C, 0x00aaff);
+                drawExtension(Bp, Cp, 0x00aaff);
+                drawExtension(C, A, 0x00aaff);
+                drawExtension(Cp, Ap, 0x00aaff);
+
+                // Intersection points
+                const P = lineIntersection3D(A, B, Ap, Bp);
+                const Q = lineIntersection3D(B, C, Bp, Cp);
+                const R = lineIntersection3D(C, A, Cp, Ap);
+
+                if (P && Q && R) {
+                    mainGroup.add(createPointMesh(P, 0x00ffcc, 0.1));
+                    mainGroup.add(createPointMesh(Q, 0x00ffcc, 0.1));
+                    mainGroup.add(createPointMesh(R, 0x00ffcc, 0.1));
+                    addLabel(createLabel('P', P, '#00ffcc'), mainGroup);
+                    addLabel(createLabel('Q', Q, '#00ffcc'), mainGroup);
+                    addLabel(createLabel('R', R, '#00ffcc'), mainGroup);
+
+                    // Desargues line
+                    const dir = Vec3.normalize(Vec3.sub(Q, P));
+                    const d1 = Vec3.sub(P, Vec3.mul(dir, 20));
+                    const d2 = Vec3.add(P, Vec3.mul(dir, 20));
+                    const desLine = createLine(d1, d2, 0x00ff88, 1);
+                    desLine.material.linewidth = 2; // Note: linewidth only works on some browsers
+                    desarguesLineGroup.add(desLine);
+
+                    // Update live data
+                    document.getElementById('coord-P').textContent = `(${P.x.toFixed(2)},${P.y.toFixed(2)},${P.z.toFixed(2)})`;
+                    document.getElementById('coord-Q').textContent = `(${Q.x.toFixed(2)},${Q.y.toFixed(2)},${Q.z.toFixed(2)})`;
+                    document.getElementById('coord-R').textContent = `(${R.x.toFixed(2)},${R.y.toFixed(2)},${R.z.toFixed(2)})`;
+
+                    const distR = pointToLineDistance(R, P, Q);
+                    const maxC = Math.max(Math.abs(P.x), Math.abs(P.y), Math.abs(P.z), Math.abs(Q.x), Math.abs(Q.y), Math.abs(Q.z), Math.abs(R.x), Math.abs(R.y), Math.abs(R.z));
+                    const relErr = maxC > 0.001 ? distR / maxC : distR;
+
+                    const colEl = document.getElementById('collinearity');
+                    if (relErr < 0.01) {
+                        colEl.textContent = '<0.01';
+                        colEl.style.color = '#4ade80';
+                    } else {
+                        colEl.textContent = relErr.toFixed(4);
+                        colEl.style.color = '#f87171';
+                    }
+                }
+            }
+
+            // 中心Project模式
+            if (projectionMode) {
+                // Sigma plane - 奶白色不透明纸张效果
+                const sigmaPlane = createPlaneMesh(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, sigmaY, 0), 15, 0xfaf8f5, 0.88);
+                sigmaPlane.renderOrder = 0;
+                projectionGroup.add(sigmaPlane);
+
+                const points = [S, A, B, C, Ap, Bp, Cp];
+                const labels_arr = ['S', 'A', 'B', 'C', "A'", "B'", "C'"];
+                const projected = {};
+
+                points.forEach((pt, i) => {
+                    const proj = projectToSigma(pt, O, sigmaY);
+                    if (!proj) return;
+                    projected[labels_arr[i]] = proj;
+
+                    // Project线（hideOthersMode 时隐藏）
+                    if (!hideOthersMode) {
+                        const projLine = createLine(O, proj, 0x999999, 0.7);
+                        projLine.renderOrder = 2;
+                        projectionGroup.add(projLine);
+                    }
+                    // Project点
+                    projectionGroup.add(createPointMesh(proj, 0x000000, 0.08));
+                    const projLbl = createLabel(labels_arr[i], proj, '#000000', 0.32);
+                    projLbl.position.y += 0.18;
+                    addLabel(projLbl, projectionGroup);
+                });
+
+                // Project三角形边
+                const projEdges = [
+                    ['A', 'B'], ['B', 'C'], ['C', 'A'],
+                    ["A'", "B'"], ["B'", "C'"], ["C'", "A'"]
+                ];
+                projEdges.forEach(([l1, l2]) => {
+                    if (projected[l1] && projected[l2]) {
+                        const isBase = ['A','B','C'].includes(l1) && ['A','B','C'].includes(l2);
+                        const col = isBase ? 0x222222 : 0x111111;
+                        const edgeLine = createLine(projected[l1], projected[l2], col, 1);
+                        edgeLine.renderOrder = 2;
+                        projectionGroup.add(edgeLine);
+                    }
+                });
+
+                // Project延长线
+                const projExtPairs = [
+                    ['A', 'B'], ["A'", "B'"],
+                    ['B', 'C'], ["B'", "C'"],
+                    ['C', 'A'], ["C'", "A'"]
+                ];
+                projExtPairs.forEach(([l1, l2]) => {
+                    if (projected[l1] && projected[l2]) {
+                        const dir = Vec3.normalize(Vec3.sub(projected[l2], projected[l1]));
+                        const far1 = Vec3.sub(projected[l1], Vec3.mul(dir, 15));
+                        const far2 = Vec3.add(projected[l2], Vec3.mul(dir, 15));
+                        const isBase = ['A','B','C'].includes(l1) && ['A','B','C'].includes(l2);
+                        const col = isBase ? 0x666666 : 0x555555;
+                        const line = createLine(far1, far2, col, 0.6);
+                        line.renderOrder = 2;
+                        projectionGroup.add(line);
+                    }
+                });
+
+                // Project交点
+                const projP = lineIntersection3D(projected['A'], projected['B'], projected["A'"], projected["B'"]);
+                const projQ = lineIntersection3D(projected['B'], projected['C'], projected["B'"], projected["C'"]);
+                const projR = lineIntersection3D(projected['C'], projected['A'], projected["C'"], projected["A'"]);
+
+                if (projP && projQ && projR) {
+                    projectionGroup.add(createPointMesh(projP, 0x000000, 0.1));
+                    projectionGroup.add(createPointMesh(projQ, 0x000000, 0.1));
+                    projectionGroup.add(createPointMesh(projR, 0x000000, 0.1));
+                    const pLbl = createLabel('P', projP, '#000000', 0.32); pLbl.position.y += 0.18; addLabel(pLbl, projectionGroup);
+                    const qLbl = createLabel('Q', projQ, '#000000', 0.32); qLbl.position.y += 0.18; addLabel(qLbl, projectionGroup);
+                    const rLbl = createLabel('R', projR, '#000000', 0.32); rLbl.position.y += 0.18; addLabel(rLbl, projectionGroup);
+
+                    const pDir = Vec3.normalize(Vec3.sub(projQ, projP));
+                    const pd1 = Vec3.sub(projP, Vec3.mul(pDir, 15));
+                    const pd2 = Vec3.add(projP, Vec3.mul(pDir, 15));
+                    const pLine = createLine(pd1, pd2, 0x000000, 1);
+                    pLine.renderOrder = 2;
+                    projectionGroup.add(pLine);
+                }
+
+                // Point O（hideOthersMode 时隐藏）
+                if (!hideOthersMode) {
+                    projectionGroup.add(createPointMesh(O, 0x000000, 0.14));
+                    const oLbl = createLabel('O', O, '#000000', 0.36);
+                    oLbl.position.y += 0.22;
+                    addLabel(oLbl, projectionGroup);
+                }
+            }
+        }
+
+        // ==================== UI 事件 ====================
+        const sliders = ['tiltX', 'tiltY', 'tiltZ', 'posZ'];
+        sliders.forEach(id => {
+            const el = document.getElementById(id);
+            el.addEventListener('input', () => {
+                const valEl = document.getElementById('val-' + id);
+                if (id.startsWith('tilt')) valEl.textContent = el.value + '°';
+                else valEl.textContent = parseFloat(el.value).toFixed(2);
+                needsUpdate = true;
+            });
+        });
+
+        document.getElementById('btn-reset').addEventListener('click', () => {
+            document.getElementById('tiltX').value = 15;
+            document.getElementById('tiltY').value = 10;
+            document.getElementById('tiltZ').value = 5;
+            document.getElementById('posZ').value = 0.5;
+            sliders.forEach(id => document.getElementById(id).dispatchEvent(new Event('input')));
+            camera.position.set(8, 6, 10);
+            controls.target.set(0, 2, 0);
+            controls.update();
+            needsUpdate = true;
+        });
+
+        // Panel toggle
+        document.getElementById('stats-toggle').addEventListener('click', () => {
+            document.getElementById('stats-panel').classList.toggle('collapsed');
+            document.getElementById('stats-arrow').textContent = 
+                document.getElementById('stats-panel').classList.contains('collapsed') ? '▶' : '▼';
+        });
+
+        document.getElementById('legend-toggle').addEventListener('click', () => {
+            document.getElementById('legend-panel').classList.toggle('collapsed');
+            document.getElementById('legend-arrow').textContent = 
+                document.getElementById('legend-panel').classList.contains('collapsed') ? '▶' : '▼';
+        });
+
+        // Timbre switcher - event delegation on circle-of-fifths
+        document.getElementById('circle-of-fifths').addEventListener('click', (e) => {
+            const btn = e.target.closest('.cof-corner-btn');
+            if (btn) switchTimbre(btn.dataset.timbre);
+        });
+
+        // UI show/hide
+        function hideAllUI() {
+            document.getElementById('title-panel').classList.add('hidden-ui');
+            document.getElementById('stats-panel').classList.add('hidden-ui');
+            document.getElementById('legend-panel').classList.add('hidden-ui');
+            document.getElementById('control-panel').classList.add('hidden-ui');
+        }
+
+        function showAllUI() {
+            document.getElementById('title-panel').classList.remove('hidden-ui');
+            document.getElementById('stats-panel').classList.remove('hidden-ui');
+            document.getElementById('legend-panel').classList.remove('hidden-ui');
+            document.getElementById('control-panel').classList.remove('hidden-ui');
+        }
+
+        // Control panel hide/show
+        const panelHideBtn = document.getElementById('panel-hide-btn');
+        const controlPanel = document.getElementById('control-panel');
+
+        // Create restore button (initially hidden)
+        const panelToggleBtn = document.createElement('div');
+        panelToggleBtn.id = 'panel-toggle-btn';
+        panelToggleBtn.style.cssText = 'position:absolute;top:10px;right:10px;width:32px;height:32px;background:rgba(15,23,42,0.95);border:1px solid rgba(148,163,184,0.2);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:#cbd5e1;z-index:101;backdrop-filter:blur(12px);opacity:0;pointer-events:none;transition:opacity 0.3s ease;';
+        panelToggleBtn.innerHTML = '🙉';
+        panelToggleBtn.title = 'Show Panel';
+        document.body.appendChild(panelToggleBtn);
+
+        if (panelHideBtn && controlPanel) {
+            panelHideBtn.addEventListener('click', () => {
+                controlPanel.classList.add('hidden-ui');
+                panelToggleBtn.style.opacity = '1';
+                panelToggleBtn.style.pointerEvents = 'auto';
+            });
+        }
+
+        panelToggleBtn.addEventListener('click', () => {
+            controlPanel.classList.remove('hidden-ui');
+            panelToggleBtn.style.opacity = '0';
+            panelToggleBtn.style.pointerEvents = 'none';
+        });
+
+        // ▶️ Animate
+        const btnAnimate = document.getElementById('btn-animate');
+        btnAnimate.addEventListener('click', () => {
+            if (!animating) {
+                // 开始Animate：保存当前状态
+                animating = true;
+                btnAnimate.textContent = 'Animating…';
+                btnAnimate.disabled = true;
+                hideAllUI();
+                startMusic();
+                showCircleOfFifths();
+                animationTime = 0;
+                animStartState = {
+                    tiltX: parseFloat(document.getElementById('tiltX').value),
+                    tiltY: parseFloat(document.getElementById('tiltY').value),
+                    tiltZ: parseFloat(document.getElementById('tiltZ').value),
+                    posZ: parseFloat(document.getElementById('posZ').value)
+                };
+                animParams = generateAnimParams();
+            }
+        });
+
+        // ==================== Circle of Fifths ====================
+        function createSectorPath(outerR, innerR, startDeg, endDeg) {
+            const s1 = startDeg * Math.PI / 180;
+            const s2 = endDeg * Math.PI / 180;
+            const x1o = outerR * Math.sin(s1);
+            const y1o = -outerR * Math.cos(s1);
+            const x2o = outerR * Math.sin(s2);
+            const y2o = -outerR * Math.cos(s2);
+            const x1i = innerR * Math.sin(s1);
+            const y1i = -innerR * Math.cos(s1);
+            const x2i = innerR * Math.sin(s2);
+            const y2i = -innerR * Math.cos(s2);
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', `M ${x1o} ${y1o} A ${outerR} ${outerR} 0 0 1 ${x2o} ${y2o} L ${x2i} ${y2i} A ${innerR} ${innerR} 0 0 0 ${x1i} ${y1i} Z`);
+            return path;
+        }
+
+        function createCircleOfFifths() {
+            const container = document.getElementById('circle-of-fifths');
+            if (!container) return;
+            // Remove only old SVG, preserve corner buttons
+            const oldSvg = container.querySelector('svg');
+            if (oldSvg) oldSvg.remove();
+
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('viewBox', '-99 -99 198 198');
+
+            // Outer ring (Major)
+            for (let i = 0; i < 12; i++) {
+                const path = createSectorPath(95, 59, i * 30, (i + 1) * 30);
+                const clickable = COF_CLICKABLE_MAJOR[i];
+                path.setAttribute('fill', clickable ? '#fbbf24' : 'transparent');
+                path.setAttribute('stroke', '#0a0a0f');
+                path.setAttribute('stroke-width', '1');
+                path.classList.add('cof-sector');
+                path.dataset.type = 'major';
+                path.dataset.index = i;
+                path.style.cursor = 'pointer';
+                path.addEventListener('click', () => selectTonality(i, 'major'));
+                svg.appendChild(path);
+
+                const angle = (i + 0.5) * 30 * Math.PI / 180;
+                const r = 77;
+                const x = r * Math.sin(angle);
+                const y = -r * Math.cos(angle);
+
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', x);
+                text.setAttribute('y', y - 5);
+                text.setAttribute('text-anchor', 'middle');
+                text.setAttribute('dominant-baseline', 'middle');
+                text.setAttribute('fill', '#0a0a0f');
+                text.setAttribute('font-size', '10');
+                text.setAttribute('font-weight', '700');
+                text.style.pointerEvents = 'none';
+                text.textContent = COF_MAJOR[i];
+                svg.appendChild(text);
+
+                // 等音第二行
+                if (COF_MAJOR_ALT[i]) {
+                    const text2 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    text2.setAttribute('x', x);
+                    text2.setAttribute('y', y + 6);
+                    text2.setAttribute('text-anchor', 'middle');
+                    text2.setAttribute('dominant-baseline', 'middle');
+                    text2.setAttribute('fill', '#451a03');
+                    text2.setAttribute('font-size', '8');
+                    text2.setAttribute('font-weight', '600');
+                    text2.style.pointerEvents = 'none';
+                    text2.textContent = COF_MAJOR_ALT[i];
+                    svg.appendChild(text2);
+                }
+            }
+
+            // Inner ring (Minor)
+            for (let i = 0; i < 12; i++) {
+                const path = createSectorPath(59, 40, i * 30, (i + 1) * 30);
+                const clickable = COF_CLICKABLE_MINOR[i];
+                path.setAttribute('fill', clickable ? '#60a5fa' : 'transparent');
+                path.setAttribute('stroke', '#0a0a0f');
+                path.setAttribute('stroke-width', '1');
+                path.classList.add('cof-sector');
+                path.dataset.type = 'minor';
+                path.dataset.index = i;
+                path.style.cursor = 'pointer';
+                path.addEventListener('click', () => selectTonality(i, 'minor'));
+                svg.appendChild(path);
+
+                const angle = (i + 0.5) * 30 * Math.PI / 180;
+                const r = 50;
+                const x = r * Math.sin(angle);
+                const y = -r * Math.cos(angle);
+
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', x);
+                text.setAttribute('y', y - 4);
+                text.setAttribute('text-anchor', 'middle');
+                text.setAttribute('dominant-baseline', 'middle');
+                text.setAttribute('fill', '#fff');
+                text.setAttribute('font-size', '9');
+                text.setAttribute('font-weight', '600');
+                text.style.pointerEvents = 'none';
+                text.textContent = COF_MINOR[i];
+                svg.appendChild(text);
+
+                // 等音第二行
+                if (COF_MINOR_ALT[i]) {
+                    const text2 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    text2.setAttribute('x', x);
+                    text2.setAttribute('y', y + 6);
+                    text2.setAttribute('text-anchor', 'middle');
+                    text2.setAttribute('dominant-baseline', 'middle');
+                    text2.setAttribute('fill', '#dbeafe');
+                    text2.setAttribute('font-size', '7');
+                    text2.setAttribute('font-weight', '500');
+                    text2.style.pointerEvents = 'none';
+                    text2.textContent = COF_MINOR_ALT[i];
+                    svg.appendChild(text2);
+                }
+            }
+
+            // Center EXIT button
+            const centerGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            centerGroup.classList.add('cof-center-btn');
+            centerGroup.addEventListener('click', exitAnimation);
+
+            const centerCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            centerCircle.setAttribute('cx', 0);
+            centerCircle.setAttribute('cy', 0);
+            centerCircle.setAttribute('r', 32);
+            centerCircle.setAttribute('fill', '#dc2626');
+            centerCircle.setAttribute('stroke', '#fff');
+            centerCircle.setAttribute('stroke-width', '2.5');
+            centerGroup.appendChild(centerCircle);
+
+            const centerText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            centerText.setAttribute('x', 0);
+            centerText.setAttribute('y', -3);
+            centerText.setAttribute('text-anchor', 'middle');
+            centerText.setAttribute('dominant-baseline', 'middle');
+            centerText.setAttribute('fill', '#fff');
+            centerText.setAttribute('font-size', '9');
+            centerText.setAttribute('font-weight', '800');
+            centerText.style.pointerEvents = 'none';
+            centerText.textContent = 'EXIT';
+            centerGroup.appendChild(centerText);
+
+            svg.appendChild(centerGroup);
+            container.insertBefore(svg, container.firstChild);
+            updateCOFHighlight();
+        }
+
+        function selectTonality(index, mode) {
+            const rootMap = mode === 'major' ? COF_MAJOR : COF_MINOR;
+            const rootName = rootMap[index];
+            // 等音统一使用升号名称查频率表
+            const enharmonicMap = {'Gb':'F#','Db':'C#','G#':'Ab','D#':'Eb','A#':'Bb','eb':'d#','bb':'a#'};
+            let freqRoot = enharmonicMap[rootName] || rootName;
+            if (mode === 'minor') {
+                freqRoot = freqRoot.toUpperCase();
+            }
+            currentTonality = { root: freqRoot, mode: mode, rootIndex: index };
+            updateCOFHighlight();
+        }
+
+        function updateCOFHighlight() {
+            const sectors = document.querySelectorAll('.cof-sector');
+            sectors.forEach(s => {
+                s.classList.remove('active-major', 'active-minor');
+                const type = s.dataset.type;
+                const idx = parseInt(s.dataset.index);
+                if (type === currentTonality.mode && idx === currentTonality.rootIndex) {
+                    s.classList.add(type === 'major' ? 'active-major' : 'active-minor');
+                }
+            });
+        }
+
+        function showCircleOfFifths() {
+            createCircleOfFifths();
+            document.getElementById('circle-of-fifths').classList.add('visible');
+            // corner buttons show via CSS parent selector
+            updateTimbreButtons();
+        }
+
+        function hideCircleOfFifths() {
+            document.getElementById('circle-of-fifths').classList.remove('visible');
+            // corner buttons hide via CSS parent selector
+        }
+
+        function updateTimbreButtons() {
+            document.querySelectorAll('.cof-corner-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.timbre === currentTimbre);
+            });
+        }
+
+        // Timbre button events bound in showCircleOfFifths
+
+        function exitAnimation() {
+            animating = false;
+            btnAnimate.textContent = '▶️ Animate';
+            btnAnimate.disabled = false;
+            showAllUI();
+            stopMusic();
+            hideCircleOfFifths();
+
+            document.getElementById('tiltX').value = animStartState.tiltX;
+            document.getElementById('tiltY').value = animStartState.tiltY;
+            document.getElementById('tiltZ').value = animStartState.tiltZ;
+            document.getElementById('posZ').value = animStartState.posZ;
+
+            sliders.forEach(id => {
+                const el = document.getElementById(id);
+                const valEl = document.getElementById('val-' + id);
+                if (id.startsWith('tilt')) valEl.textContent = Math.round(el.value) + '°';
+                else valEl.textContent = parseFloat(el.value).toFixed(2);
+            });
+            needsUpdate = true;
+        }
+
+        // 中心Project
+        const btnProjection = document.getElementById('btn-projection');
+        let btnHideOthers = null;
+
+        btnProjection.addEventListener('click', () => {
+            projectionMode = !projectionMode;
+
+            if (projectionMode) {
+                btnProjection.textContent = 'Exit Project';
+                btnProjection.style.background = '#dc2626';
+                hideOthersMode = true;
+
+                if (!btnHideOthers) {
+                    btnHideOthers = document.createElement('button');
+                    btnHideOthers.id = 'btn-hide-others';
+                    btnHideOthers.textContent = 'Show Others';
+                    btnHideOthers.style.cssText = 'background: #ea580c; color: #fff; border: none; border-radius: 6px; padding: 5px 12px; font-size: 10px; cursor: pointer; white-space: nowrap;';
+                    btnHideOthers.addEventListener('click', () => {
+                        hideOthersMode = !hideOthersMode;
+                        btnHideOthers.textContent = hideOthersMode ? 'Show Others' : 'Hide Others';
+                        needsUpdate = true;
+                    });
+                    btnProjection.parentNode.insertBefore(btnHideOthers, btnProjection.nextSibling);
+                } else {
+                    btnHideOthers.style.display = 'inline-block';
+                    btnHideOthers.textContent = 'Show Others';
+                }
+                needsUpdate = true;
+            } else {
+                btnProjection.textContent = '中心Project';
+                btnProjection.style.background = '#7c3aed';
+                hideOthersMode = false;
+                if (btnHideOthers) btnHideOthers.style.display = 'none';
+                needsUpdate = true;
+            }
+            updateScene();
+        });
+
+        // Window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = wrapper.clientWidth / wrapper.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(wrapper.clientWidth, wrapper.clientHeight);
+        });
+
+        // ==================== 动画循环 ====================
+        let frameCounter = 0;
+        let needsUpdate = true;
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            frameCounter++;
+
+            if (animating) {
+                animationTime += 0.02; updateAudio();
+                const period = Math.PI * 4;
+                const t = animationTime;
+
+                if (t >= period) {
+                    // 循环播放：重置时间继续动画
+                    animationTime = 0;
+                }
+
+                // Animate进行中（随机轨迹循环模式）
+                const p = animParams;
+                document.getElementById('tiltX').value = animStartState.tiltX + p.txAmp * Math.sin(t * p.txFreq + p.txPhase);
+                document.getElementById('tiltY').value = animStartState.tiltY + p.tyAmp * Math.cos(t * p.tyFreq + p.tyPhase);
+                document.getElementById('tiltZ').value = animStartState.tiltZ + p.tzAmp * Math.sin(t * p.tzFreq + p.tzPhase);
+                document.getElementById('posZ').value = animStartState.posZ + p.pzAmp * Math.sin(t * p.pzFreq + p.pzPhase);
+
+                sliders.forEach(id => {
+                    const el = document.getElementById(id);
+                    const valEl = document.getElementById('val-' + id);
+                    if (id.startsWith('tilt')) valEl.textContent = Math.round(el.value) + '°';
+                    else valEl.textContent = parseFloat(el.value).toFixed(2);
+                });
+                needsUpdate = true;
+            }
+
+            // Rebuild geometry every 10 frames or on demand
+            if (needsUpdate || frameCounter % 10 === 0) {
+                updateScene();
+                needsUpdate = false;
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        // Initialize
+        sliders.forEach(id => document.getElementById(id).dispatchEvent(new Event('input')));
+        updateScene();
+        animate();
+    </script>
+
+</body>
+</html>

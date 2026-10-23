@@ -1,0 +1,2732 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>黎曼球 · Möbius 变换</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    width: 100%; height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #f8f9fa;
+    overflow: hidden;
+  }
+  body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 10px;
+    overflow: visible;
+  }
+  .rotated-container {
+    display: flex;
+    flex-direction: row;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .canvas-wrapper {
+    flex-shrink: 0;
+    width: 600px;
+    height: 600px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    overflow: hidden;
+    position: relative;
+  }
+  canvas { display: block; width: 100%; height: 100%; cursor: grab; }
+  canvas:active { cursor: grabbing; }
+  .view-reset-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    color: #fff;
+    background: #b2bec3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, transform 0.1s;
+    z-index: 10;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+    user-select: none;
+  }
+  .view-reset-btn:hover { background: #95a5a6; }
+  .view-reset-btn:active { transform: scale(0.92); }
+
+  .panel {
+    flex-shrink: 0;
+    width: 300px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 580px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #dee2e6 transparent;
+  }
+  .panel::-webkit-scrollbar { width: 6px; }
+  .panel::-webkit-scrollbar-track { background: transparent; }
+  .panel::-webkit-scrollbar-thumb { background: #dee2e6; border-radius: 3px; }
+  .panel::-webkit-scrollbar-thumb:hover { background: #adb5bd; }
+  .title-bar {
+    text-align: center;
+    font-size: 14px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 2px;
+  }
+  .section-label {
+    text-align: center;
+    font-size: 9px;
+    color: #888;
+    margin-bottom: -4px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .param-row {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 1px 0;
+  }
+  .param-label {
+    width: 22px;
+    font-weight: bold;
+    font-size: 14px;
+    color: #555;
+  }
+  .param-value {
+    width: 55px;
+    font-size: 10px;
+    text-align: center;
+    font-family: "SF Mono", monospace;
+    font-size: 11px;
+    color: #2e86de;
+    font-weight: bold;
+    cursor: pointer;
+    user-select: none;
+    background: #f8f9fa;
+    border-radius: 4px;
+    padding: 2px 4px;
+  }
+  .param-value:hover { background: #e8f4fd; }
+  .param-value.active { background: #d0ebff; }
+  input[type="range"] {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 5px;
+    background: #e0e0e0;
+    border-radius: 3px;
+    outline: none;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    background: #2e86de;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .btn {
+    width: 20px;
+    height: 18px;
+    font-size: 12px;
+    border: none;
+    border-radius: 5px;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+    color: #fff;
+    transition: transform 0.1s, opacity 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    -webkit-user-select: none;
+    flex-shrink: 0;
+  }
+  .btn:hover { opacity: 0.85; }
+  .btn:active { transform: scale(0.92); }
+  .btn-minus { background: #ff6b6b; }
+  .btn-plus { background: #1dd1a1; }
+  .play-btn, .rewind-btn {
+    width: 20px;
+    height: 18px;
+    font-size: 9px;
+    border: none;
+    border-radius: 5px;
+    font-size: 10px;
+    font-weight: bold;
+    cursor: pointer;
+    color: #fff;
+    transition: transform 0.1s, opacity 0.2s, background 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    -webkit-user-select: none;
+    flex-shrink: 0;
+  }
+  .play-btn:hover, .rewind-btn:hover { opacity: 0.85; }
+  .play-btn:active, .rewind-btn:active { transform: scale(0.92); }
+  .play-btn { background: #a29bfe; }
+  .play-btn.active { background: #6c5ce7; }
+  .rewind-btn { background: #fdcb6e; color: #2d3436; }
+  .rewind-btn.active { background: #e17055; color: #fff; }
+  .formula {
+    background: #f1f3f5;
+    border-radius: 6px;
+    padding: 6px 8px;
+    font-size: 11px;
+    color: #495057;
+    text-align: center;
+    line-height: 1.5;
+  }
+  .formula code {
+    font-family: "KaTeX_Math", "Times New Roman", serif;
+    font-style: italic;
+  }
+  .step-selector {
+    display: flex;
+    gap: 3px;
+    justify-content: center;
+  }
+  .step-btn {
+    padding: 3px 10px;
+    border: 2px solid #dee2e6;
+    background: #fff;
+    border-radius: 5px;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    color: #495057;
+    transition: all 0.15s;
+  }
+  .step-btn:hover { border-color: #adb5bd; }
+  .step-btn.active {
+    background: #2e86de;
+    color: #fff;
+    border-color: #2e86de;
+  }
+  select {
+    width: 100%;
+    padding: 6px 8px;
+    border: 2px solid #dee2e6;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #495057;
+    background: #fff;
+    cursor: pointer;
+    outline: none;
+  }
+  select:focus { border-color: #2e86de; }
+  .curve-param-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+  }
+  .curve-param-row label {
+    width: 28px;
+    font-weight: bold;
+    font-size: 13px;
+    color: #495057;
+  }
+  .curve-param-row .param-display {
+    flex: 1;
+    padding: 4px 6px;
+    border: 2px solid #dee2e6;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #495057;
+    background: #fff;
+    text-align: left;
+    outline: none;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+  }
+  .curve-param-row .param-display:hover { border-color: #adb5bd; }
+  .curve-param-row .param-display.active { border-color: #2e86de; background: #e8f4fd; }
+  #curve-params-box {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    padding: 6px;
+  }
+  .sound-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #555;
+    cursor: pointer;
+    padding: 2px;
+  }
+  .sound-toggle input {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+  }
+  .custom-select-wrap {
+    position: relative;
+    width: 100%;
+  }
+  .custom-select-trigger {
+    width: 100%;
+    padding: 5px 8px;
+    border: 2px solid #dee2e6;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #495057;
+    background: #fff;
+    cursor: pointer;
+    outline: none;
+    text-align: left;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .custom-select-trigger:focus { border-color: #2e86de; }
+  .custom-select-trigger::after {
+    content: "▼";
+    font-size: 10px;
+    color: #888;
+    margin-left: 4px;
+  }
+  .custom-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    background: #fff;
+    border: 2px solid #dee2e6;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 100;
+    display: none;
+    overflow: hidden;
+    transform: rotate(0deg);
+    transform-origin: top left;
+    font-size: 12px;
+  }
+  .custom-dropdown.open { display: block; }
+  .custom-option {
+    padding: 8px 10px;
+    cursor: pointer;
+    color: #495057;
+    white-space: nowrap;
+    transition: background 0.15s;
+  }
+  .custom-option:hover { background: #e8f4fd; }
+  .custom-option.selected { background: #d0ebff; font-weight: bold; }
+  #curve-select { display: none; }
+
+  /* 2D 复数拨盘 */
+  .complex-dial {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: #f1f3f5;
+    border: 2px solid #dee2e6;
+    position: relative;
+    cursor: pointer;
+    flex-shrink: 0;
+    overflow: hidden;
+  }
+  .complex-dial:hover { border-color: #adb5bd; }
+  .dial-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #2e86de;
+    border: 2px solid #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+  .dial-cross-h {
+    position: absolute;
+    top: 50%;
+    left: 10%;
+    width: 80%;
+    height: 1px;
+    background: rgba(0,0,0,0.08);
+    pointer-events: none;
+  }
+  .dial-cross-v {
+    position: absolute;
+    left: 50%;
+    top: 10%;
+    width: 1px;
+    height: 80%;
+    background: rgba(0,0,0,0.08);
+    pointer-events: none;
+  }
+
+  /* 环盘操控器 */
+  .ring-controller {
+    position: absolute;
+    bottom: 45px;
+    left: 12px;
+    width: 140px;
+    height: 140px;
+    z-index: 20;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .ring-outer {
+    position: absolute;
+    width: 140px;
+    height: 140px;
+    border: 4px solid rgba(46, 134, 222, 0.6);
+    border-radius: 50%;
+    background: rgba(255,255,255,0.85);
+    cursor: pointer;
+  }
+  .ring-inner {
+    position: absolute;
+    top: 32px; left: 32px;
+    width: 76px; height: 76px;
+    border: 2px solid rgba(46, 134, 222, 0.3);
+    border-radius: 50%;
+    background: rgba(232, 244, 253, 0.6);
+    cursor: pointer;
+  }
+  .ring-plus, .ring-minus {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 16px; height: 16px;
+    font-size: 11px;
+    border-radius: 50%;
+    background: #2e86de;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+    transition: transform 0.1s, background 0.2s;
+  }
+  .ring-plus { top: -6px; }
+  .ring-minus { bottom: -6px; }
+  .ring-plus:hover, .ring-minus:hover { background: #1a6bc5; }
+  .ring-plus:active, .ring-minus:active { transform: translateX(-50%) scale(0.9); }
+  .ring-knob {
+    position: absolute;
+    width: 16px; height: 16px;
+    background: #fd79a8;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+    pointer-events: none;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+  }
+  .ring-rot-indicator {
+    position: absolute;
+    width: 4px; height: 16px;
+    background: #fd79a8;
+    border-radius: 2px;
+    top: 4px;
+    left: 50%;
+    transform: translateX(-50%);
+    transform-origin: 50% 66px;
+    pointer-events: none;
+  }
+  .det-box {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    font-size: 11px;
+    color: #495057;
+    background: #f8f9fa;
+    border-radius: 6px;
+    padding: 6px 8px;
+    cursor: pointer;
+    transition: background 0.2s;
+    user-select: none;
+  }
+  .det-box:hover { background: #e8f4fd; }
+  .det-box:active { transform: scale(0.98); }
+  .det-box .det-val {
+    font-family: monospace;
+    font-weight: bold;
+    color: #2e86de;
+  }
+  .sample-play-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    padding: 4px 0;
+  }
+  .sound-toggle-inline {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    margin-left: auto;
+  }
+  .sound-toggle-inline input {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    margin: 0;
+  }
+  .sound-toggle-inline span { font-size: 14px; }
+  .sample-play-btn {
+    width: 36px;
+    height: 28px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    color: #fff;
+    background: #fdcb6e;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, transform 0.1s;
+    user-select: none;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  }
+  .sample-play-btn:hover { opacity: 0.85; }
+  .sample-play-btn:active { transform: scale(0.92); }
+  .sample-play-btn.active { background: #e17055; }
+
+  .cr-gen-btn {
+    width: 44px;
+    height: 32px;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+    color: #fff;
+    background: #e17055;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, transform 0.1s;
+    box-shadow: 0 2px 8px rgba(225, 112, 85, 0.3);
+    user-select: none;
+    margin-bottom: 4px;
+  }
+  .cr-gen-btn:hover { background: #d35400; }
+  .cr-gen-btn:active { transform: scale(0.92); }
+  .cr-panel-section {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: flex-start;
+    margin-top: 2px;
+    margin-bottom: 2px;
+  }
+  .cr-values {
+    background: rgba(255,255,255,0.96);
+    border-radius: 8px;
+    padding: 5px 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 110px;
+    width: 100%;
+  }
+  .cr-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 12px;
+    cursor: pointer;
+    padding: 3px 5px;
+    border-radius: 4px;
+    transition: background 0.15s;
+    align-items: center;
+  }
+  .cr-row:hover { background: #f1f3f5; }
+  .cr-row.active { background: #e8f4fd; }
+  .cr-label { font-weight: bold; color: #495057; font-size: 11px; }
+  .cr-num { font-family: "SF Mono", monospace; font-weight: bold; font-size: 12px; }
+  .cr-detail {
+    background: rgba(255,255,255,0.98);
+    border-radius: 8px;
+    padding: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    margin-top: 2px;
+    width: 100%;
+    font-size: 11px;
+    line-height: 1.6;
+  }
+  .cr-detail-header {
+    position: relative;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 6px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 4px;
+    font-size: 12px;
+    padding-right: 24px;
+  }
+  .cr-detail-z {
+    font-family: "SF Mono", monospace;
+    margin: 2px 0;
+    font-size: 11px;
+  }
+  .cr-detail-formula {
+    background: #f8f9fa;
+    border-radius: 4px;
+    padding: 6px;
+    margin: 6px 0;
+    text-align: center;
+    font-family: "KaTeX_Math", "Times New Roman", serif;
+    font-style: italic;
+    color: #495057;
+    font-size: 11px;
+    word-break: break-all;
+  }
+  .cr-detail-result {
+    font-weight: bold;
+    text-align: center;
+    color: #e17055;
+    font-size: 13px;
+    font-family: "SF Mono", monospace;
+    margin-top: 4px;
+  }
+  .cr-detail-close {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    width: 20px;
+    height: 20px;
+    border: none;
+    border-radius: 4px;
+    background: #f1f3f5;
+    color: #888;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    padding: 0;
+    transition: background 0.15s, color 0.15s;
+  }
+  .cr-detail-close:hover {
+    background: #e17055;
+    color: #fff;
+  }
+
+</style>
+</head>
+<body>
+<div class="rotated-container">
+  <div class="canvas-wrapper">
+    <canvas id="plot" width="600" height="600"></canvas>
+
+    <!-- 环盘操控器 -->
+    <div class="ring-controller" id="ring-controller">
+      <div class="ring-outer" id="ring-outer"></div>
+      <div class="ring-inner" id="ring-inner"></div>
+      <div class="ring-plus" id="ring-plus">+</div>
+      <div class="ring-minus" id="ring-minus">−</div>
+      <div class="ring-rot-indicator" id="ring-rot-indicator"></div>
+      <div class="ring-knob" id="ring-knob"></div>
+    </div>
+    <button class="view-reset-btn" onclick="resetView()">⟲</button>
+
+  </div>
+  <div class="panel">
+    <div class="title-bar">黎曼球 · Möbius 变换</div>
+    <div class="cr-panel-section">
+      <button class="cr-gen-btn" onclick="randomizeCRPoints()">Zgen</button>
+      <div class="cr-values" id="cr-values">
+        <div class="cr-row" data-type="plane" onclick="showCRDetail('plane')">
+          <span class="cr-label">平面</span>
+          <span class="cr-num" id="cr-plane">—</span>
+        </div>
+        <div class="cr-row" data-type="stereo" onclick="showCRDetail('stereo')">
+          <span class="cr-label">球极</span>
+          <span class="cr-num" id="cr-stereo">—</span>
+        </div>
+        <div class="cr-row" data-type="mobius" onclick="showCRDetail('mobius')">
+          <span class="cr-label">莫比</span>
+          <span class="cr-num" id="cr-mobius">—</span>
+        </div>
+      </div>
+      <div class="cr-detail" id="cr-detail" style="display:none;">
+        <div class="cr-detail-header">
+          <span id="cr-detail-header-text"></span>
+          <button class="cr-detail-close" onclick="hideCRDetail()">✕</button>
+        </div>
+        <div id="cr-detail-points"></div>
+        <div class="cr-detail-formula" id="cr-detail-formula"></div>
+        <div class="cr-detail-formula" id="cr-detail-formula-num" style="margin-top:4px;"></div>
+        <div class="cr-detail-result" id="cr-detail-result"></div>
+      </div>
+    </div>
+    <div class="section-label">原始曲线</div>
+    <div class="custom-select-wrap" id="custom-select-wrap">
+      <div class="custom-select-trigger" id="custom-select-trigger" onclick="toggleDropdown()">单位圆 x² + y² = 1</div>
+      <div class="custom-dropdown" id="custom-dropdown">
+        <div class="custom-option selected" data-value="circle" onclick="selectCurve('circle')">单位圆 x² + y² = 1</div>
+        <div class="custom-option" data-value="line" onclick="selectCurve('line')">直线 y = tx + s</div>
+        <div class="custom-option" data-value="ellipse" onclick="selectCurve('ellipse')">椭圆 x²/m² + y²/n² = 1</div>
+        <div class="custom-option" data-value="parabola" onclick="selectCurve('parabola')">抛物线 y = tx² + sx + r</div>
+        <div class="custom-option" data-value="hyperbola" onclick="selectCurve('hyperbola')">双曲线 x²/m² − y²/n² = 1</div>
+        <div class="custom-option" data-value="elliptic" onclick="selectCurve('elliptic')">椭圆曲线 y² = ux³ − vx + w</div>
+      </div>
+    </div>
+    <select id="curve-select" onchange="changeCurve()" style="display:none;">
+      <option value="circle">单位圆 x² + y² = 1</option>
+      <option value="line">直线 y = tx + s</option>
+      <option value="ellipse">椭圆 x²/m² + y²/n² = 1</option>
+      <option value="parabola">抛物线 y = tx² + sx + r</option>
+      <option value="hyperbola">双曲线 x²/m² − y²/n² = 1</option>
+      <option value="elliptic">椭圆曲线 y² = ux³ − vx + w</option>
+    </select>
+    <div id="curve-params-box"></div>
+    <div class="formula" id="formula-box">
+      <code id="formula-text">z = x + i·y<br>w = (a·z + b) / (c·z + d)<br>a,b,c,d ∈ ℂ</code>
+    </div>
+    <div class="section-label">步长</div>
+    <div class="step-selector">
+      <button class="step-btn" data-step="0.1" onclick="setStep(0.1)">0.1°</button>
+      <button class="step-btn active" data-step="1" onclick="setStep(1)">1°</button>
+      <button class="step-btn" data-step="10" onclick="setStep(10)">10°</button>
+    </div>
+    <div id="param-container"></div>
+    <div class="sample-play-row">
+      <button class="sample-play-btn active" id="sample-play-btn" onclick="toggleSamplePointPlay()" style="opacity:0.4;cursor:not-allowed;">⏸</button>
+      <span style="font-size:11px;color:#666;flex:1;">Sample point</span>
+      <label class="sound-toggle-inline">
+        <input type="checkbox" id="sound-check" checked onchange="toggleSound()">
+        <span>🔊</span>
+      </label>
+    </div>
+    <div class="det-box" onclick="resetMobiusParams()" title="点击重置 a,b,c,d 为 1,0,0,1">
+      <span>|ad − bc| = <span class="det-val" id="det-val">1.000</span></span>
+      <span style="font-size:10px;color:#888;">↻ 点击重置</span>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ==================== Three.js 场景 ====================
+let scene, camera, renderer;
+let camRadius = 4, camTheta = Math.PI / 3, camPhi = Math.PI / 3;
+let isDraggingCamera = false;
+let lastDragPos = { x: 0, y: 0 };
+let needsRender = true;
+
+// 几何对象
+let sphereMesh, sphereWireframe;
+let planeGrid;
+let zeroMarker, singularityMarker, northPoleMarker;
+let samplePlaneMarker, sampleSphereMarker, projSampleMarker;
+let refPlaneMarkers, refSphereMarkers, projRefMarkers;
+let transCurveLines = [];
+let projSphereCurveLines = [];
+const MAX_BRANCHES = 10;
+const MAX_POINTS_PER_BRANCH = 8001;
+
+// ==================== 参数状态 ====================
+const curveColors = {
+  circle: '#20bf6b', line: '#fd79a8', ellipse: '#fdcb6e',
+  parabola: '#0984e3', hyperbola: '#8B4513', elliptic: '#1a237e'
+};
+
+let complexParams = {
+  a: { re: 1, im: 0 },
+  b: { re: 0, im: 0 },
+  c: { re: 0, im: 0 },
+  d: { re: 1, im: 0 }
+};
+const paramNames = ['a', 'b', 'c', 'd'];
+let stepSize = 1;
+let playTimers = {}, playDirections = {};
+let rewindTimers = {}, rewindDirections = {};
+let keyTimers = {};
+
+// 环盘变换
+let ringTransform = { scale: 1, rotation: 0, tx: 0, ty: 0 };
+let ringDragMode = null;
+let ringDragStart = { angle: 0, x: 0, y: 0, scale: 1, tx: 0, ty: 0, rot: 0 };
+let scaleTimer = null;
+
+// 曲线
+let currentCurve = 'circle';
+const curveDefaults = {
+  circle: {},
+  line: { t: 1, s: 0 },
+  ellipse: { m: 2, n: 3 },
+  parabola: { t: 1, s: 0, r: 0 },
+  hyperbola: { m: 2, n: 3 },
+  elliptic: { u: 1, v: 1, w: 1 }
+};
+let curveParams = JSON.parse(JSON.stringify(curveDefaults));
+
+// 音效
+let audioCtx = null;
+let soundEnabled = true;
+let lastSoundTime = {};
+const majorScales = {
+  a: [220.00,246.94,261.63,293.66,329.63,349.23,392.00,440.00,493.88,523.25,587.33,659.25,698.46,783.99,880.00,987.77,1046.50],
+  b: [246.94,277.18,293.66,329.63,369.99,392.00,440.00,493.88,554.37,587.33,659.25,739.99,783.99,880.00,987.77,1108.73,1174.66],
+  c: [261.63,293.66,329.63,349.23,392.00,440.00,493.88,523.25,587.33,659.25,698.46,783.99,880.00,987.77,1046.50,1174.66,1318.51],
+  d: [293.66,329.63,369.99,392.00,440.00,493.88,554.37,587.33,659.25,739.99,783.99,880.00,987.77,1108.73,1174.66,1318.51,1479.98]
+};
+
+// 数字键盘
+let numPadTarget = null, numPadKey = null, numPadExpr = '', numPadOriginalValue = '';
+const CREAM = '#FFF8F0', RED_ORANGE = '#E85D04';
+
+const W = 600, H = 600;
+const canvas = document.getElementById('plot');
+
+// ==================== 复数运算 ====================
+function cAdd(a, b) { return { re: a.re + b.re, im: a.im + b.im }; }
+function cSub(a, b) { return { re: a.re - b.re, im: a.im - b.im }; }
+function cMul(a, b) {
+  return { re: a.re * b.re - a.im * b.im, im: a.re * b.im + a.im * b.re };
+}
+function cDiv(a, b) {
+  const denom = b.re * b.re + b.im * b.im;
+  if (denom < 1e-20) return null;
+  return { re: (a.re * b.re + a.im * b.im) / denom, im: (a.im * b.re - a.re * b.im) / denom };
+}
+function cAbs(a) { return Math.sqrt(a.re * a.re + a.im * a.im); }
+function cArg(a) { return Math.atan2(a.im, a.re); }
+function cConj(a) { return { re: a.re, im: -a.im }; }
+
+// ==================== 音效 ====================
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+function playPianoTone(freq, duration) {
+  const ctx = getAudioCtx();
+  const t = ctx.currentTime;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = 'triangle';
+  osc.frequency.value = freq;
+  gain.gain.setValueAtTime(0, t);
+  gain.gain.linearRampToValueAtTime(0.3, t + 0.01);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + duration);
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start(t);
+  osc.stop(t + duration);
+}
+function paramToNote(paramName, value) {
+  const scale = majorScales[paramName];
+  if (!scale) return null;
+  const minVal = -50, maxVal = 50;
+  const ratio = (value - minVal) / (maxVal - minVal);
+  const idx = Math.max(0, Math.min(scale.length - 1, Math.round(ratio * (scale.length - 1))));
+  return scale[idx];
+}
+function triggerSound(paramName, value) {
+  if (!soundEnabled) return;
+  const now = Date.now();
+  if (lastSoundTime[paramName] && now - lastSoundTime[paramName] < 80) return;
+  lastSoundTime[paramName] = now;
+  const freq = paramToNote(paramName, value);
+  if (freq) playPianoTone(freq, 0.15);
+}
+function playAngleSound(value) {
+  if (!soundEnabled) return;
+  const now = Date.now();
+  if (lastSoundTime['angle'] && now - lastSoundTime['angle'] < 80) return;
+  lastSoundTime['angle'] = now;
+  const freq = 220 + (value / 360) * 660;
+  playPianoTone(freq, 0.15);
+}
+function toggleSound() {
+  soundEnabled = document.getElementById('sound-check').checked;
+  const soundLabel = document.querySelector('.sound-toggle-inline span');
+  if (soundLabel) soundLabel.textContent = soundEnabled ? '🔊' : '🔇';
+}
+
+// ==================== Three.js 初始化 ====================
+function createCrossMarker(color, scale) {
+  const group = new THREE.Group();
+  const petalGeo = new THREE.CylinderGeometry(0, 0.015 * scale, 0.05 * scale, 4);
+  const petalMat = new THREE.MeshBasicMaterial({ color: color });
+  const dirs = [
+    [1,0,0], [-1,0,0], [0,1,0], [0,-1,0], [0,0,1], [0,0,-1]
+  ];
+  dirs.forEach(d => {
+    const mesh = new THREE.Mesh(petalGeo, petalMat);
+    const axis = new THREE.Vector3(d[0], d[1], d[2]);
+    mesh.position.copy(axis.clone().multiplyScalar(0.025 * scale));
+    mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), axis);
+    group.add(mesh);
+  });
+  return group;
+}
+
+function createTetrahedronMarker(color, scale) {
+  const geo = new THREE.TetrahedronGeometry(0.03 * scale, 0);
+  const mat = new THREE.MeshBasicMaterial({ color: color });
+  return new THREE.Mesh(geo, mat);
+}
+
+function initThree() {
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0xf8f9fa);
+
+  camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+  updateCamera();
+
+  renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: false });
+  renderer.setSize(W, H);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+  const ambient = new THREE.AmbientLight(0xffffff, 0.7);
+  scene.add(ambient);
+  const dirLight = new THREE.DirectionalLight(0xffffff, 0.4);
+  dirLight.position.set(5, 8, 5);
+  scene.add(dirLight);
+
+  createObjects();
+  initCurveLines();
+  animate();
+}
+
+function updateCamera() {
+  camera.position.x = camRadius * Math.sin(camPhi) * Math.cos(camTheta);
+  camera.position.z = camRadius * Math.cos(camPhi);
+  camera.position.y = camRadius * Math.sin(camPhi) * Math.sin(camTheta);
+  camera.lookAt(0, 0, 0);
+}
+
+function createObjects() {
+  const sphereGeo = new THREE.SphereGeometry(1, 64, 64);
+  const sphereMat = new THREE.MeshPhongMaterial({
+    color: 0x74b9ff,
+    transparent: true,
+    opacity: 0.15,
+    side: THREE.DoubleSide,
+    depthWrite: false
+  });
+  sphereMesh = new THREE.Mesh(sphereGeo, sphereMat);
+  scene.add(sphereMesh);
+
+  const gridSize = 6;
+  const gridDiv = 12;
+  const gridGroup = new THREE.Group();
+  const gridMat = new THREE.LineBasicMaterial({ color: 0xdddddd, transparent: true, opacity: 0.6 });
+  for (let i = -gridDiv; i <= gridDiv; i++) {
+    const x = i * gridSize / gridDiv;
+    const pts = [new THREE.Vector3(x, 0, -gridSize), new THREE.Vector3(x, 0, gridSize)];
+    const geo = new THREE.BufferGeometry().setFromPoints(pts);
+    gridGroup.add(new THREE.Line(geo, gridMat));
+    const pts2 = [new THREE.Vector3(-gridSize, 0, x), new THREE.Vector3(gridSize, 0, x)];
+    const geo2 = new THREE.BufferGeometry().setFromPoints(pts2);
+    gridGroup.add(new THREE.Line(geo2, gridMat));
+  }
+  const axisMat = new THREE.LineBasicMaterial({ color: 0x999999, linewidth: 1.5 });
+  const xAxis = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-gridSize, 0, 0), new THREE.Vector3(gridSize, 0, 0)]);
+  gridGroup.add(new THREE.Line(xAxis, axisMat));
+  const zAxis = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, -gridSize), new THREE.Vector3(0, 0, gridSize)]);
+  gridGroup.add(new THREE.Line(zAxis, axisMat));
+  planeGrid = gridGroup;
+  scene.add(planeGrid);
+
+  const meridianGroup = new THREE.Group();
+  const meridianMat = new THREE.LineBasicMaterial({ color: 0x666666, transparent: true, opacity: 0.5 });
+  for (let i = 0; i < 8; i++) {
+    const theta = (i / 8) * Math.PI * 2;
+    const pts = [];
+    for (let j = 0; j <= 128; j++) {
+      const phi = (j / 128) * Math.PI * 2;
+      pts.push(new THREE.Vector3(
+        Math.cos(phi) * Math.cos(theta),
+        Math.sin(phi),
+        Math.cos(phi) * Math.sin(theta)
+      ));
+    }
+    const geo = new THREE.BufferGeometry().setFromPoints(pts);
+    meridianGroup.add(new THREE.Line(geo, meridianMat));
+  }
+  scene.add(meridianGroup);
+
+  const parallelGroup = new THREE.Group();
+  const parallelMat = new THREE.LineBasicMaterial({ color: 0x666666, transparent: true, opacity: 0.45 });
+  const latAngles = [-Math.PI/6, 0, Math.PI/6];
+  for (const lat of latAngles) {
+    const y = Math.sin(lat);
+    const r = Math.cos(lat);
+    const pts = [];
+    for (let j = 0; j <= 64; j++) {
+      const theta = (j / 64) * Math.PI * 2;
+      pts.push(new THREE.Vector3(r * Math.cos(theta), y, r * Math.sin(theta)));
+    }
+    const geo = new THREE.BufferGeometry().setFromPoints(pts);
+    parallelGroup.add(new THREE.Line(geo, parallelMat));
+  }
+  scene.add(parallelGroup);
+
+  const zeroGeo = new THREE.SphereGeometry(0.015, 16, 16);
+  const zeroMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+  zeroMarker = new THREE.Mesh(zeroGeo, zeroMat);
+  scene.add(zeroMarker);
+
+  const singGeo = new THREE.SphereGeometry(0.015, 16, 16);
+  const singMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+  singularityMarker = new THREE.Mesh(singGeo, singMat);
+  scene.add(singularityMarker);
+
+  const northGeo = new THREE.OctahedronGeometry(0.025, 0);
+  const northMat = new THREE.MeshBasicMaterial({ color: 0x0984e3 });
+  northPoleMarker = new THREE.Mesh(northGeo, northMat);
+  northPoleMarker.position.set(0, 1, 0);
+  scene.add(northPoleMarker);
+
+  const samplePlaneGeo = new THREE.SphereGeometry(0.04, 16, 16);
+  const samplePlaneMat = new THREE.MeshBasicMaterial({ color: 0xffd700 });
+  samplePlaneMarker = new THREE.Mesh(samplePlaneGeo, samplePlaneMat);
+  samplePlaneMarker.visible = false;
+  scene.add(samplePlaneMarker);
+
+  sampleSphereMarker = createCrossMarker(0xffd700, 1.0);
+  sampleSphereMarker.visible = false;
+  scene.add(sampleSphereMarker);
+
+  projSampleMarker = createTetrahedronMarker(0xffd700, 1.0);
+  projSampleMarker.visible = false;
+  scene.add(projSampleMarker);
+
+  const refColors = [0xff0000, 0x00ff00, 0x0000ff];
+  window.refPlaneMarkers = [];
+  window.refSphereMarkers = [];
+  window.projRefMarkers = [];
+  for (let i = 0; i < 3; i++) {
+    const pGeo = new THREE.SphereGeometry(0.04, 16, 16);
+    const pMat = new THREE.MeshBasicMaterial({ color: refColors[i] });
+    const pMesh = new THREE.Mesh(pGeo, pMat);
+    pMesh.visible = false;
+    scene.add(pMesh);
+    window.refPlaneMarkers.push(pMesh);
+
+    const sMesh = createCrossMarker(refColors[i], 0.9);
+    sMesh.visible = false;
+    scene.add(sMesh);
+    window.refSphereMarkers.push(sMesh);
+
+    const projMesh = createTetrahedronMarker(refColors[i], 0.9);
+    projMesh.visible = false;
+    scene.add(projMesh);
+    window.projRefMarkers.push(projMesh);
+  }
+}
+
+let planeOrigCurveLines = [];
+let projectionLines = [];
+let branchValidPoints = [];
+
+let samplePointState = {
+  branchIdx: 0,
+  pointIdx: 0,
+  active: false,
+  branchEnterTime: Date.now()
+};
+
+let refFixedPoints = [];
+
+function initCurveLines() {
+  branchValidPoints = [];
+  for (let i = 0; i < MAX_BRANCHES; i++) {
+    branchValidPoints.push([]);
+    const planeOrigGeo = new THREE.BufferGeometry();
+    planeOrigGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(MAX_POINTS_PER_BRANCH * 3), 3));
+    planeOrigGeo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(MAX_POINTS_PER_BRANCH * 3), 3));
+    planeOrigGeo.setDrawRange(0, 0);
+    const planeOrigMat = new THREE.LineBasicMaterial({ vertexColors: true, linewidth: 2 });
+    const planeOrigLine = new THREE.Line(planeOrigGeo, planeOrigMat);
+    planeOrigLine.visible = false;
+    scene.add(planeOrigLine);
+    planeOrigCurveLines.push({ geometry: planeOrigGeo, line: planeOrigLine });
+
+    const transGeo = new THREE.BufferGeometry();
+    transGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(MAX_POINTS_PER_BRANCH * 3), 3));
+    transGeo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(MAX_POINTS_PER_BRANCH * 3), 3));
+    const transMat = new THREE.LineBasicMaterial({ vertexColors: true, linewidth: 2 });
+    const transLine = new THREE.Line(transGeo, transMat);
+    transLine.visible = false;
+    scene.add(transLine);
+    transCurveLines.push({ geometry: transGeo, line: transLine });
+
+    const projSphereGeo = new THREE.BufferGeometry();
+    projSphereGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(MAX_POINTS_PER_BRANCH * 3), 3));
+    const projSphereMat = new THREE.LineBasicMaterial({ color: 0x000000, depthTest: false });
+    const projSphereLine = new THREE.Line(projSphereGeo, projSphereMat);
+    projSphereLine.visible = false;
+    projSphereLine.renderOrder = 9999;
+    scene.add(projSphereLine);
+    projSphereCurveLines.push({ geometry: projSphereGeo, line: projSphereLine });
+
+    const projGeo = new THREE.BufferGeometry();
+    projGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(6), 3));
+    const projMat = new THREE.LineDashedMaterial({ 
+      color: 0x000000, 
+      dashSize: 0.08, 
+      gapSize: 0.04,
+      linewidth: 1
+    });
+    const projLine = new THREE.Line(projGeo, projMat);
+    projLine.visible = false;
+    scene.add(projLine);
+    projectionLines.push({ geometry: projGeo, line: projLine });
+  }
+}
+
+// ==================== 球极投影 ====================
+function stereoProject(z) {
+  const x = z.re, y = z.im;
+  const r2 = x * x + y * y;
+  const denom = r2 + 1;
+  return new THREE.Vector3(2 * x / denom, (r2 - 1) / denom, 2 * y / denom);
+}
+
+function stereoInverse(p) {
+  if (Math.abs(p.y - 1) < 1e-10) return null;
+  const denom = 1 - p.y;
+  return { re: p.x / denom, im: p.z / denom };
+}
+
+// ==================== 莫比乌斯变换 ====================
+function mobiusTransform(z, a, b, c, d) {
+  const num = cAdd(cMul(a, z), b);
+  const den = cAdd(cMul(c, z), d);
+  return cDiv(num, den);
+}
+
+// ==================== 曲线生成 ====================
+function generateOriginalPoints() {
+  const N = 4000;
+  const cp = curveParams[currentCurve];
+  let branches = [];
+
+  switch (currentCurve) {
+    case 'circle': {
+      const pts = [];
+      for (let i = 0; i <= N; i++) {
+        const t = i * 2 * Math.PI / N;
+        pts.push({ re: Math.cos(t), im: Math.sin(t) });
+      }
+      branches.push(pts);
+      break;
+    }
+    case 'line': {
+      const t = cp.t, s = cp.s;
+      const eps = 1e-4;
+      const pts = [];
+      for (let i = 0; i <= N; i++) {
+        const theta = -Math.PI / 2 + eps + (Math.PI - 2 * eps) * i / N;
+        const x = Math.tan(theta);
+        pts.push({ re: x, im: t * x + s });
+      }
+      branches.push(pts);
+      break;
+    }
+    case 'ellipse': {
+      const m = cp.m, n = cp.n;
+      const pts = [];
+      for (let i = 0; i <= N; i++) {
+        const theta = i * 2 * Math.PI / N;
+        pts.push({ re: m * Math.cos(theta), im: n * Math.sin(theta) });
+      }
+      branches.push(pts);
+      break;
+    }
+    case 'parabola': {
+      const t = cp.t, s = cp.s, r = cp.r;
+      const eps = 1e-4;
+      const pts = [];
+      for (let i = 0; i <= N; i++) {
+        const theta = -Math.PI / 2 + eps + (Math.PI - 2 * eps) * i / N;
+        const x = Math.tan(theta);
+        pts.push({ re: x, im: t * x * x + s * x + r });
+      }
+      branches.push(pts);
+      break;
+    }
+    case 'hyperbola': {
+      const m = cp.m, n = cp.n;
+      const eps = 1e-4;
+      const pts1 = [], pts2 = [];
+      for (let i = 0; i <= N / 2; i++) {
+        const theta = -Math.PI / 2 + eps + (Math.PI - 2 * eps) * i / (N / 2);
+        pts1.push({ re: m / Math.cos(theta), im: n * Math.tan(theta) });
+      }
+      for (let i = 0; i <= N / 2; i++) {
+        const theta = Math.PI / 2 + eps + (Math.PI - 2 * eps) * i / (N / 2);
+        pts2.push({ re: m / Math.cos(theta), im: n * Math.tan(theta) });
+      }
+      branches.push(pts1, pts2);
+      break;
+    }
+    case 'elliptic': {
+      const u = cp.u, v = cp.v, w = cp.w;
+      const intervals = findEllipticDomains(u, v, w);
+      if (intervals.length === 0) break;
+
+      for (let idx = 0; idx < intervals.length; idx++) {
+        const [xa, xb] = intervals[idx];
+        const isBounded = isFinite(xb);
+        const ptsPerInterval = Math.max(300, Math.floor(N / (intervals.length * 2)));
+
+        if (isBounded) {
+          const pts = [];
+          for (let i = 0; i <= ptsPerInterval; i++) {
+            const t = i / ptsPerInterval;
+            const x = xa + (xb - xa) * t;
+            const rhs = u * x * x * x - v * x + w;
+            if (rhs >= -1e-8) {
+              pts.push({ re: x, im: Math.sqrt(Math.max(0, rhs)) });
+            }
+          }
+          for (let i = ptsPerInterval - 1; i >= 0; i--) {
+            const t = i / ptsPerInterval;
+            const x = xa + (xb - xa) * t;
+            const rhs = u * x * x * x - v * x + w;
+            if (rhs >= -1e-8) {
+              pts.push({ re: x, im: -Math.sqrt(Math.max(0, rhs)) });
+            }
+          }
+          if (pts.length > 2) branches.push(pts);
+        } else {
+          const upperPts = [];
+          for (let i = 0; i <= ptsPerInterval; i++) {
+            const theta = -Math.PI / 2 + 1e-4 + (Math.PI - 2e-4) * i / ptsPerInterval;
+            const x = xa + Math.tan(theta);
+            const rhs = u * x * x * x - v * x + w;
+            if (rhs >= -1e-8) {
+              upperPts.push({ re: x, im: Math.sqrt(Math.max(0, rhs)) });
+            }
+          }
+          if (upperPts.length > 1) branches.push(upperPts);
+
+          const lowerPts = [];
+          for (let i = ptsPerInterval; i >= 0; i--) {
+            const theta = -Math.PI / 2 + 1e-4 + (Math.PI - 2e-4) * i / ptsPerInterval;
+            const x = xa + Math.tan(theta);
+            const rhs = u * x * x * x - v * x + w;
+            if (rhs >= -1e-8) {
+              lowerPts.push({ re: x, im: -Math.sqrt(Math.max(0, rhs)) });
+            }
+          }
+          if (lowerPts.length > 1) branches.push(lowerPts);
+        }
+      }
+      break;
+    }
+  }
+  return branches;
+}
+
+function findEllipticDomains(u, v, w) {
+  const f = (x) => u * x * x * x - v * x + w;
+  const roots = [];
+  const scale = Math.max(1, Math.pow(Math.abs(w / u) + 0.001, 1/3), Math.sqrt(Math.abs(v / u) + 0.001));
+  const scanMin = -8 * scale, scanMax = 8 * scale, step = 0.02;
+
+  let prevX = scanMin, prevY = f(prevX);
+  for (let x = scanMin + step; x <= scanMax; x += step) {
+    const y = f(x);
+    if (prevY === 0) roots.push(prevX);
+    else if (y === 0) roots.push(x);
+    else if (prevY * y < 0) {
+      let lo = prevX, hi = x, mid;
+      for (let iter = 0; iter < 40; iter++) {
+        mid = (lo + hi) / 2;
+        const fm = f(mid);
+        if (Math.abs(fm) < 1e-14) break;
+        if (f(lo) * fm <= 0) hi = mid; else lo = mid;
+      }
+      roots.push((lo + hi) / 2);
+    }
+    prevX = x; prevY = y;
+  }
+  roots.sort((a, b) => a - b);
+  const uniq = [];
+  for (const r of roots) {
+    if (uniq.length === 0 || Math.abs(r - uniq[uniq.length - 1]) > 1e-6) uniq.push(r);
+  }
+
+  const refinedRoots = [];
+  for (const r of uniq) {
+    let x = r;
+    for (let iter = 0; iter < 20; iter++) {
+      const fx = f(x);
+      const dfx = 3 * u * x * x - v;
+      if (Math.abs(dfx) < 1e-15) break;
+      const nx = x - fx / dfx;
+      if (Math.abs(nx - x) < 1e-12) break;
+      x = nx;
+    }
+    refinedRoots.push(x);
+  }
+
+  const intervals = [];
+  const tests = [scanMin, ...refinedRoots, scanMax];
+  for (let i = 0; i < tests.length - 1; i++) {
+    const mid = (tests[i] + tests[i + 1]) / 2;
+    if (f(mid) >= 0) {
+      let xb = tests[i + 1];
+      if (i === tests.length - 2) xb = Infinity;
+      intervals.push([tests[i], xb]);
+    }
+  }
+  return intervals;
+}
+
+// ==================== 环盘变换 ====================
+function applyRingTransform(z) {
+  const cos = Math.cos(ringTransform.rotation);
+  const sin = Math.sin(ringTransform.rotation);
+  const re = ringTransform.scale * (cos * z.re - sin * z.im) + ringTransform.tx;
+  const im = ringTransform.scale * (sin * z.re + cos * z.im) + ringTransform.ty;
+  return { re, im };
+}
+
+// ==================== 颜色 ====================
+function hslToRgb(h, s, l) {
+  let r, g, b;
+  if (s === 0) { r = g = b = l; }
+  else {
+    const hue2rgb = (p, q, t) => {
+      if (t < 0) t += 1;
+      if (t > 1) t -= 1;
+      if (t < 1/6) return p + (q - p) * 6 * t;
+      if (t < 1/2) return q;
+      if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+      return p;
+    };
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+    const p = 2 * l - q;
+    r = hue2rgb(p, q, h + 1/3);
+    g = hue2rgb(p, q, h);
+    b = hue2rgb(p, q, h - 1/3);
+  }
+  return { r, g, b };
+}
+
+function phaseToColor(re, im) {
+  const angle = Math.atan2(im, re);
+  let hue = (-angle / (2 * Math.PI)) * 360;
+  while (hue < 0) hue += 360;
+  while (hue >= 360) hue -= 360;
+  const rgb = hslToRgb(hue / 360, 0.85, 0.5);
+  return rgb;
+}
+
+// ==================== 几何更新 ====================
+function updateScene() {
+  const a = complexParams.a, b = complexParams.b;
+  const c = complexParams.c, d = complexParams.d;
+
+  const z0 = cDiv({ re: -b.re, im: -b.im }, a);
+  const zInf = cDiv({ re: -d.re, im: -d.im }, c);
+
+  if (z0 && cAbs(z0) < 1e6) {
+    const p0 = stereoProject(z0);
+    zeroMarker.position.copy(p0);
+    zeroMarker.visible = true;
+  } else {
+    zeroMarker.visible = false;
+  }
+
+  if (zInf && cAbs(zInf) < 1e6) {
+    const pInf = stereoProject(zInf);
+    singularityMarker.position.copy(pInf);
+    singularityMarker.visible = true;
+  } else {
+    singularityMarker.visible = false;
+  }
+
+  const branches = generateOriginalPoints();
+
+  for (let i = 0; i < MAX_BRANCHES; i++) {
+    if (i < branches.length) {
+      const pts = branches[i];
+      updateBranch(i, pts, a, b, c, d);
+      planeOrigCurveLines[i].line.visible = true;
+      transCurveLines[i].line.visible = true;
+      projSphereCurveLines[i].line.visible = true;
+    } else {
+      planeOrigCurveLines[i].line.visible = false;
+      transCurveLines[i].line.visible = false;
+      projSphereCurveLines[i].line.visible = false;
+      projectionLines[i].line.visible = false;
+      branchValidPoints[i] = [];
+      planeOrigCurveLines[i].geometry.setDrawRange(0, 0);
+      transCurveLines[i].geometry.setDrawRange(0, 0);
+      projSphereCurveLines[i].geometry.setDrawRange(0, 0);
+    }
+  }
+
+  const det = cSub(cMul(a, d), cMul(b, c));
+  document.getElementById('det-val').textContent = cAbs(det).toFixed(3);
+
+  let nowHasValid = false;
+  for (let b = 0; b < branchValidPoints.length; b++) {
+    if (branchValidPoints[b] && branchValidPoints[b].length > 0) { nowHasValid = true; break; }
+  }
+  if (nowHasValid && refFixedPoints.length === 0) {
+    pickFixedRefPoints();
+  }
+
+  const currentPoints = branchValidPoints[samplePointState.branchIdx];
+  if (!samplePointState.active || !currentPoints || currentPoints.length === 0) {
+    initSamplePoint();
+  }
+
+  updateFormula();
+  updateCRMarkers();
+  computeAndDisplayCR();
+}
+
+function updateBranch(branchIdx, pts, a, b, c, d) {
+  const planeOrigPos = planeOrigCurveLines[branchIdx].geometry.attributes.position.array;
+  const planeOrigCol = planeOrigCurveLines[branchIdx].geometry.attributes.color.array;
+  const transPos = transCurveLines[branchIdx].geometry.attributes.position.array;
+  const transCol = transCurveLines[branchIdx].geometry.attributes.color.array;
+  const projSpherePos = projSphereCurveLines[branchIdx].geometry.attributes.position.array;
+
+  let transCount = 0;
+  const validPoints = [];
+  const curveColorHex = curveColors[currentCurve] || '#333333';
+  const curveColor = new THREE.Color(curveColorHex);
+
+  const n = Math.min(pts.length, MAX_POINTS_PER_BRANCH);
+  for (let i = 0; i < n; i++) {
+    const z = applyRingTransform(pts[i]);
+
+    planeOrigPos[i * 3] = z.re;
+    planeOrigPos[i * 3 + 1] = 0;
+    planeOrigPos[i * 3 + 2] = z.im;
+    planeOrigCol[i * 3] = curveColor.r;
+    planeOrigCol[i * 3 + 1] = curveColor.g;
+    planeOrigCol[i * 3 + 2] = curveColor.b;
+
+    const pProj = stereoProject(z);
+    projSpherePos[i * 3] = pProj.x;
+    projSpherePos[i * 3 + 1] = pProj.y;
+    projSpherePos[i * 3 + 2] = pProj.z;
+
+    const w = mobiusTransform(z, a, b, c, d);
+    if (w && isFinite(w.re) && isFinite(w.im)) {
+      const pTrans = stereoProject(w);
+      transPos[transCount * 3] = pTrans.x;
+      transPos[transCount * 3 + 1] = pTrans.y;
+      transPos[transCount * 3 + 2] = pTrans.z;
+
+      const col = phaseToColor(w.re, w.im);
+      transCol[transCount * 3] = col.r;
+      transCol[transCount * 3 + 1] = col.g;
+      transCol[transCount * 3 + 2] = col.b;
+
+      validPoints.push({ plane: { re: z.re, im: z.im }, sphere: pTrans, origIdx: i });
+      transCount++;
+    }
+  }
+
+  planeOrigCurveLines[branchIdx].geometry.setDrawRange(0, n);
+  planeOrigCurveLines[branchIdx].geometry.attributes.position.needsUpdate = true;
+  planeOrigCurveLines[branchIdx].geometry.attributes.color.needsUpdate = true;
+
+  transCurveLines[branchIdx].geometry.setDrawRange(0, transCount);
+  transCurveLines[branchIdx].geometry.attributes.position.needsUpdate = true;
+  transCurveLines[branchIdx].geometry.attributes.color.needsUpdate = true;
+
+  projSphereCurveLines[branchIdx].geometry.setDrawRange(0, n);
+  projSphereCurveLines[branchIdx].geometry.attributes.position.needsUpdate = true;
+
+  branchValidPoints[branchIdx] = validPoints;
+}
+
+// ==================== 公式更新 ====================
+function updateFormula() {
+  const formulaText = document.getElementById('formula-text');
+  if (!formulaText) return;
+  const a = formatComplex(complexParams.a);
+  const b = formatComplex(complexParams.b);
+  const c = formatComplex(complexParams.c);
+  const d = formatComplex(complexParams.d);
+  formulaText.innerHTML = `z = x + i·y<br>w = (<code>${a}</code>·z + <code>${b}</code>) / (<code>${c}</code>·z + <code>${d}</code>)`;
+}
+
+function pickFixedRefPoints() {
+  const candidates = [];
+  for (let b = 0; b < branchValidPoints.length; b++) {
+    const pts = branchValidPoints[b];
+    if (pts && pts.length > 0) {
+      for (let k = 0; k < pts.length; k++) {
+        candidates.push({ branchIdx: b, pointIdx: k });
+      }
+    }
+  }
+  if (candidates.length < 3) {
+    refFixedPoints = [];
+    return;
+  }
+  refFixedPoints = [];
+  const step = Math.floor(candidates.length / 3);
+  for (let i = 0; i < 3; i++) {
+    const idx = Math.min(i * step + Math.floor(step / 2), candidates.length - 1);
+    refFixedPoints.push(candidates[idx]);
+  }
+}
+
+function updateRefMarkers() {
+  if (refFixedPoints.length < 3) {
+    for (let i = 0; i < 3; i++) {
+      if (window.refPlaneMarkers && window.refPlaneMarkers[i]) window.refPlaneMarkers[i].visible = false;
+      if (window.refSphereMarkers && window.refSphereMarkers[i]) window.refSphereMarkers[i].visible = false;
+      if (window.projRefMarkers && window.projRefMarkers[i]) window.projRefMarkers[i].visible = false;
+    }
+    return;
+  }
+
+  for (let i = 0; i < 3; i++) {
+    const fixed = refFixedPoints[i];
+    const pts = branchValidPoints[fixed.branchIdx];
+    if (!pts || fixed.pointIdx >= pts.length) {
+      if (window.refPlaneMarkers && window.refPlaneMarkers[i]) window.refPlaneMarkers[i].visible = false;
+      if (window.refSphereMarkers && window.refSphereMarkers[i]) window.refSphereMarkers[i].visible = false;
+      if (window.projRefMarkers && window.projRefMarkers[i]) window.projRefMarkers[i].visible = false;
+      continue;
+    }
+    const pt = pts[fixed.pointIdx];
+
+    if (window.refPlaneMarkers && window.refPlaneMarkers[i]) {
+      window.refPlaneMarkers[i].position.set(pt.plane.re, 0, pt.plane.im);
+      window.refPlaneMarkers[i].visible = true;
+    }
+
+    if (window.refSphereMarkers && window.refSphereMarkers[i]) {
+      window.refSphereMarkers[i].position.copy(pt.sphere);
+      window.refSphereMarkers[i].visible = true;
+    }
+
+    if (window.projRefMarkers && window.projRefMarkers[i]) {
+      const pProj = stereoProject(pt.plane);
+      window.projRefMarkers[i].position.copy(pProj);
+      window.projRefMarkers[i].visible = true;
+    }
+  }
+}
+
+// ==================== 采样点动画系统 ====================
+function initSamplePoint() {
+  if (crFixedPoints.length === 0) {
+    randomizeCRPoints();
+  }
+}
+
+function trySwitchBranch(currentBranchIdx, moveDirection) {
+  return false;
+}
+
+function updateSamplePointAnimation() {
+  if (!samplePointState.active || !samplePointState.playing) return;
+
+  const now = Date.now();
+  if (now - samplePointState.lastUpdate < 50) return;
+  samplePointState.lastUpdate = now;
+
+  if (samplePointState.branchEnterTime && now - samplePointState.branchEnterTime > 60000) {
+    samplePointState.pointIdx = 0;
+    samplePointState.direction = 1;
+    samplePointState.branchEnterTime = now;
+    return;
+  }
+
+  const branchIdx = samplePointState.branchIdx;
+  const points = branchValidPoints[branchIdx];
+  if (!points || points.length === 0) {
+    initSamplePoint();
+    return;
+  }
+
+  samplePointState.pointIdx += samplePointState.direction * samplePointState.speed;
+
+  if (samplePointState.pointIdx >= points.length - 1) {
+    if (trySwitchBranch(branchIdx, 1)) return;
+    samplePointState.pointIdx = points.length - 1;
+    samplePointState.direction = -1;
+  } else if (samplePointState.pointIdx <= 0) {
+    if (trySwitchBranch(branchIdx, -1)) return;
+    samplePointState.pointIdx = 0;
+    samplePointState.direction = 1;
+  }
+}
+
+function toggleSamplePointPlay() {
+  // No-op: auto-play removed
+}
+
+function updateProjectionLines() {
+  for (let i = 0; i < projectionLines.length; i++) {
+    projectionLines[i].line.visible = false;
+  }
+}
+
+// Fixed 4-point set for cross ratio: yellow + red/green/blue
+let crFixedPoints = [];
+
+function randomizeCRPoints() {
+  const candidates = [];
+  for (let b = 0; b < MAX_BRANCHES; b++) {
+    const drawCount = planeOrigCurveLines[b].geometry.drawRange.count;
+    const count = isFinite(drawCount) ? drawCount : 0;
+    if (count > 0) {
+      for (let k = 0; k < count; k++) {
+        candidates.push({ branchIdx: b, pointIdx: k });
+      }
+    }
+  }
+  if (candidates.length < 4) return;
+
+  crFixedPoints = [];
+  const used = new Set();
+  while (crFixedPoints.length < 4) {
+    const idx = Math.floor(Math.random() * candidates.length);
+    const key = candidates[idx].branchIdx + '_' + candidates[idx].pointIdx;
+    if (!used.has(key)) {
+      used.add(key);
+      crFixedPoints.push(candidates[idx]);
+    }
+  }
+
+  updateCRMarkers();
+  computeAndDisplayCR();
+}
+
+function updateCRMarkers() {
+  if (crFixedPoints.length < 4) return;
+
+  const markers = [
+    { plane: samplePlaneMarker, sphere: sampleSphereMarker, proj: projSampleMarker },
+    { plane: window.refPlaneMarkers[0], sphere: window.refSphereMarkers[0], proj: window.projRefMarkers[0] },
+    { plane: window.refPlaneMarkers[1], sphere: window.refSphereMarkers[1], proj: window.projRefMarkers[1] },
+    { plane: window.refPlaneMarkers[2], sphere: window.refSphereMarkers[2], proj: window.projRefMarkers[2] }
+  ];
+
+  const a = complexParams.a, b = complexParams.b;
+  const c = complexParams.c, d = complexParams.d;
+
+  for (let i = 0; i < 4; i++) {
+    const fixed = crFixedPoints[i];
+    const posArr = planeOrigCurveLines[fixed.branchIdx].geometry.attributes.position.array;
+    const count = planeOrigCurveLines[fixed.branchIdx].geometry.drawRange.count;
+    const safeCount = isFinite(count) ? count : 0;
+    
+    if (fixed.pointIdx >= safeCount) {
+      if (markers[i].plane) markers[i].plane.visible = false;
+      if (markers[i].sphere) markers[i].sphere.visible = false;
+      if (markers[i].proj) markers[i].proj.visible = false;
+      continue;
+    }
+    
+    const z = { re: posArr[fixed.pointIdx * 3], im: posArr[fixed.pointIdx * 3 + 2] };
+    
+    if (markers[i].plane) {
+      markers[i].plane.position.set(z.re, 0, z.im);
+      markers[i].plane.visible = true;
+    }
+    
+    const pProj = stereoProject(z);
+    if (markers[i].proj) {
+      markers[i].proj.position.copy(pProj);
+      markers[i].proj.visible = true;
+    }
+    
+    const w = mobiusTransform(z, a, b, c, d);
+    if (w && isFinite(w.re) && isFinite(w.im)) {
+      const pTrans = stereoProject(w);
+      if (markers[i].sphere) {
+        markers[i].sphere.position.copy(pTrans);
+        markers[i].sphere.visible = true;
+      }
+    } else {
+      if (markers[i].sphere) markers[i].sphere.visible = false;
+    }
+  }
+
+  samplePointState.active = true;
+  samplePointState.branchIdx = crFixedPoints[0].branchIdx;
+  samplePointState.pointIdx = crFixedPoints[0].pointIdx;
+}
+
+function computeCR(z1, z2, z3, z4) {
+  const num = cMul(cSub(z1, z3), cSub(z2, z4));
+  const den = cMul(cSub(z1, z4), cSub(z2, z3));
+  return cDiv(num, den);
+}
+
+function formatCR(z) {
+  if (!z || !isFinite(z.re) || !isFinite(z.im)) return '—';
+  const re = z.re.toFixed(2);
+  const im = Math.abs(z.im).toFixed(2);
+  const sign = z.im >= 0 ? '+' : '−';
+  return `${re} ${sign} ${im}i`;
+}
+
+function formatComplexShort(z) {
+  const re = parseFloat(z.re.toFixed(2));
+  const im = parseFloat(z.im.toFixed(2));
+  if (Math.abs(im) < 1e-10) return String(re);
+  if (Math.abs(re) < 1e-10) return (im >= 0 ? '' : '−') + Math.abs(im) + 'i';
+  const sign = im >= 0 ? '+' : '−';
+  return `${re}${sign}${Math.abs(im)}i`;
+}
+
+function computeAndDisplayCR() {
+  if (crFixedPoints.length < 4) return;
+
+  const a = complexParams.a, b = complexParams.b;
+  const c = complexParams.c, d = complexParams.d;
+  const curveColor = curveColors[currentCurve] || '#333333';
+
+  const planeZs = [];
+  const stereoZs = [];
+  const mobiusZs = [];
+
+  for (let i = 0; i < 4; i++) {
+    const fixed = crFixedPoints[i];
+    const posArr = planeOrigCurveLines[fixed.branchIdx].geometry.attributes.position.array;
+    const count = planeOrigCurveLines[fixed.branchIdx].geometry.drawRange.count;
+    const safeCount = isFinite(count) ? count : 0;
+    if (fixed.pointIdx >= safeCount) return;
+
+    const z = { re: posArr[fixed.pointIdx * 3], im: posArr[fixed.pointIdx * 3 + 2] };
+    planeZs.push(z);
+    stereoZs.push({ re: z.re, im: z.im });
+
+    const w = mobiusTransform(z, a, b, c, d);
+    mobiusZs.push(w || z);
+  }
+
+  const crPlane = computeCR(planeZs[0], planeZs[1], planeZs[2], planeZs[3]);
+  const crStereo = { re: crPlane.re, im: crPlane.im };
+  const crMobius = computeCR(mobiusZs[0], mobiusZs[1], mobiusZs[2], mobiusZs[3]);
+
+  const crPlaneEl = document.getElementById('cr-plane');
+  const crStereoEl = document.getElementById('cr-stereo');
+  const crMobiusEl = document.getElementById('cr-mobius');
+
+  if (crPlaneEl) { crPlaneEl.textContent = formatCR(crPlane); crPlaneEl.style.color = curveColor; }
+  if (crStereoEl) { crStereoEl.textContent = formatCR(crStereo); crStereoEl.style.color = curveColor; }
+  if (crMobiusEl) { crMobiusEl.textContent = formatCR(crMobius); crMobiusEl.style.color = curveColor; }
+
+  window._crData = {
+    plane: { points: planeZs, cr: crPlane },
+    stereo: { points: stereoZs, cr: crStereo },
+    mobius: { points: mobiusZs, cr: crMobius }
+  };
+}
+
+function showCRDetail(type) {
+  const detail = document.getElementById('cr-detail');
+  const data = window._crData && window._crData[type];
+  if (!data) return;
+
+  if (detail.dataset.currentType === type && detail.style.display !== 'none') {
+    hideCRDetail();
+    return;
+  }
+
+  detail.dataset.currentType = type;
+  detail.style.display = 'block';
+
+  const names = { plane: '平面交比', stereo: '球极交比', mobius: '莫比交比' };
+  document.getElementById('cr-detail-header-text').textContent = names[type];
+
+  const colors = ['#FFD700', '#FF0000', '#00CC00', '#0066FF'];
+  const labels = ['z₁', 'z₂', 'z₃', 'z₄'];
+
+  let pointsHtml = '';
+  for (let i = 0; i < 4; i++) {
+    const z = data.points[i];
+    const re = z.re.toFixed(2);
+    const imAbs = Math.abs(z.im).toFixed(2);
+    const sign = z.im >= 0 ? '+' : '−';
+    pointsHtml += '<div class="cr-detail-z" style="color:' + colors[i] + '">' + labels[i] + ' = ' + re + ' ' + sign + ' ' + imAbs + 'i</div>';
+  }
+  document.getElementById('cr-detail-points').innerHTML = pointsHtml;
+
+  const symbolFormula = '<div style="display:flex;flex-direction:column;align-items:center;font-style:italic;">' +
+    '<div style="padding:2px 0;">(z₁ − z₃)(z₂ − z₄)</div>' +
+    '<div style="width:100%;height:1px;background:#666;margin:2px 0;"></div>' +
+    '<div style="padding:2px 0;">(z₁ − z₄)(z₂ − z₃)</div>' +
+    '</div>';
+  document.getElementById('cr-detail-formula').innerHTML = '<span style="color:#888;font-style:italic;">cross ratio = </span>' + symbolFormula;
+
+  const f = [];
+  for (let i = 0; i < 4; i++) {
+    const z = data.points[i];
+    const re = z.re.toFixed(2);
+    const imAbs = Math.abs(z.im).toFixed(2);
+    const sign = z.im >= 0 ? '+' : '−';
+    f.push('<span style="color:' + colors[i] + '">&lt;' + re + sign + imAbs + 'i&gt;</span>');
+  }
+  const numFormula = '(' + f[0] + ' − ' + f[2] + ')(' + f[1] + ' − ' + f[3] + ')';
+  const denFormula = '(' + f[0] + ' − ' + f[3] + ')(' + f[1] + ' − ' + f[2] + ')';
+  const numFormulaFrac = '<div style="display:flex;flex-direction:column;align-items:center;">' +
+    '<div style="padding:2px 0;">' + numFormula + '</div>' +
+    '<div style="width:100%;height:1px;background:#666;margin:2px 0;"></div>' +
+    '<div style="padding:2px 0;">' + denFormula + '</div>' +
+    '</div>';
+  document.getElementById('cr-detail-formula-num').innerHTML = '<span style="color:#888;font-style:italic;">= </span>' + numFormulaFrac;
+
+  const crStr = formatCR(data.cr);
+  document.getElementById('cr-detail-result').textContent = 'cross ratio = ' + crStr;
+
+  document.querySelectorAll('.cr-row').forEach(r => r.classList.remove('active'));
+  const activeRow = document.querySelector('.cr-row[data-type="' + type + '"]');
+  if (activeRow) activeRow.classList.add('active');
+}
+
+function hideCRDetail() {
+  const detail = document.getElementById('cr-detail');
+  detail.style.display = 'none';
+  detail.dataset.currentType = '';
+  document.querySelectorAll('.cr-row').forEach(r => r.classList.remove('active'));
+}
+
+function updateCrossRatio() {
+  // 旧版 Cross Ratio 显示已移除，由 computeAndDisplayCR() 统一管理
+}
+
+// ==================== 渲染循环 ====================
+function animate() {
+  requestAnimationFrame(animate);
+
+  const now = Date.now();
+  for (const name of paramNames) {
+    if (playTimers[name]) {
+      if (now - playTimers[name].last >= 120) {
+        playTimers[name].last = now;
+        const z = complexParams[name];
+        const r = cAbs(z);
+        let theta = cArg(z) + playDirections[name] * stepSize * Math.PI / 180;
+        complexParams[name] = { re: r * Math.cos(theta), im: r * Math.sin(theta) };
+        updateDial(name);
+        playAngleSound(theta * 180 / Math.PI);
+        needsRender = true;
+      }
+    }
+    if (rewindTimers[name]) {
+      if (now - rewindTimers[name].last >= 120) {
+        rewindTimers[name].last = now;
+        const z = complexParams[name];
+        const r = cAbs(z);
+        let theta = cArg(z) + rewindDirections[name] * stepSize * Math.PI / 180;
+        complexParams[name] = { re: r * Math.cos(theta), im: r * Math.sin(theta) };
+        updateDial(name);
+        playAngleSound(theta * 180 / Math.PI);
+        needsRender = true;
+      }
+    }
+  }
+
+  if (needsRender) {
+    updateScene();
+    needsRender = false;
+  }
+
+  updateSamplePointAnimation();
+  updateProjectionLines();
+
+  renderer.render(scene, camera);
+}
+
+// ==================== 相机交互 ====================
+function getCanvasXY(clientX, clientY) {
+  const rect = canvas.getBoundingClientRect();
+  const cssX = clientX - rect.left;
+  const cssY = clientY - rect.top;
+  return {
+    x: cssX * (W / rect.width),
+    y: cssY * (H / rect.height)
+  };
+}
+
+function onMouseDown(e) {
+  if (e.target.closest('.ring-controller')) return;
+  isDraggingCamera = true;
+  lastDragPos = { x: e.clientX, y: e.clientY };
+  canvas.style.cursor = 'grabbing';
+}
+
+function onMouseMove(e) {
+  if (!isDraggingCamera) return;
+  const dx = e.clientX - lastDragPos.x;
+  const dy = e.clientY - lastDragPos.y;
+  lastDragPos = { x: e.clientX, y: e.clientY };
+  camTheta += dx * 0.008;
+  camPhi += dy * 0.008;
+  camPhi = Math.max(0.1, Math.min(Math.PI - 0.1, camPhi));
+  updateCamera();
+}
+
+function onMouseUp() {
+  isDraggingCamera = false;
+  canvas.style.cursor = 'grab';
+}
+
+function onWheel(e) {
+  e.preventDefault();
+  const delta = e.deltaY > 0 ? 1.1 : 0.9;
+  camRadius *= delta;
+  camRadius = Math.max(2, Math.min(20, camRadius));
+  updateCamera();
+}
+
+let touchStartDist = 0;
+let touchStartRadius = 4;
+
+function onTouchStart(e) {
+  if (e.target.closest('.ring-controller')) return;
+  if (e.touches.length === 2) {
+    const dx = e.touches[0].clientX - e.touches[1].clientX;
+    const dy = e.touches[0].clientY - e.touches[1].clientY;
+    touchStartDist = Math.sqrt(dx * dx + dy * dy);
+    touchStartRadius = camRadius;
+    e.preventDefault();
+  } else if (e.touches.length === 1) {
+    isDraggingCamera = true;
+    lastDragPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    e.preventDefault();
+  }
+}
+
+function onTouchMove(e) {
+  if (e.touches.length === 2) {
+    const dx = e.touches[0].clientX - e.touches[1].clientX;
+    const dy = e.touches[0].clientY - e.touches[1].clientY;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (touchStartDist > 0) {
+      camRadius = touchStartRadius * touchStartDist / dist;
+      camRadius = Math.max(2, Math.min(20, camRadius));
+      updateCamera();
+    }
+    e.preventDefault();
+  } else if (isDraggingCamera && e.touches.length === 1) {
+    const touch = e.touches[0];
+    const dx = touch.clientX - lastDragPos.x;
+    const dy = touch.clientY - lastDragPos.y;
+    lastDragPos = { x: touch.clientX, y: touch.clientY };
+    camTheta += dx * 0.008;
+    camPhi += dy * 0.008;
+    camPhi = Math.max(0.1, Math.min(Math.PI - 0.1, camPhi));
+    updateCamera();
+    e.preventDefault();
+  }
+}
+
+function onTouchEnd(e) {
+  if (e.touches.length === 0) {
+    isDraggingCamera = false;
+  }
+}
+
+canvas.addEventListener('mousedown', onMouseDown);
+window.addEventListener('mousemove', onMouseMove);
+window.addEventListener('mouseup', onMouseUp);
+canvas.addEventListener('wheel', onWheel, { passive: false });
+canvas.addEventListener('touchstart', onTouchStart, { passive: false });
+canvas.addEventListener('touchmove', onTouchMove, { passive: false });
+canvas.addEventListener('touchend', onTouchEnd);
+
+// ==================== 环盘操控器 ====================
+const ringController = document.getElementById('ring-controller');
+const ringOuter = document.getElementById('ring-outer');
+const ringInner = document.getElementById('ring-inner');
+const ringPlus = document.getElementById('ring-plus');
+const ringMinus = document.getElementById('ring-minus');
+const ringKnob = document.getElementById('ring-knob');
+const ringRotIndicator = document.getElementById('ring-rot-indicator');
+
+function updateRingVisual() {
+  ringRotIndicator.style.transform = `translateX(-50%) rotate(${ringTransform.rotation * 180 / Math.PI}deg)`;
+  const maxOff = 18;
+  const kx = Math.max(-maxOff, Math.min(maxOff, ringTransform.tx * 8));
+  const ky = Math.max(-maxOff, Math.min(maxOff, -ringTransform.ty * 8));
+  ringKnob.style.transform = `translate(calc(-50% + ${kx}px), calc(-50% + ${ky}px))`;
+}
+
+function getRingCenter() {
+  const rect = ringController.getBoundingClientRect();
+  return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+}
+
+ringOuter.addEventListener('mousedown', (e) => {
+  e.stopPropagation();
+  const center = getRingCenter();
+  const screenDx = e.clientX - center.x;
+  const screenDy = e.clientY - center.y;
+  ringDragStart.angle = Math.atan2(screenDy, screenDx);
+  ringDragStart.rot = ringTransform.rotation;
+  ringDragMode = 'rotate';
+});
+
+ringInner.addEventListener('mousedown', (e) => {
+  e.stopPropagation();
+  ringDragStart.x = e.clientX;
+  ringDragStart.y = e.clientY;
+  ringDragStart.tx = ringTransform.tx;
+  ringDragStart.ty = ringTransform.ty;
+  ringDragMode = 'translate';
+});
+
+ringInner.addEventListener('dblclick', (e) => {
+  e.stopPropagation();
+  ringTransform = { scale: 1, rotation: 0, tx: 0, ty: 0 };
+  updateRingVisual();
+  needsRender = true;
+});
+
+function startScale(delta) {
+  if (scaleTimer) clearInterval(scaleTimer);
+  scaleTimer = setInterval(() => {
+    ringTransform.scale *= delta;
+    ringTransform.scale = Math.max(0.1, Math.min(10, ringTransform.scale));
+    needsRender = true;
+  }, 50);
+}
+function stopScale() {
+  if (scaleTimer) { clearInterval(scaleTimer); scaleTimer = null; }
+}
+
+ringPlus.addEventListener('mousedown', (e) => { e.stopPropagation(); startScale(1.03); });
+ringPlus.addEventListener('mouseup', stopScale);
+ringPlus.addEventListener('mouseleave', stopScale);
+ringPlus.addEventListener('touchstart', (e) => { e.stopPropagation(); e.preventDefault(); startScale(1.03); });
+ringPlus.addEventListener('touchend', stopScale);
+
+ringMinus.addEventListener('mousedown', (e) => { e.stopPropagation(); startScale(0.97); });
+ringMinus.addEventListener('mouseup', stopScale);
+ringMinus.addEventListener('mouseleave', stopScale);
+ringMinus.addEventListener('touchstart', (e) => { e.stopPropagation(); e.preventDefault(); startScale(0.97); });
+ringMinus.addEventListener('touchend', stopScale);
+
+window.addEventListener('mousemove', (e) => {
+  if (!ringDragMode) return;
+  const center = getRingCenter();
+  if (ringDragMode === 'rotate') {
+    const screenDx = e.clientX - center.x;
+    const screenDy = e.clientY - center.y;
+    const angle = Math.atan2(screenDy, screenDx);
+    let delta = angle - ringDragStart.angle;
+    if (delta > Math.PI) delta -= 2 * Math.PI;
+    if (delta < -Math.PI) delta += 2 * Math.PI;
+    ringTransform.rotation = ringDragStart.rot + delta;
+    updateRingVisual();
+    needsRender = true;
+  } else if (ringDragMode === 'translate') {
+    const screenDx = e.clientX - ringDragStart.x;
+    const screenDy = e.clientY - ringDragStart.y;
+    ringTransform.tx = ringDragStart.tx + screenDx * 0.02;
+      ringTransform.ty = ringDragStart.ty - screenDy * 0.02;
+    updateRingVisual();
+    needsRender = true;
+  }
+});
+
+window.addEventListener('mouseup', () => { ringDragMode = null; });
+
+ringOuter.addEventListener('touchstart', (e) => {
+  e.stopPropagation(); e.preventDefault();
+  const touch = e.touches[0];
+  const center = getRingCenter();
+  const screenDx = touch.clientX - center.x;
+  const screenDy = touch.clientY - center.y;
+  ringDragStart.angle = Math.atan2(screenDy, screenDx);
+  ringDragStart.rot = ringTransform.rotation;
+  ringDragMode = 'rotate';
+});
+ringInner.addEventListener('touchstart', (e) => {
+  e.stopPropagation(); e.preventDefault();
+  const touch = e.touches[0];
+  ringDragStart.x = touch.clientX;
+  ringDragStart.y = touch.clientY;
+  ringDragStart.tx = ringTransform.tx;
+  ringDragStart.ty = ringTransform.ty;
+  ringDragMode = 'translate';
+});
+window.addEventListener('touchmove', (e) => {
+  if (!ringDragMode || e.touches.length === 0) return;
+  const touch = e.touches[0];
+  const center = getRingCenter();
+  if (ringDragMode === 'rotate') {
+    const screenDx = touch.clientX - center.x;
+    const screenDy = touch.clientY - center.y;
+    const angle = Math.atan2(screenDy, screenDx);
+    let delta = angle - ringDragStart.angle;
+    if (delta > Math.PI) delta -= 2 * Math.PI;
+    if (delta < -Math.PI) delta += 2 * Math.PI;
+    ringTransform.rotation = ringDragStart.rot + delta;
+    updateRingVisual();
+    needsRender = true;
+  } else if (ringDragMode === 'translate') {
+    const screenDx = touch.clientX - ringDragStart.x;
+    const screenDy = touch.clientY - ringDragStart.y;
+    ringTransform.tx = ringDragStart.tx + screenDx * 0.02;
+      ringTransform.ty = ringDragStart.ty - screenDy * 0.02;
+    updateRingVisual();
+    needsRender = true;
+  }
+}, { passive: false });
+window.addEventListener('touchend', () => { ringDragMode = null; });
+
+// ==================== 缩放 ====================
+function resetView() {
+  camRadius = 4;
+  camTheta = Math.PI / 3;
+  camPhi = Math.PI / 3;
+  updateCamera();
+}
+
+// ==================== 数字键盘 ====================
+function showNumPad(key, displayEl) {
+  if (numPadTarget && numPadTarget !== displayEl) numpadCancel();
+  numPadKey = key;
+  numPadTarget = displayEl;
+  numPadOriginalValue = displayEl.textContent;
+  numPadExpr = String(displayEl.textContent || '');
+  document.querySelectorAll('.param-value').forEach(el => el.classList.remove('active'));
+  displayEl.classList.add('active');
+  let pad = document.getElementById('custom-numpad');
+  if (!pad) {
+    pad = document.createElement('div');
+    pad.id = 'custom-numpad';
+    pad.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);' +
+      'background:rgba(255,255,255,0.98);border:2px solid #dee2e6;border-radius:16px;' +
+      'padding:14px;z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.2);display:none;' +
+      'flex-direction:column;align-items:center;gap:10px;';
+    const display = document.createElement('div');
+    display.id = 'numpad-display';
+    display.style.cssText = 'font-size:15px;font-weight:bold;color:#2e86de;' +
+      'min-width:180px;text-align:center;padding:8px 12px;' +
+      'background:#f8f9fa;border-radius:8px;border:2px solid #dee2e6;word-break:break-all;' +
+      'min-height:40px;display:flex;align-items:center;justify-content:center;';
+    pad.appendChild(display);
+    const grid = document.createElement('div');
+    grid.style.cssText = 'display:grid;grid-template-columns:repeat(5,40px);gap:4px;';
+    const buttons = [
+      {ch:'C', type:'clear'}, {ch:'(', type:'op'}, {ch:')', type:'op'}, {ch:'←', type:'back'}, {ch:'✔', type:'ok'},
+      {ch:'7', type:'num'}, {ch:'8', type:'num'}, {ch:'9', type:'num'}, {ch:'/', type:'op'}, {ch:'×', type:'op'},
+      {ch:'4', type:'num'}, {ch:'5', type:'num'}, {ch:'6', type:'num'}, {ch:'-', type:'op'}, {ch:'+', type:'op'},
+      {ch:'1', type:'num'}, {ch:'2', type:'num'}, {ch:'3', type:'num'}, {ch:'√', type:'const'}, {ch:'^', type:'op'},
+      {ch:'0', type:'num'}, {ch:'.', type:'num'}, {ch:'π', type:'const'}, {ch:'e', type:'const'}, {ch:'ln', type:'ln'}
+    ];
+    buttons.forEach(btnInfo => {
+      const btn = document.createElement('button');
+      btn.textContent = btnInfo.ch;
+      const isOk = btnInfo.type === 'ok';
+      const isClear = btnInfo.type === 'clear';
+      const isFn = btnInfo.type === 'ln';
+      const isOp = btnInfo.type === 'op' || btnInfo.type === 'const';
+      btn.style.cssText = 'width:40px;height:40px;border:none;' +
+        'border-radius:8px;font-size:' + (btnInfo.ch.length > 1 ? '11px' : '14px') + ';font-weight:bold;' +
+        'cursor:pointer;transition:all 0.1s;user-select:none;-webkit-user-select:none;' +
+        'display:flex;align-items:center;justify-content:center;' +
+        (isOk ? 'background:' + RED_ORANGE + ';color:' + CREAM + ';box-shadow:0 2px 8px rgba(232,93,4,0.3);font-size:18px;'
+          : isClear ? 'background:' + CREAM + ';color:' + RED_ORANGE + ';box-shadow:0 2px 8px rgba(0,0,0,0.08);'
+          : isFn ? 'background:#74b9ff;color:#fff;box-shadow:0 2px 8px rgba(116,185,255,0.3);'
+          : isOp ? 'background:#f0f0f0;color:#666;box-shadow:0 1px 4px rgba(0,0,0,0.08);'
+          : 'background:' + CREAM + ';color:' + RED_ORANGE + ';box-shadow:0 2px 8px rgba(0,0,0,0.08);');
+      btn.onmousedown = (e) => { e.preventDefault(); handleNumpad(btnInfo.ch, btnInfo.type); };
+      btn.ontouchstart = (e) => { e.preventDefault(); handleNumpad(btnInfo.ch, btnInfo.type); };
+      grid.appendChild(btn);
+    });
+    pad.appendChild(grid);
+    document.body.appendChild(pad);
+  }
+  updateNumpadDisplay();
+  pad.style.display = 'flex';
+}
+
+function updateNumpadDisplay() {
+  const display = document.getElementById('numpad-display');
+  if (display) display.textContent = numPadExpr;
+}
+
+function handleNumpad(ch, type) {
+  if (type === 'ok') { numpadConfirm(); return; }
+  if (type === 'clear') { numPadExpr = ''; updateNumpadDisplay(); return; }
+  if (type === 'back') {
+    if (numPadExpr.length > 0) numPadExpr = numPadExpr.slice(0, -1);
+    updateNumpadDisplay(); return;
+  }
+  if (type === 'ln') { numPadExpr += 'ln('; updateNumpadDisplay(); return; }
+  numPadExpr += ch;
+  updateNumpadDisplay();
+}
+
+function safeEval(expr) {
+  let jsExpr = expr.replace(/×/g, '*').replace(/÷/g, '/');
+  jsExpr = jsExpr.replace(/π/g, '(' + Math.PI + ')');
+  jsExpr = jsExpr.replace(/(?<![a-zA-Z])e(?![a-zA-Z])/g, '(' + Math.E + ')');
+  jsExpr = jsExpr.replace(/√(\d+(?:\.\d+)?)/g, 'Math.sqrt($1)');
+  while (/√\(/.test(jsExpr)) { jsExpr = jsExpr.replace(/√\(([^()]*)\)/g, 'Math.sqrt($1)'); }
+  jsExpr = jsExpr.replace(/√Math\./g, 'Math.sqrt(Math.');
+  jsExpr = jsExpr.replace(/√(\d+\.\d+)/g, 'Math.sqrt($1)');
+  jsExpr = jsExpr.replace(/√/g, 'Math.sqrt');
+  while (/ln\(/.test(jsExpr)) { jsExpr = jsExpr.replace(/ln\(([^()]*)\)/g, 'Math.log($1)'); }
+  jsExpr = jsExpr.replace(/ln/g, 'Math.log');
+  jsExpr = jsExpr.replace(/(\d+(?:\.\d+)?)(Math\.|\()/g, '$1*$2');
+  while (true) {
+    const caretIdx = jsExpr.lastIndexOf('^');
+    if (caretIdx === -1) break;
+    function getOperand(str, start) {
+      let i = start;
+      while (i < str.length && str[i] === ' ') i++;
+      if (i >= str.length) return { text: '', end: i };
+      if (str[i] === '(') {
+        let depth = 1; i++;
+        while (i < str.length && depth > 0) {
+          if (str[i] === '(') depth++;
+          else if (str[i] === ')') depth--;
+          i++;
+        }
+        return { text: str.substring(start, i), end: i };
+      }
+      if (str.substring(i, i + 5) === 'Math.') {
+        let j = i + 5;
+        while (j < str.length && /[a-zA-Z]/.test(str[j])) j++;
+        while (j < str.length && str[j] === ' ') j++;
+        if (j < str.length && str[j] === '(') {
+          let depth = 1; j++;
+          while (j < str.length && depth > 0) {
+            if (str[j] === '(') depth++;
+            else if (str[j] === ')') depth--;
+            j++;
+          }
+          return { text: str.substring(start, j), end: j };
+        }
+      }
+      if (/[\d.]/.test(str[i])) {
+        let j = i;
+        while (j < str.length && /[\d.]/.test(str[j])) j++;
+        return { text: str.substring(start, j), end: j };
+      }
+      return { text: str[i], end: i + 1 };
+    }
+    function getLeftOperand(str, caretIdx) {
+      let i = caretIdx - 1;
+      while (i >= 0 && str[i] === ' ') i--;
+      if (i < 0) return { text: '', start: 0 };
+      if (str[i] === ')') {
+        let depth = 1; i--;
+        while (i >= 0 && depth > 0) {
+          if (str[i] === ')') depth++;
+          else if (str[i] === '(') depth--;
+          i--;
+        }
+        return { text: str.substring(i + 1, caretIdx), start: i + 1 };
+      }
+      if (/[\d.]/.test(str[i])) {
+        let j = i;
+        while (j >= 0 && /[\d.]/.test(str[j])) j--;
+        return { text: str.substring(j + 1, caretIdx), start: j + 1 };
+      }
+      return { text: str[i], start: i };
+    }
+    const leftResult = getLeftOperand(jsExpr, caretIdx);
+    const leftOp = leftResult.text;
+    const leftStart = leftResult.start;
+    const rightResult = getOperand(jsExpr, caretIdx + 1);
+    const rightOp = rightResult.text;
+    jsExpr = jsExpr.substring(0, leftStart) + 'Math.pow(' + leftOp + ',' + rightOp + ')' + jsExpr.substring(rightResult.end);
+  }
+  try {
+    const result = new Function('return ' + jsExpr)();
+    if (!isFinite(result) || isNaN(result)) return NaN;
+    return result;
+  } catch (e) { return NaN; }
+}
+
+function parseComplex(expr) {
+  expr = expr.replace(/\s/g, '').replace(/×/g, '*');
+  expr = expr.replace(/π/g, '(' + Math.PI + ')');
+  expr = expr.replace(/(?<![a-zA-Z])e(?![a-zA-Z])/g, '(' + Math.E + ')');
+  if (!expr.includes('i')) {
+    const v = safeEval(expr);
+    return isNaN(v) ? null : { re: v, im: 0 };
+  }
+  expr = expr.replace(/i$/, '');
+  if (expr === '' || expr === '+') return { re: 0, im: 1 };
+  if (expr === '-') return { re: 0, im: -1 };
+  let splitIdx = -1;
+  for (let i = expr.length - 1; i >= 0; i--) {
+    if ((expr[i] === '+' || expr[i] === '-') && i > 0 && expr[i-1] !== 'e' && expr[i-1] !== 'E') {
+      splitIdx = i;
+      break;
+    }
+  }
+  if (splitIdx > 0) {
+    const rePart = safeEval(expr.substring(0, splitIdx));
+    let imExpr = expr.substring(splitIdx);
+    let imPart;
+    if (imExpr === '+' || imExpr === '') imPart = 1;
+    else if (imExpr === '-') imPart = -1;
+    else imPart = safeEval(imExpr);
+    if (isNaN(rePart) || isNaN(imPart)) return null;
+    return { re: rePart || 0, im: imPart };
+  } else {
+    const imPart = safeEval(expr);
+    if (isNaN(imPart)) return null;
+    return { re: 0, im: imPart || 1 };
+  }
+}
+
+function numpadConfirm() {
+  if (numPadTarget && numPadKey) {
+    const exprToEval = numPadExpr || '0';
+    const val = parseComplex(exprToEval);
+    if (val && isFinite(val.re) && isFinite(val.im)) {
+      if (numPadKey.startsWith('curve_')) {
+        const k = numPadKey.replace('curve_', '');
+        curveParams[currentCurve][k] = val.re;
+        numPadTarget.textContent = exprToEval;
+      } else {
+        complexParams[numPadKey] = val;
+        numPadTarget.textContent = formatComplex(val);
+        updateDial(numPadKey);
+      }
+      numPadTarget.classList.remove('active');
+      needsRender = true;
+      document.getElementById('custom-numpad').style.display = 'none';
+      numPadTarget = null; numPadKey = null; numPadExpr = ''; numPadOriginalValue = '';
+    } else {
+      const display = document.getElementById('numpad-display');
+      if (display) {
+        display.style.color = '#ff0000';
+        display.textContent = '错误: 无效表达式';
+        setTimeout(() => { display.style.color = '#2e86de'; updateNumpadDisplay(); }, 1500);
+      }
+    }
+  }
+}
+
+function numpadCancel() {
+  if (numPadTarget) {
+    numPadTarget.textContent = numPadOriginalValue;
+    numPadTarget.classList.remove('active');
+  }
+  const pad = document.getElementById('custom-numpad');
+  if (pad) pad.style.display = 'none';
+  numPadTarget = null; numPadKey = null; numPadExpr = ''; numPadOriginalValue = '';
+}
+
+function formatComplex(z) {
+  const re = z.re, im = z.im;
+  if (Math.abs(im) < 1e-10) return re.toFixed(2);
+  if (Math.abs(re) < 1e-10) return im.toFixed(2) + 'i';
+  const sign = im >= 0 ? '+' : '-';
+  return re.toFixed(2) + sign + Math.abs(im).toFixed(2) + 'i';
+}
+
+// ==================== 参数面板 ====================
+function buildMobiusParams() {
+  const container = document.getElementById('param-container');
+  container.innerHTML = '';
+  paramNames.forEach(name => {
+    const row = document.createElement('div');
+    row.className = 'param-row';
+    row.style.gap = '3px';
+
+    const label = document.createElement('span');
+    label.className = 'param-label';
+    label.textContent = name;
+    label.style.width = '18px';
+    label.style.fontSize = '13px';
+
+    const rewind = document.createElement('button');
+    rewind.className = 'rewind-btn';
+    rewind.id = `rewind-${name}`;
+    rewind.textContent = '◀';
+    rewind.style.width = '22px';
+    rewind.style.height = '20px';
+    rewind.onclick = () => toggleRewind(name);
+
+    const minus = document.createElement('button');
+    minus.className = 'btn btn-minus';
+    minus.textContent = '−';
+    minus.style.width = '22px';
+    minus.style.height = '20px';
+    minus.onmousedown = (e) => { e.preventDefault(); startAdjust(name, -1); };
+    minus.onmouseup = (e) => { e.preventDefault(); stopAdjust(name, -1); };
+    minus.onmouseleave = () => stopAdjust(name, -1);
+    minus.ontouchstart = (e) => { e.preventDefault(); startAdjust(name, -1); };
+    minus.ontouchend = (e) => { e.preventDefault(); stopAdjust(name, -1); };
+    minus.ontouchcancel = () => stopAdjust(name, -1);
+
+    const dial = document.createElement('div');
+    dial.className = 'complex-dial';
+    dial.id = `dial-${name}`;
+    dial.innerHTML = '<div class="dial-cross-h"></div><div class="dial-cross-v"></div><div class="dial-dot" id="dial-dot-' + name + '"></div>';
+    dial.addEventListener('mousedown', (e) => onDialDown(e, name));
+    dial.addEventListener('touchstart', (e) => { e.preventDefault(); onDialDown(e.touches[0], name); }, { passive: false });
+
+    const plus = document.createElement('button');
+    plus.className = 'btn btn-plus';
+    plus.textContent = '+';
+    plus.style.width = '22px';
+    plus.style.height = '20px';
+    plus.onmousedown = (e) => { e.preventDefault(); startAdjust(name, 1); };
+    plus.onmouseup = (e) => { e.preventDefault(); stopAdjust(name, 1); };
+    plus.onmouseleave = () => stopAdjust(name, 1);
+    plus.ontouchstart = (e) => { e.preventDefault(); startAdjust(name, 1); };
+    plus.ontouchend = (e) => { e.preventDefault(); stopAdjust(name, 1); };
+    plus.ontouchcancel = () => stopAdjust(name, 1);
+
+    const play = document.createElement('button');
+    play.className = 'play-btn';
+    play.id = `play-${name}`;
+    play.textContent = '▶';
+    play.style.width = '22px';
+    play.style.height = '20px';
+    play.onclick = () => togglePlay(name);
+
+    const val = document.createElement('span');
+    val.className = 'param-value';
+    val.id = `val-${name}`;
+    val.textContent = formatComplex(complexParams[name]);
+    val.onclick = () => showNumPad(name, val);
+
+    row.appendChild(label);
+    row.appendChild(rewind);
+    row.appendChild(minus);
+    row.appendChild(dial);
+    row.appendChild(plus);
+    row.appendChild(play);
+    row.appendChild(val);
+    container.appendChild(row);
+  });
+  updateAllDials();
+  updateFormula();
+}
+
+let dialDragParam = null;
+function onDialDown(e, name) {
+  const dial = document.getElementById(`dial-${name}`);
+  const rect = dial.getBoundingClientRect();
+  const centerX = rect.left + rect.width / 2;
+  const centerY = rect.top + rect.height / 2;
+  const screenDx = e.clientX - centerX;
+  const screenDy = e.clientY - centerY;
+  const maxR = 32;
+  const maxVal = 5;
+  const re = (screenDx / maxR) * maxVal;
+  const im = (-screenDy / maxR) * maxVal;
+  complexParams[name] = { re, im };
+  updateDial(name);
+  needsRender = true;
+  dialDragParam = name;
+}
+
+window.addEventListener('mousemove', (e) => {
+  if (!dialDragParam) return;
+  const dial = document.getElementById(`dial-${dialDragParam}`);
+  const rect = dial.getBoundingClientRect();
+  const centerX = rect.left + rect.width / 2;
+  const centerY = rect.top + rect.height / 2;
+  const screenDx = e.clientX - centerX;
+  const screenDy = e.clientY - centerY;
+  const maxR = 32;
+  const maxVal = 5;
+  const re = (screenDx / maxR) * maxVal;
+  const im = (-screenDy / maxR) * maxVal;
+  complexParams[dialDragParam] = { re, im };
+  updateDial(dialDragParam);
+  needsRender = true;
+});
+window.addEventListener('mouseup', () => { dialDragParam = null; });
+window.addEventListener('touchmove', (e) => {
+  if (!dialDragParam || e.touches.length === 0) return;
+  const touch = e.touches[0];
+  const dial = document.getElementById(`dial-${dialDragParam}`);
+  const rect = dial.getBoundingClientRect();
+  const screenDx = touch.clientX - (rect.left + rect.width / 2);
+  const screenDy = touch.clientY - (rect.top + rect.height / 2);
+  const maxR = 32;
+  const maxVal = 5;
+  complexParams[dialDragParam] = {
+    re: (screenDx / maxR) * maxVal,
+    im: (-screenDy / maxR) * maxVal
+  };
+  updateDial(dialDragParam);
+  needsRender = true;
+}, { passive: false });
+window.addEventListener('touchend', () => { dialDragParam = null; });
+
+function updateDial(name) {
+  const dot = document.getElementById(`dial-dot-${name}`);
+  const val = document.getElementById(`val-${name}`);
+  if (!dot || !val) return;
+  const z = complexParams[name];
+  const maxVal = 5;
+  const maxR = 28;
+  const cx = (z.re / maxVal) * maxR;
+  const cy = -(z.im / maxVal) * maxR;
+  const clampedX = Math.max(-maxR, Math.min(maxR, cx));
+  const clampedY = Math.max(-maxR, Math.min(maxR, cy));
+  dot.style.transform = `translate(calc(-50% + ${clampedX}px), calc(-50% + ${clampedY}px))`;
+  val.textContent = formatComplex(z);
+}
+
+function updateAllDials() {
+  paramNames.forEach(name => updateDial(name));
+}
+
+function adjustParam(name, direction) {
+  const z = complexParams[name];
+  const r = cAbs(z);
+  const theta = cArg(z);
+  const delta = stepSize * 0.1;
+  const newR = Math.max(0, r + direction * delta);
+  complexParams[name] = { re: newR * Math.cos(theta), im: newR * Math.sin(theta) };
+  updateDial(name);
+  triggerSound(name, newR);
+  needsRender = true;
+}
+
+function startAdjust(name, direction) {
+  const key = name + '_' + direction;
+  if (keyTimers[key]) return;
+  adjustParam(name, direction);
+  keyTimers[key] = setInterval(() => adjustParam(name, direction), 100);
+}
+
+function stopAdjust(name, direction) {
+  const key = name + '_' + direction;
+  if (keyTimers[key]) { clearInterval(keyTimers[key]); delete keyTimers[key]; }
+}
+
+function togglePlay(name) {
+  const btn = document.getElementById(`play-${name}`);
+  if (playTimers[name]) {
+    delete playTimers[name];
+    delete playDirections[name];
+    btn.textContent = '▶';
+    btn.classList.remove('active');
+  } else {
+    playDirections[name] = 1;
+    playTimers[name] = { last: Date.now() };
+    btn.textContent = '⏸';
+    btn.classList.add('active');
+  }
+}
+
+function toggleRewind(name) {
+  const btn = document.getElementById(`rewind-${name}`);
+  if (rewindTimers[name]) {
+    delete rewindTimers[name];
+    delete rewindDirections[name];
+    btn.textContent = '◀';
+    btn.classList.remove('active');
+  } else {
+    rewindDirections[name] = -1;
+    rewindTimers[name] = { last: Date.now() };
+    btn.textContent = '⏸';
+    btn.classList.add('active');
+  }
+}
+
+function normalizeDet() {
+  const a = complexParams.a, b = complexParams.b;
+  const c = complexParams.c, d = complexParams.d;
+  const det = cSub(cMul(a, d), cMul(b, c));
+  const detMag = cAbs(det);
+  if (detMag < 1e-10) return;
+  const factor = 1 / detMag;
+  paramNames.forEach(name => {
+    complexParams[name].re *= factor;
+    complexParams[name].im *= factor;
+    updateDial(name);
+  });
+  needsRender = true;
+}
+
+function resetMobiusParams() {
+  stopAllAuto();
+  complexParams = { a: { re: 1, im: 0 }, b: { re: 0, im: 0 }, c: { re: 0, im: 0 }, d: { re: 1, im: 0 } };
+  ringTransform = { scale: 1, rotation: 0, tx: 0, ty: 0 };
+  refFixedPoints = [];
+  crFixedPoints = [];
+  updateRingVisual();
+  updateAllDials();
+  updateFormula();
+  needsRender = true;
+}
+
+function stopAllAuto() {
+  paramNames.forEach(name => {
+    if (playTimers[name]) {
+      delete playTimers[name];
+      delete playDirections[name];
+      const btn = document.getElementById(`play-${name}`);
+      if (btn) { btn.textContent = '▶'; btn.classList.remove('active'); }
+    }
+    if (rewindTimers[name]) {
+      delete rewindTimers[name];
+      delete rewindDirections[name];
+      const btn = document.getElementById(`rewind-${name}`);
+      if (btn) { btn.textContent = '◀'; btn.classList.remove('active'); }
+    }
+  });
+}
+
+// ==================== 曲线参数面板 ====================
+function buildCurveParams() {
+  const box = document.getElementById('curve-params-box');
+  box.innerHTML = '';
+  const defs = curveDefaults[currentCurve];
+  if (!defs || Object.keys(defs).length === 0) {
+    box.style.display = 'none';
+    return;
+  }
+  box.style.display = 'flex';
+  for (const key of Object.keys(defs)) {
+    const row = document.createElement('div');
+    row.className = 'curve-param-row';
+    const label = document.createElement('label');
+    label.textContent = key + '=';
+    const display = document.createElement('div');
+    display.className = 'param-display';
+    display.textContent = curveParams[currentCurve][key];
+    display.dataset.paramKey = key;
+    display.addEventListener('click', function(e) {
+      e.stopPropagation();
+      const k = this.dataset.paramKey;
+      showNumPad('curve_' + k, this);
+    });
+    display.addEventListener('touchstart', function(e) {
+      e.stopPropagation(); e.preventDefault();
+      const k = this.dataset.paramKey;
+      showNumPad('curve_' + k, this);
+    }, { passive: false });
+    row.appendChild(label);
+    row.appendChild(display);
+    box.appendChild(row);
+  }
+}
+
+function changeCurve() {
+  currentCurve = document.getElementById('curve-select').value;
+  refFixedPoints = [];
+  crFixedPoints = [];
+  buildCurveParams();
+  needsRender = true;
+  updateScene();
+  randomizeCRPoints();
+}
+
+let dropdownOpen = false;
+function toggleDropdown() {
+  dropdownOpen = !dropdownOpen;
+  document.getElementById('custom-dropdown').classList.toggle('open', dropdownOpen);
+}
+function selectCurve(value) {
+  document.getElementById('curve-select').value = value;
+  const trigger = document.getElementById('custom-select-trigger');
+  const options = document.querySelectorAll('.custom-option');
+  options.forEach(opt => {
+    opt.classList.toggle('selected', opt.dataset.value === value);
+    if (opt.dataset.value === value) trigger.textContent = opt.textContent;
+  });
+  dropdownOpen = false;
+  document.getElementById('custom-dropdown').classList.remove('open');
+  changeCurve();
+}
+
+function setStep(s) {
+  stepSize = s;
+  document.querySelectorAll('.step-btn').forEach(btn => {
+    const clean = parseFloat(btn.dataset.step);
+    btn.classList.toggle('active', Math.abs(clean - s) < 1e-6);
+  });
+}
+
+// ==================== 视口自适应缩放 ====================
+function fitToViewport() {
+  const container = document.querySelector('.rotated-container');
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const padding = 40;
+  const preW = 600 + 12 + 300;
+  const preH = 600;
+  const scale = Math.min(
+    (vw - padding) / preW,
+    (vh - padding) / preH,
+    1.2
+  );
+  container.style.transform = `scale(${Math.max(0.5, scale)})`;
+}
+window.addEventListener('resize', fitToViewport);
+setTimeout(fitToViewport, 100);
+
+// ==================== 初始化 ====================
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.modulus-wrap')) {
+    document.querySelectorAll('.modulus-popover').forEach(p => p.classList.remove('open'));
+  }
+  const wrap = document.getElementById('custom-select-wrap');
+  if (wrap && !wrap.contains(e.target)) {
+    dropdownOpen = false;
+    document.getElementById('custom-dropdown').classList.remove('open');
+  }
+  const numpad = document.getElementById('custom-numpad');
+  if (numpad && numpad.style.display === 'flex' && !e.target.closest('#custom-numpad')) {
+    numpadCancel();
+  }
+});
+
+buildCurveParams();
+buildMobiusParams();
+fitToViewport();
+initThree();
+updateRingVisual();
+
+</script>
+</body>
+</html>

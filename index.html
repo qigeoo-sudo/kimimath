@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>重新发现龙珠之动画旅行 · 入口</title>
+<style>
+:root{
+  --bg:#0b1020; --panel:#141e33; --border:#263553;
+  --text:#d7e0ee; --muted:#5f7194; --faint:#33415e;
+  --cyan:#5cc8e6; --violet:#b48ce6; --mint:#6ce0a8; --gold:#e6c86e;
+  --mono:"JetBrains Mono","Cascadia Code",Consolas,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--bg);color:var(--text);
+  font:14px/1.6 "Segoe UI","Microsoft YaHei",sans-serif;
+  display:flex;flex-direction:column;overflow:hidden}
+
+/* ===== 顶部常驻标签栏 ===== */
+header{flex:0 0 52px;display:flex;align-items:center;gap:18px;padding:0 18px;
+  background:#0e1528;border-bottom:1px solid var(--border);z-index:10}
+.brand{display:flex;align-items:center;gap:9px;font-weight:600;font-size:15px;white-space:nowrap;cursor:pointer}
+.brand .dot{width:10px;height:10px;border-radius:50%;background:var(--gold);box-shadow:0 0 8px var(--gold)}
+.brand small{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:.18em}
+nav{display:flex;gap:6px;overflow-x:auto}
+.tab{border:1px solid transparent;background:none;color:var(--muted);font:inherit;font-size:13px;
+  padding:6px 14px;border-radius:8px;cursor:pointer;white-space:nowrap}
+.tab:hover{color:var(--text);background:#182444}
+.tab.on{color:var(--cyan);border-color:var(--border);background:var(--panel)}
+
+/* ===== 内容区 ===== */
+#stage{flex:1;position:relative;overflow:hidden}
+.view{position:absolute;inset:0;display:none}
+.view.on{display:block}
+#view-home{overflow-y:auto;padding:34px clamp(18px,5vw,64px) 60px}
+.frame{width:100%;height:100%;border:0;display:block;background:var(--bg)}
+
+/* ===== 入口页 ===== */
+.hero{max-width:1100px;margin:0 auto 30px}
+.hero h1{font-size:26px;letter-spacing:.02em}
+.hero h1 small{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.22em;margin-left:10px}
+.hero p{color:var(--muted);margin-top:8px;max-width:780px}
+
+.group{max-width:1100px;margin:0 auto 30px}
+.group-head{display:flex;align-items:baseline;gap:10px;margin-bottom:14px}
+.group-head::before{content:"";width:9px;height:9px;border-radius:50%;align-self:center}
+.group-head h2{font-size:17px;letter-spacing:.03em}
+.group-head span{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:.18em}
+.group[data-accent="cyan"]  .group-head::before{background:var(--cyan);box-shadow:0 0 7px var(--cyan)}
+.group[data-accent="violet"] .group-head::before{background:var(--violet);box-shadow:0 0 7px var(--violet)}
+.group[data-accent="mint"]  .group-head::before{background:var(--mint);box-shadow:0 0 7px var(--mint)}
+
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:14px;
+  padding:18px 18px 14px;cursor:pointer;display:flex;flex-direction:column;gap:10px;
+  transition:transform .15s,border-color .15s,box-shadow .15s}
+.card:hover{transform:translateY(-3px);box-shadow:0 8px 26px rgba(0,0,0,.35)}
+.group[data-accent="cyan"]  .card:hover{border-color:var(--cyan)}
+.group[data-accent="violet"] .card:hover{border-color:var(--violet)}
+.group[data-accent="mint"]  .card:hover{border-color:var(--mint)}
+.card .eq{font-family:var(--mono);font-size:13px;color:var(--gold);
+  border:1px solid var(--border);border-radius:999px;padding:3px 12px;
+  align-self:flex-start;background:#0e1528}
+.card h3{font-size:16px}
+.card h3 small{color:var(--muted);font-weight:400;font-size:12px;margin-left:6px}
+.card p{color:var(--muted);font-size:13px;flex:1}
+.tags{display:flex;gap:6px;flex-wrap:wrap}
+.tag{font-family:var(--mono);font-size:10px;letter-spacing:.06em;
+  border:1px solid var(--faint);border-radius:6px;padding:2px 8px}
+.group[data-accent="cyan"]  .tag{color:var(--cyan)}
+.group[data-accent="violet"] .tag{color:var(--violet)}
+.group[data-accent="mint"]  .tag{color:var(--mint)}
+.card .go{font-size:12px;opacity:0;transition:opacity .15s}
+.group[data-accent="cyan"]  .go{color:var(--cyan)}
+.group[data-accent="violet"] .go{color:var(--violet)}
+.group[data-accent="mint"]  .go{color:var(--mint)}
+.card:hover .go{opacity:1}
+footer.hint{max-width:1100px;margin:6px auto 0;color:var(--faint);font-size:12px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand" id="brand"><span class="dot"></span>龙珠之动画旅行 <small>ANIMATED MATH</small></div>
+  <nav id="tabs"></nav>
+</header>
+
+<div id="stage">
+  <section class="view on" id="view-home">
+    <div class="hero">
+      <h1>重新发现龙珠之动画旅行<small>ANIMATED MATH JOURNEY</small></h1>
+      <p>参数在复平面上走动，根随之流动，绕支点一圈，根与根悄悄换位；球面之上，变换与几何定理获得生命。从局部模型到五次方程的不可解，从黎曼曲面到丹德林球——一段用动画重新发现的数学旅行。</p>
+    </div>
+    <div id="groups"></div>
+    <footer class="hint">点击卡片进入动画 · 顶部标签栏可随时切换页面或返回入口</footer>
+  </section>
+  <!-- 各动画的 iframe 视图由 JS 按 GROUPS 动态生成 -->
+</div>
+
+<script>
+"use strict";
+/* ================================================================
+   页面配置：入口卡片（分组）与顶部标签都由这里驱动
+   今后加新动画只需一步：在下面 GROUPS 对应组里加一项（入口卡片即出现）
+   顶部标签栏固定为：入口 + 三个组标题，点组标签回入口并滚动到对应组
+   file 为同目录下的动画文件名（改动文件名需同步这里）
+   ================================================================ */
+const GROUPS = [
+  { name:"根与群论", en:"ROOTS & GROUPS", accent:"cyan", pages:[
+    { id:"local", label:"局部模型", title:"参数小圆盘的微观变化", eq:"x = a + t²",
+      desc:"所有「之旅」里支点行为的微观解释：小圆盘的原像怎样从两块合并成一块；绕分支点一圈，两个原像为什么恰好互换。",
+      tags:["分支点","原像","局部模型"], file:"局部模型之旅_参数小圆盘的微观变化.html" },
+    { id:"cubic", label:"三根之旅", title:"支点与交换", eq:"x = y³ − 3y",
+      desc:"绕支点 x = ±2 一圈，两根悄悄交换——monodromy 生成 S₃，正是卡尔达诺公式的「先开平方、再开立方」。",
+      tags:["S₃","A₃","卡尔达诺"], file:"三根之旅-支点与交换动画.html" },
+    { id:"quartic", label:"四根之旅", title:"支点与置换群", eq:"x = y⁴ − 4y² + ty",
+      desc:"t 从 0 滑到 1：支点 −4 裂开，D₄ 扩张成整个 S₄——对称性破缺，对应费拉里解法的根式塔。",
+      tags:["S₄","D₄","V₄","费拉里"], file:"四根之旅-支点与置换群动画.html" },
+    { id:"quintic", label:"五根之旅", title:"阿贝尔与伽罗瓦", eq:"x = y⁵ − 5y³ + 4y",
+      desc:"四个相邻对换生成整个 S₅，而 A₅ 是单群、可解链第一步就断——一般五次方程没有根式解。",
+      tags:["S₅","A₅ 单群","伽罗瓦判据"], file:"五根之旅-阿贝尔与伽罗瓦.html" },
+    { id:"cyclic", label:"圆根之旅", title:"单位根与循环群", eq:"x = yⁿ",
+      desc:"n 个根排在单位圆上，绕 x = 0 一圈全体轮转一格——monodromy 是循环群 Zₙ，根式解永远存在。",
+      tags:["Zₙ","循环群","高斯 1796"], file:"圆根之旅-单位根与循环群.html" },
+  ]},
+  { name:"复分析与黎曼", en:"COMPLEX & RIEMANN", accent:"violet", pages:[
+    { id:"surface", label:"黎曼曲面", title:"整数叶与分数叶", eq:"w = s^(m/n)",
+      desc:"多值函数的图像真正成为曲面：m/n 从整数变到分数，看解析延拓怎样在叶与叶之间穿行。",
+      tags:["黎曼曲面","解析延拓","n 叶"], file:"黎曼曲面解析延拓之旅_整数叶与分数叶.html" },
+    { id:"sphere", label:"黎曼球", title:"平面球极与莫比", eq:"w = (az+b)/(cz+d)",
+      desc:"球极投影把复平面贴上球面，Möbius 变换在球上变成干净利落的几何动作——无穷远点不再特殊。",
+      tags:["黎曼球","球极投影","Möbius"], file:"黎曼球变换之旅_平面球极与莫比.html" },
+    { id:"mobius", label:"莫比乌斯变换", title:"各种曲线", eq:"w = (az+b)/(cz+d)",
+      desc:"直线、圆与各类曲线在 Möbius 变换下的命运：保圆性、不动点与轨道一目了然。",
+      tags:["Möbius","保圆性","曲线"], file:"莫比乌斯变换之旅_各种曲线.html" },
+    { id:"contour", label:"围道之旅", title:"从柯西定理到洛朗展开", eq:"∮ f(z) dz",
+      desc:"复平面网格的变形演示：围道在柯西定理下自由形变，遇到孤立奇点就留下洛朗展开的残影。",
+      tags:["柯西定理","围道","洛朗展开"], file:"围道之旅_从柯西定理到洛朗展开.html" },
+  ]},
+  { name:"几何与丹德林", en:"GEOMETRY & DANDELIN", accent:"mint", pages:[
+    { id:"dandelin", label:"丹德林球之旅", title:"可证明的准线方程", eq:"PF = e·Pd",
+      desc:"圆锥里塞进两个球，切点就是焦点——丹德林球让圆锥曲线的焦点-准线性质变成可证明的几何。",
+      tags:["丹德林球","圆锥曲线","焦点-准线"], file:"丹德林球之旅_可证明的准线方程.html" },
+    { id:"elliptic", label:"三维椭圆曲线之旅", title:"模仿丹德林球", eq:"z = ax³ + bx − y²",
+      desc:"把丹德林球的思想搬到三维：曲面上的截面曲线随参数连续变形。",
+      tags:["椭圆曲线","三维","截面"], file:"三维椭圆曲线之旅_模仿丹德林球.html" },
+    { id:"pascal", label:"Pascal 与 Pappus", title:"丹德林球上的连续变化",
+      desc:"从 Pappus 定理连续变化到 Pascal 定理：六点共线的奇迹，在丹德林球视角下一气呵成。",
+      tags:["Pascal","Pappus","连续变化"], file:"Pascal定理与Pappus定理之旅_在丹德林球上的连续变化.html" },
+    { id:"desargues", label:"笛沙格定理之旅", title:"透视与交点共线",
+      desc:"两个透视三角形的对应边交点共线——三维动态模型里的笛沙格定理。",
+      tags:["笛沙格","射影几何","三维"], file:"笛沙格定理之旅.html" },
+  ]},
+];
+
+const $ = id=>document.getElementById(id);
+const stage = $("stage");
+const loaded = {};   // iframe 首次激活时才加载：隐藏状态下产物量不到画布尺寸
+const allPages = GROUPS.flatMap(g=>g.pages);
+
+/* ================================================================
+   暂停补丁：通过 fetch + srcdoc 注入到每个产物 iframe 的 <head> 最前面，
+   包装 rAF / setInterval / setTimeout / AudioContext，
+   切走卡片时 __pauseCtl.pause() 全部冻结（含声音），切回 resume() 接着跑。
+   ================================================================ */
+const PAUSE_PATCH = `<script>
+(function(){
+  "use strict";
+  if (window.__pauseCtl) return;
+  let paused = false;
+  const held = [];
+  const timers = new Map();
+  let nextId = 1;
+  const audioCtxs = new Set();
+  const origRAF = window.requestAnimationFrame.bind(window);
+  const origCAF = window.cancelAnimationFrame.bind(window);
+  const origSI = window.setInterval.bind(window);
+  const origCI = window.clearInterval.bind(window);
+  const origST = window.setTimeout.bind(window);
+  const origCT = window.clearTimeout.bind(window);
+
+  window.requestAnimationFrame = function(cb){
+    return origRAF(function(ts){
+      if (!paused) cb(ts);
+      else held.push(cb);  // 暂停时挂起：循环链条在此断，resume 时补发
+    });
+  };
+  window.cancelAnimationFrame = function(id){ origCAF(id); };
+
+  window.setInterval = function(fn, delay){
+    const args = [].slice.call(arguments, 2);
+    const sid = nextId++;
+    const rec = { type:"i", fn:fn, delay:delay||0, args:args, realId:null };
+    if (!paused) rec.realId = origSI.apply(null, [fn, rec.delay].concat(args));
+    timers.set(sid, rec);
+    return sid;
+  };
+  window.clearInterval = function(sid){
+    const rec = timers.get(sid);
+    if (rec){ if (rec.realId!==null) origCI(rec.realId); timers.delete(sid); }
+    origCI(sid);
+  };
+  window.setTimeout = function(fn, delay){
+    const args = [].slice.call(arguments, 2);
+    const sid = nextId++;
+    const rec = { type:"t", fn:fn, delay:delay||0, args:args, realId:null, at:0 };
+    if (!paused){
+      rec.at = Date.now();
+      rec.realId = origST(function(){ timers.delete(sid); fn.apply(null, args); }, rec.delay);
+    }
+    timers.set(sid, rec);
+    return sid;
+  };
+  window.clearTimeout = function(sid){
+    const rec = timers.get(sid);
+    if (rec){ if (rec.realId!==null) origCT(rec.realId); timers.delete(sid); }
+    origCT(sid);
+  };
+
+  const OrigAC = window.AudioContext || window.webkitAudioContext;
+  if (OrigAC){
+    const Wrapped = function(){
+      const ctx = new OrigAC();
+      audioCtxs.add(ctx);
+      if (paused) ctx.suspend();
+      return ctx;
+    };
+    Wrapped.prototype = OrigAC.prototype;
+    window.AudioContext = Wrapped;
+    if (window.webkitAudioContext) window.webkitAudioContext = Wrapped;
+  }
+
+  window.__pauseCtl = {
+    pause: function(){
+      if (paused) return;
+      paused = true;
+      timers.forEach(function(rec){
+        if (rec.realId!==null){
+          if (rec.type==="i") origCI(rec.realId); else origCT(rec.realId);
+          rec.realId = null;
+        }
+        if (rec.type==="t") rec.delay = Math.max(0, rec.delay - (Date.now() - rec.at));
+      });
+      audioCtxs.forEach(function(ctx){ try{ ctx.suspend().catch(function(){}); }catch(e){} });
+    },
+    resume: function(){
+      if (!paused) return;
+      paused = false;
+      timers.forEach(function(rec, sid){
+        if (rec.type==="i") rec.realId = origSI.apply(null, [rec.fn, rec.delay].concat(rec.args));
+        else {
+          rec.at = Date.now();
+          rec.realId = origST(function(){ timers.delete(sid); rec.fn.apply(null, rec.args); }, rec.delay);
+        }
+      });
+      const cbs = held.splice(0);
+      cbs.forEach(function(cb){ window.requestAnimationFrame(cb); });
+      audioCtxs.forEach(function(ctx){ try{ ctx.resume().catch(function(){}); }catch(e){} });
+    }
+  };
+})();
+<\/script>`;
+
+function pauseIframe(v){
+  const f = v && v.querySelector("iframe");
+  try{ f && f.contentWindow && f.contentWindow.__pauseCtl && f.contentWindow.__pauseCtl.pause(); }catch(e){}
+}
+function resumeIframe(v){
+  const f = v && v.querySelector("iframe");
+  try{ f && f.contentWindow && f.contentWindow.__pauseCtl && f.contentWindow.__pauseCtl.resume(); }catch(e){}
+}
+
+/* ---- 顶部标签：入口 + 三个组标题 ---- */
+function makeTab(id,label){
+  const b = document.createElement("button");
+  b.className = "tab"; b.textContent = label; b.dataset.id = id;
+  b.onclick = ()=>show(id);
+  return b;
+}
+function buildTabs(){
+  const nav = $("tabs");
+  nav.appendChild(makeTab("home","入口"));
+  GROUPS.forEach((g,i)=>nav.appendChild(makeTab("g"+i, g.name)));
+}
+function groupOf(p){ return GROUPS.findIndex(g=>g.pages.includes(p)); }
+
+/* ---- 入口卡片：分组生成 ---- */
+function buildGroups(){
+  const box = $("groups");
+  GROUPS.forEach((g,gi)=>{
+    const sec = document.createElement("div");
+    sec.className = "group"; sec.dataset.accent = g.accent; sec.id = "group-"+gi;
+    const head = document.createElement("div");
+    head.className = "group-head";
+    head.innerHTML = `<h2>${g.name}</h2><span>${g.en}</span>`;
+    sec.appendChild(head);
+    const cards = document.createElement("div");
+    cards.className = "cards";
+    for(const p of g.pages){
+      const c = document.createElement("div");
+      c.className = "card";
+      c.innerHTML =
+        (p.eq ? `<span class="eq">${p.eq}</span>` : "")+
+        `<h3>${p.label}<small>${p.title}</small></h3>`+
+        `<p>${p.desc}</p>`+
+        `<div class="tags">${p.tags.map(t=>`<span class="tag">${t}</span>`).join("")}</div>`+
+        `<span class="go">进入动画 →</span>`;
+      c.onclick = ()=>show(p.id);
+      cards.appendChild(c);
+    }
+    sec.appendChild(cards);
+    box.appendChild(sec);
+  });
+}
+
+/* ---- 切换：g0/g1/g2 为组标签（回入口并滚动到该组），其余为页面 id ---- */
+function show(id){
+  let p = allPages.find(p=>p.id===id);
+  let scrollTo = -1;
+  if(/^g\d+$/.test(id)){
+    scrollTo = Math.min(+id.slice(1), GROUPS.length-1);
+    p = null;
+  } else if(id!=="home" && !p){
+    id = "home";
+  }
+  const active = p ? "g"+groupOf(p) : (scrollTo>=0 ? "g"+scrollTo : "home");
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on", t.dataset.id===active));
+  pauseIframe(document.querySelector(".view.on"));   // 切走前冻结旧页面的动画与声音
+  document.querySelectorAll(".view").forEach(v=>v.classList.remove("on"));
+  if(location.hash.slice(1)!==id) location.hash = id;
+  if(!p){
+    $("view-home").classList.add("on");
+    document.title = "重新发现龙珠之动画旅行 · 入口";
+    if(scrollTo>=0){
+      const sec = $("group-"+scrollTo);
+      if(sec) sec.scrollIntoView({behavior:"smooth", block:"start"});
+    }
+    return;
+  }
+  let v = $("view-"+p.id);
+  if(!v){
+    v = document.createElement("section");
+    v.className = "view"; v.id = "view-"+p.id;
+    const f = document.createElement("iframe");
+    f.className = "frame"; f.setAttribute("title", p.label);
+    v.appendChild(f); stage.appendChild(v);
+  }
+  v.classList.add("on");   // 先显示，再加载，保证产物能量到画布尺寸
+  if(!loaded[p.id]){
+    loaded[p.id] = true;
+    fetch(encodeURI(p.file)).then(r=>r.text()).then(html=>{
+      // 暂停补丁插到 <head> 最前，保证先于产物一切脚本运行
+      v.querySelector("iframe").srcdoc = html.replace(/<head>/i, "<head>"+PAUSE_PATCH);
+    }).catch(()=>{   // fetch 失败退化为直接 src（无暂停能力）
+      v.querySelector("iframe").src = encodeURI(p.file);
+    });
+  }
+  resumeIframe(v);   // 切回时从冻结处接着跑
+  document.title = p.label + " · 重新发现龙珠之动画旅行";
+}
+
+/* ---- 启动 + 浏览器前进后退 ---- */
+$("brand").onclick = ()=>show("home");
+buildTabs(); buildGroups();
+function validId(h){ return h==="home" || /^g\d+$/.test(h) || allPages.some(p=>p.id===h); }
+addEventListener("hashchange", ()=>{
+  const h = location.hash.slice(1);
+  show(validId(h) ? h : "home");
+});
+const h0 = location.hash.slice(1);
+show(validId(h0) ? h0 : "home");
+</script>
+</body>
+</html>

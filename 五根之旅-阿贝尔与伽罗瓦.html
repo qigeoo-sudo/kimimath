@@ -1,0 +1,1281 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>五根之旅 · x = y⁵ − 5y³ + 4y 与伽罗瓦判据</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#050810; --panel:#0c1220; --panel2:#111a2b; --border:#1a2540;
+  --cyan:#22d3ee; --mint:#34d399; --amber:#fbbf24; --red:#f87171; --violet:#a78bfa; --rose:#fb7185;
+  --text:#d7e0ee; --muted:#5f7194; --faint:#33415e;
+  --mono:'JetBrains Mono','PingFang SC','Microsoft YaHei',monospace;
+  --sans:'Inter','PingFang SC','Microsoft YaHei',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;}
+body{
+  background:var(--bg); color:var(--text); font-family:var(--sans);
+  font-size:14px; line-height:1.55; overflow-x:hidden;
+  background-image:radial-gradient(1200px 600px at 70% -10%, rgba(251,113,133,.05), transparent 60%),
+                   radial-gradient(900px 500px at 10% 110%, rgba(52,211,153,.04), transparent 60%);
+}
+body::after{
+  content:""; position:fixed; inset:0; pointer-events:none; z-index:50;
+  background:repeating-linear-gradient(0deg, rgba(255,255,255,.012) 0 1px, transparent 1px 3px);
+}
+::selection{background:rgba(251,113,133,.25);}
+
+/* ---------- header ---------- */
+header{
+  display:flex; align-items:center; justify-content:space-between; gap:16px;
+  padding:14px 20px; border-bottom:1px solid var(--border);
+  background:rgba(12,18,32,.7); backdrop-filter:blur(8px);
+  position:sticky; top:0; z-index:20;
+}
+.h-left{display:flex; align-items:center; gap:14px; min-width:0;}
+.radar{width:12px;height:12px;border-radius:50%;background:var(--rose);position:relative;flex:none;
+  box-shadow:0 0 10px var(--rose);}
+.radar::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:1px solid var(--rose);
+  animation:ping 1.6s ease-out infinite;}
+@keyframes ping{0%{transform:scale(.4);opacity:.9}100%{transform:scale(1.5);opacity:0}}
+h1{font-family:var(--mono);font-size:17px;font-weight:700;letter-spacing:.04em;white-space:nowrap;}
+h1 .eq{color:var(--rose);}
+.subtitle{font-family:var(--mono);font-size:10px;letter-spacing:.22em;color:var(--muted);text-transform:uppercase;margin-top:2px;}
+.h-right{display:flex;align-items:center;gap:10px;flex:none;}
+.badge{font-family:var(--mono);font-size:10px;letter-spacing:.18em;color:var(--mint);
+  border:1px solid rgba(52,211,153,.4);padding:5px 10px;border-radius:3px;display:flex;align-items:center;gap:7px;}
+.badge i{width:6px;height:6px;border-radius:50%;background:var(--mint);animation:blink 1.4s ease-in-out infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+.eq-chip{font-family:var(--mono);font-size:12px;color:var(--amber);border:1px solid var(--border);
+  background:var(--panel2);padding:5px 12px;border-radius:3px;}
+.page-link{font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--cyan);text-decoration:none;
+  border:1px solid var(--border);background:var(--panel2);padding:5px 10px;border-radius:3px;transition:all .15s ease;}
+.page-link:hover{border-color:rgba(34,211,238,.5);box-shadow:0 0 10px rgba(34,211,238,.15);}
+
+/* ---------- layout ---------- */
+.layout{
+  display:grid; grid-template-columns:344px minmax(0,1fr) 380px; gap:12px;
+  padding:12px; max-width:1720px; margin:0 auto; align-items:start;
+}
+.left{grid-column:1;grid-row:1;}
+#panelY{grid-column:2;grid-row:1;}
+.right{grid-column:3;grid-row:1/3;align-self:stretch;}
+.right>.panel:last-child{margin-top:auto;}
+#panelGroup{grid-column:1/3;grid-row:2;align-self:end;}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:4px;overflow:hidden;}
+.p-head{
+  display:flex;align-items:center;gap:8px;padding:9px 14px;border-bottom:1px solid var(--border);
+  font-family:var(--mono);font-size:10px;letter-spacing:.2em;color:var(--muted);text-transform:uppercase;
+  background:var(--panel2);
+}
+.led{width:6px;height:6px;border-radius:50%;flex:none;}
+.led.c{background:var(--cyan);box-shadow:0 0 6px var(--cyan);}
+.led.a{background:var(--amber);box-shadow:0 0 6px var(--amber);}
+.led.m{background:var(--mint);box-shadow:0 0 6px var(--mint);}
+.led.r{background:var(--red);box-shadow:0 0 6px var(--red);}
+.led.ro{background:var(--rose);box-shadow:0 0 6px var(--rose);}
+.p-head .spacer{flex:1;}
+.legend{display:flex;gap:10px;font-size:10px;letter-spacing:.08em;}
+.legend span{display:flex;align-items:center;gap:5px;color:var(--text);}
+.legend i{width:8px;height:8px;border-radius:50%;}
+
+/* ---------- left column ---------- */
+.left{display:flex;flex-direction:column;gap:12px;}
+.section{padding:14px;border-bottom:1px solid var(--border);}
+.section:last-child{border-bottom:none;}
+.sec-label{font-family:var(--mono);font-size:9px;letter-spacing:.24em;color:var(--muted);text-transform:uppercase;margin-bottom:10px;}
+
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px;}
+.tab{
+  font-family:var(--mono);font-size:10.5px;padding:9px 4px;text-align:center;cursor:pointer;
+  background:var(--panel2);border:1px solid var(--border);color:var(--muted);border-radius:3px;
+  transition:all .15s ease;line-height:1.4;
+}
+.tab:hover{color:var(--text);border-color:var(--faint);}
+.tab.active{color:var(--rose);border-color:rgba(251,113,133,.55);background:rgba(251,113,133,.08);
+  box-shadow:0 0 12px rgba(251,113,133,.12) inset;}
+.tab small{display:block;font-size:9px;letter-spacing:.04em;margin-top:2px;opacity:.75;}
+.tab small.stage-tag{color:var(--amber);opacity:1;font-weight:700;letter-spacing:.1em;}
+.tab.wide{grid-column:1/-1;}
+.seq-box{display:flex;flex-wrap:wrap;align-items:center;gap:5px;min-height:30px;
+  border:1px dashed var(--border);border-radius:3px;padding:6px 8px;background:var(--panel2);}
+.seq-empty{font-family:var(--mono);font-size:10px;color:var(--muted);}
+.seq-chip{font-family:var(--mono);font-size:10px;font-weight:700;padding:3px 8px;border-radius:3px;letter-spacing:.06em;}
+.seq-chip.s1{color:var(--cyan);border:1px solid rgba(34,211,238,.5);background:rgba(34,211,238,.08);}
+.seq-chip.s2{color:var(--amber);border:1px solid rgba(251,191,36,.5);background:rgba(251,191,36,.08);}
+.seq-chip.s3{color:var(--mint);border:1px solid rgba(52,211,153,.5);background:rgba(52,211,153,.08);}
+.seq-chip.s4{color:var(--rose);border:1px solid rgba(251,113,133,.5);background:rgba(251,113,133,.08);}
+.seq-arrow{font-family:var(--mono);font-size:10px;color:var(--muted);}
+.bp-line{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:.03em;
+  border:1px dashed var(--border);border-radius:3px;padding:6px 8px;background:var(--panel2);
+  margin-top:-4px;margin-bottom:12px;line-height:1.6;}
+.bp-line b{color:var(--red);font-weight:500;}
+.gen-line{font-family:var(--mono);font-size:10.5px;letter-spacing:.03em;
+  border:1px solid rgba(251,113,133,.4);border-radius:3px;padding:7px 9px;background:rgba(251,113,133,.06);
+  margin-top:-4px;margin-bottom:12px;line-height:1.6;color:var(--text);}
+.gen-line b{color:var(--rose);font-weight:700;}
+.gen-line .ok{color:var(--mint);}
+
+/* 群论对照表 */
+.g-formula{font-family:var(--mono);font-size:11px;color:var(--amber);text-align:center;
+  padding:8px 6px;border:1px solid var(--border);border-radius:3px;background:var(--panel2);margin-bottom:10px;line-height:1.7;}
+.g-formula small{display:block;font-size:9.5px;color:var(--muted);letter-spacing:.06em;}
+.g-table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:10.5px;margin-bottom:12px;}
+.g-table th{font-size:9px;letter-spacing:.16em;color:var(--muted);font-weight:500;text-align:left;
+  padding:5px 6px;border-bottom:1px solid var(--border);text-transform:uppercase;}
+.g-table td{padding:5px 6px;border-bottom:1px solid rgba(26,37,64,.7);color:var(--text);}
+.g-table tr:last-child td{border-bottom:none;}
+.g-table td:nth-child(3){color:var(--rose);}
+.g-note{font-size:11.5px;line-height:1.7;color:var(--text);}
+.g-note p{margin-bottom:8px;}
+.g-note b{color:var(--rose);font-weight:600;}
+.g-note .g-sum{color:var(--muted);border-top:1px dashed var(--border);padding-top:8px;}
+.g-chain{border-top:1px dashed var(--border);padding-top:8px;margin-top:2px;margin-bottom:8px;}
+.g-chain-title{font-family:var(--mono);font-size:11px;color:var(--amber);letter-spacing:.06em;margin-bottom:8px;}
+.a5-box{border:1px dashed var(--border);border-radius:3px;padding:8px 10px;background:var(--panel2);margin-bottom:8px;}
+.a5-box .check-row{margin:4px 0;font-size:10.5px;}
+.a5-btns{display:flex;gap:6px;margin-top:8px;}
+.a5-btns .btn{font-size:9.5px;padding:4px 10px;}
+.a5-verdict{font-family:var(--mono);font-size:10.5px;margin-top:8px;line-height:1.6;}
+.a5-verdict .fail{color:var(--red);}
+.a5-verdict .pass{color:var(--mint);}
+
+.transport{display:flex;gap:6px;margin-bottom:12px;}
+.btn{
+  font-family:var(--mono);font-size:11px;letter-spacing:.08em;padding:8px 12px;cursor:pointer;
+  background:var(--panel2);border:1px solid var(--border);color:var(--text);border-radius:3px;
+  transition:all .15s ease;display:flex;align-items:center;gap:6px;
+}
+.btn:hover{border-color:var(--rose);color:var(--rose);}
+.btn.primary{flex:1;justify-content:center;color:var(--rose);border-color:rgba(251,113,133,.45);}
+.btn.primary:hover{background:rgba(251,113,133,.1);box-shadow:0 0 14px rgba(251,113,133,.15);}
+.btn:disabled{opacity:.35;cursor:default;pointer-events:none;}
+
+.slider-row{margin-bottom:12px;}
+.slider-row:last-child{margin-bottom:0;}
+.slider-meta{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:5px;letter-spacing:.06em;}
+.slider-meta b{color:var(--rose);font-weight:500;}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:24px;background:transparent;cursor:pointer;}
+input[type=range]::-webkit-slider-runnable-track{height:3px;background:var(--border);border-radius:2px;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;
+  background:var(--rose);margin-top:-5.5px;box-shadow:0 0 8px rgba(251,113,133,.7);border:2px solid #30141a;}
+input[type=range]::-moz-range-track{height:3px;background:var(--border);border-radius:2px;}
+input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:var(--rose);border:2px solid #30141a;box-shadow:0 0 8px rgba(251,113,133,.7);}
+input[type=range]:disabled{opacity:.3;cursor:default;}
+
+.check-row{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11px;color:var(--muted);cursor:pointer;user-select:none;}
+.check-row input{accent-color:var(--rose);}
+.toggle-btn{font-family:var(--mono);font-size:9px;letter-spacing:.14em;color:var(--rose);
+  border:1px solid var(--border);padding:2px 8px;border-radius:3px;transition:all .15s ease;flex:none;}
+.p-toggle-head{cursor:pointer;user-select:none;}
+.p-toggle-head:hover .toggle-btn{border-color:rgba(251,113,133,.5);color:var(--rose);}
+.panel.collapsed .p-toggle-head{border-bottom:none;}
+.center.collapsed{min-height:0;}
+.center.collapsed canvas{display:none;}
+
+.readout{font-family:var(--mono);font-size:12px;}
+.ro-line{display:flex;justify-content:space-between;align-items:baseline;padding:5px 0;border-bottom:1px dashed rgba(26,37,64,.8);}
+.ro-line:last-child{border-bottom:none;}
+.ro-k{color:var(--muted);font-size:10px;letter-spacing:.14em;}
+.ro-v{color:var(--text);text-align:right;}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px;vertical-align:1px;}
+.disc-note{font-size:10px;color:var(--muted);margin-top:8px;line-height:1.6;letter-spacing:.02em;}
+.disc-note b{font-weight:500;}
+.disc-note b.pos{color:var(--mint);} .disc-note b.zero{color:var(--amber);} .disc-note b.neg{color:var(--red);}
+
+.narrative{
+  font-size:12.5px;line-height:1.75;color:var(--text);
+  border-left:3px solid var(--rose);padding:10px 12px;background:rgba(251,113,133,.05);
+  min-height:96px;border-radius:0 3px 3px 0;transition:border-color .3s;
+}
+.narrative.warn{border-color:var(--amber);background:rgba(251,191,36,.06);}
+.narrative.done{border-color:var(--mint);background:rgba(52,211,153,.07);}
+.narrative .phase-tag{display:block;font-family:var(--mono);font-size:9px;letter-spacing:.22em;color:var(--muted);margin-bottom:6px;text-transform:uppercase;}
+
+.verdict{display:none;}
+.right .panel.verdict{display:none;}
+.right .panel.verdict.show{display:flex;}
+.verdict-box{
+  border:1px solid rgba(251,113,133,.45);background:rgba(251,113,133,.06);border-radius:3px;padding:12px;
+}
+.verdict-box .v-title{font-family:var(--mono);font-size:9px;letter-spacing:.24em;color:var(--rose);margin-bottom:8px;text-transform:uppercase;}
+.verdict-box .v-map{font-family:var(--mono);font-size:13.5px;letter-spacing:.04em;color:var(--text);margin-bottom:8px;line-height:1.8;}
+.verdict-box .v-map .A{color:var(--cyan);} .verdict-box .v-map .B{color:var(--amber);}
+.verdict-box .v-map .C{color:var(--mint);} .verdict-box .v-map .D{color:var(--violet);}
+.verdict-box .v-map .E{color:var(--rose);}
+.verdict-box .v-note{font-size:11px;color:var(--muted);line-height:1.65;}
+
+/* ---------- canvases ---------- */
+.center{display:flex;flex-direction:column;}
+.center canvas{width:100%;display:block;cursor:crosshair;}
+.right{display:flex;flex-direction:column;gap:12px;}
+.right .panel{display:flex;flex-direction:column;}
+.right canvas{width:100%;display:block;}
+#cvX{height:262px;}
+#cvG{height:300px;}
+
+footer{
+  padding:10px 20px 18px;text-align:center;font-family:var(--mono);font-size:10px;
+  letter-spacing:.14em;color:var(--muted);
+}
+footer kbd{border:1px solid var(--border);border-radius:3px;padding:1px 6px;background:var(--panel2);color:var(--text);font-family:var(--mono);font-size:9px;}
+
+@media (min-width:1181px){
+  #groupBody{display:grid;grid-template-columns:minmax(340px,420px) minmax(0,1fr);gap:6px 28px;align-items:start;}
+}
+@media (max-width:1180px){
+  .layout{grid-template-columns:1fr;}
+  .left,#panelY,.right,#panelGroup{grid-column:auto;grid-row:auto;}
+  .right{align-self:start;}
+  .right>.panel:last-child{margin-top:0;}
+  .center{min-height:480px;}
+  #cvX,#cvG{height:260px;}
+  h1{font-size:14px;white-space:normal;}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="h-left">
+    <div class="radar"></div>
+    <div>
+      <h1>五根之旅 <span class="eq">x = y⁵ − 5y³ + 4y</span> 与伽罗瓦判据</h1>
+      <div class="subtitle">Quintic · Abel–Ruffini · S₅ ⊃ A₅ ⊃ {e} · A₅ 单群</div>
+    </div>
+  </div>
+  <div class="h-right">
+    <a class="page-link" href="quartic.html">← 四次方程 · 四根之旅</a>
+    <div class="eq-chip">y⁵ − 5y³ + 4y − x = 0</div>
+    <div class="badge"><i></i>INTERACTIVE</div>
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- ============ LEFT : console + narrative ============ -->
+  <aside class="left">
+   <div class="panel">
+    <div class="p-head"><span class="led ro"></span>控制台 · Controls</div>
+
+    <div class="section">
+      <div class="sec-label">模式 · Mode</div>
+      <div class="tabs">
+        <div class="tab active" id="tabReal">① 实轴推进 · 向右<small>穿过 x₃、x₄ 两支点后只剩 1 个实根</small></div>
+        <div class="tab" id="tabRealNeg">② 实轴推进 · 向左<small>穿过 x₂、x₁ 两支点后只剩 1 个实根</small></div>
+        <div class="tab" id="tabLoop1">③ 绕支点一周<small id="tl1"></small><small class="stage-tag">作用 1</small></div>
+        <div class="tab" id="tabLoop2">④ 绕支点一周<small id="tl2"></small><small class="stage-tag">作用 2</small></div>
+        <div class="tab" id="tabLoop3">⑤ 绕支点一周<small id="tl3"></small><small class="stage-tag">作用 3</small></div>
+        <div class="tab" id="tabLoop4">⑥ 绕支点一周<small id="tl4"></small><small class="stage-tag">作用 4</small></div>
+        <div class="tab wide" id="tabIdentity">⑦ 原地打转<small>小圈不含支点 · 恒等 e</small></div>
+      </div>
+
+      <div class="transport">
+        <button class="btn primary" id="btnPlay">▶ 播放</button>
+        <button class="btn" id="btnReset">↺ 重置</button>
+        <button class="btn" id="btnSpeed">1×</button>
+      </div>
+
+      <div class="slider-row">
+        <div class="slider-meta"><span id="progLabel">参数 x</span><b id="progVal">0.000</b></div>
+        <input type="range" id="slider" min="0" max="999" value="0">
+      </div>
+
+      <div class="bp-line" id="bpLine"></div>
+      <div class="gen-line" id="genLine">你已生成的子群　|H| = <b>1</b> / 120　—— 去播放 ③④⑤⑥ 或组合序列，把它填满</div>
+
+      <div class="slider-row" id="radiusRow" style="display:none">
+        <div class="slider-meta"><span>绕圈半径 r</span><b id="radiusVal">0.60</b></div>
+        <input type="range" id="radius" min="20" max="120" value="60">
+      </div>
+
+      <div class="slider-row" id="seqRow" style="display:none">
+        <div class="slider-meta"><span>播放序列 · 点击 ③④⑤⑥ 追加</span><b id="seqClear" style="cursor:pointer">清空</b></div>
+        <div class="seq-box" id="seqBox"><span class="seq-empty">（空 —— 播放时只演当前选中的作用）</span></div>
+      </div>
+    </div>
+   </div>
+
+   <div class="panel" id="panelNarr">
+     <div class="p-head p-toggle-head" data-target="narrBody">
+       <span class="led ro"></span>讲解 · Narrative
+       <span class="spacer"></span><span class="toggle-btn">隐藏 ▲</span>
+     </div>
+     <div class="section" id="narrBody">
+       <div class="narrative" id="narr">
+         <span class="phase-tag" id="phaseTag">PHASE 1 · 出发</span>
+         <span id="narrText"></span>
+       </div>
+     </div>
+   </div>
+  </aside>
+
+  <!-- ============ CENTER : y-plane ============ -->
+  <main class="panel center" id="panelY">
+    <div class="p-head p-toggle-head" data-target="cvY">
+      <span class="led m"></span>Y-平面 · 五个根的位置与轨迹
+      <span class="spacer"></span>
+      <div class="legend">
+        <span><i style="background:var(--cyan)"></i>A</span>
+        <span><i style="background:var(--amber)"></i>B</span>
+        <span><i style="background:var(--mint)"></i>C</span>
+        <span><i style="background:var(--violet)"></i>D</span>
+        <span><i style="background:var(--rose)"></i>E</span>
+      </div>
+      <span class="toggle-btn">隐藏 ▲</span>
+    </div>
+    <canvas id="cvY"></canvas>
+  </main>
+
+  <!-- ============ RIGHT : x-plane + real graph + readout ============ -->
+  <aside class="right">
+    <div class="panel" id="panelX">
+      <div class="p-head p-toggle-head" data-target="cvX">
+        <span class="led a"></span>X-平面 · 参数 x 的路径
+        <span class="spacer"></span><span class="toggle-btn">隐藏 ▲</span>
+      </div>
+      <canvas id="cvX"></canvas>
+    </div>
+    <div class="panel" id="panelG">
+      <div class="p-head p-toggle-head" data-target="cvG">
+        <span class="led r"></span>实数图像 · x = y⁵ − 5y³ + 4y（横轴 y）
+        <span class="spacer"></span><span class="toggle-btn">隐藏 ▲</span>
+      </div>
+      <canvas id="cvG"></canvas>
+    </div>
+
+    <div class="panel" id="panelRead">
+      <div class="p-head p-toggle-head" data-target="readBody">
+        <span class="led m"></span>读数 · Readout
+        <span class="spacer"></span><span class="toggle-btn">隐藏 ▲</span>
+      </div>
+      <div class="section" id="readBody">
+        <div class="readout">
+          <div class="ro-line"><span class="ro-k">x</span><span class="ro-v" id="roX">0.0000</span></div>
+          <div class="ro-line"><span class="ro-k"><span class="dot" style="background:var(--cyan)"></span>A</span><span class="ro-v" id="roA"></span></div>
+          <div class="ro-line"><span class="ro-k"><span class="dot" style="background:var(--amber)"></span>B</span><span class="ro-v" id="roB"></span></div>
+          <div class="ro-line"><span class="ro-k"><span class="dot" style="background:var(--mint)"></span>C</span><span class="ro-v" id="roC"></span></div>
+          <div class="ro-line"><span class="ro-k"><span class="dot" style="background:var(--violet)"></span>D</span><span class="ro-v" id="roD"></span></div>
+          <div class="ro-line"><span class="ro-k"><span class="dot" style="background:var(--rose)"></span>E</span><span class="ro-v" id="roE"></span></div>
+        </div>
+        <div class="disc-note" id="roNote"></div>
+      </div>
+    </div>
+
+    <div class="panel verdict" id="verdict">
+      <div class="section">
+        <div class="verdict-box">
+          <div class="v-title">回到起点 · 置换结果</div>
+          <div class="v-map" id="vMap"></div>
+          <div class="v-note" id="vNote"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="section">
+        <label class="check-row"><input type="checkbox" id="chkTrail" checked> 显示根的轨迹尾迹</label>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ============ BOTTOM : 群论对照（横跨左+中栏，桌面端） ============ -->
+  <div class="panel" id="panelGroup">
+    <div class="p-head p-toggle-head" data-target="groupBody">
+      <span class="led ro"></span>阿贝尔与伽罗瓦 · 一般五次为什么没有根式解
+      <span class="spacer"></span><span class="toggle-btn">隐藏 ▲</span>
+    </div>
+    <div class="section" id="groupBody">
+      <div class="g-left">
+        <div class="g-formula">y⁵ = x：　y = ⁵√x —— 有根式解！
+          <small>绕 x = 0 一圈，五根轮转一格：monodromy = Z₅（循环群，可解）</small>
+        </div>
+        <div class="g-formula">y⁵ − 5y³ + 4y = x：　无根式解
+          <small>本页四个支点给出四个相邻对换 → monodromy = 整个 S₅（120 元）</small>
+        </div>
+        <table class="g-table">
+          <tr><th>循环类型</th><th>个数</th><th>例子</th><th>奇偶</th><th>阶</th></tr>
+          <tr><td>恒等</td><td>1</td><td>e</td><td>偶</td><td>1</td></tr>
+          <tr><td>对换</td><td>10</td><td>(A B)</td><td>奇</td><td>2</td></tr>
+          <tr><td>双对换</td><td>15</td><td>(A B)(C D)</td><td>偶</td><td>2</td></tr>
+          <tr><td>三循环</td><td>20</td><td>(A B C)</td><td>偶</td><td>3</td></tr>
+          <tr><td>三循环×对换</td><td>20</td><td>(A B C)(D E)</td><td>奇</td><td>6</td></tr>
+          <tr><td>四循环</td><td>30</td><td>(A B C D)</td><td>奇</td><td>4</td></tr>
+          <tr><td>五循环</td><td>24</td><td>(A B C D E)</td><td>偶</td><td>5</td></tr>
+        </table>
+        <table class="g-table">
+          <tr><th>方程</th><th>伽罗瓦群</th><th>可解链</th><th>根式解</th></tr>
+          <tr><td>y⁵ = x</td><td>Z₅</td><td>Z₅ ⊃ {e} ✓</td><td>y = ⁵√x</td></tr>
+          <tr><td>y⁵ − 5y³ + 4y = x</td><td>S₅</td><td>S₅ ⊃ A₅ ⊃ {e}，末级不循环 ✗</td><td>不存在</td></tr>
+          <tr><td>一般五次</td><td>S₅</td><td>同上 ✗</td><td>不存在</td></tr>
+        </table>
+      </div>
+      <div class="g-note">
+        <p><b>阿贝尔看见了什么</b>：本页四个绕圈作用给出四个相邻对换 (D E)、(B C)、(C D)、(A B)——就像洗牌里的相邻交换，它们能生成全部 120 个置换（左栏计数器可以让你亲手验证这件事）。如果方程有根式解，根式塔每开一次 n 次方，伽罗瓦群就剥下一级<b>循环商群</b>；于是这个群必须能一层层切成循环的薄片——即可解群。S₅ 行不行？</p>
+        <div class="g-chain">
+          <div class="g-chain-title">动手检验 · A₅ 没有非平凡正规子群（A₅ 是单群）</div>
+          <p>正规子群 = 若干<b>完整共轭类</b>之并，且必须含恒等 e；其阶还必须整除 |A₅| = 60。A₅ 的五个共轭类大小为 1、15、20、12、12——自己勾一勾，看能不能拼出一个整除 60 的非平凡候选：</p>
+          <div class="a5-box">
+            <label class="check-row"><input type="checkbox" checked disabled data-size="1"> 恒等 e（1 个 · 必选）</label>
+            <label class="check-row a5"><input type="checkbox" data-size="15"> 双对换 (A B)(C D) 型（15 个）</label>
+            <label class="check-row a5"><input type="checkbox" data-size="20"> 三循环 (A B C) 型（20 个）</label>
+            <label class="check-row a5"><input type="checkbox" data-size="12"> 五循环 (A B C D E) 型 · 第一类（12 个）</label>
+            <label class="check-row a5"><input type="checkbox" data-size="12"> 五循环 (A E D C B) 型 · 第二类（12 个）</label>
+            <div class="a5-btns">
+              <button class="btn" id="a5All">全选</button>
+              <button class="btn" id="a5None">仅恒等</button>
+            </div>
+            <div class="a5-verdict" id="a5Verdict"></div>
+          </div>
+          <p>除 {e}（阶 1）与 A₅ 自身（阶 60）外<b>全部失败</b>——所以 A₅ 没有非平凡正规子群，是单群。于是 S₅ 的正规链只能是 S₅ ⊃ A₅ ⊃ {e}，而最后一级 A₅/{e} ≅ A₅ 不是循环群、也无法再细分：<b>可解链到此断裂</b>。这就是 1824 年阿贝尔证明「一般五次方程无根式解」的群论内核（他当年 21 岁，用的还是置换与根式的直接语言）。</p>
+        </div>
+        <div class="g-chain">
+          <div class="g-chain-title">伽罗瓦判据（1830 年代）</div>
+          <p>方程可用根式求解 ⟺ 它的伽罗瓦群是<b>可解群</b>。判据看群、不看次数：y⁵ = x 的群是 Z₅，可解，所以五次方程当然有根式解的特例；而本页方程的群是整个 S₅，不可解，任何根式塔都够不到它的根。伽罗瓦把「哪些方程有根式解」变成一个可以逐一检验的有限问题：求出群，查它的正规链。（他 20 岁死于决斗，手稿十几年后才被刘维尔读懂。）</p>
+        </div>
+        <p class="g-sum">三部曲回顾：三次 S₃ ⊃ A₃ ⊃ {e}，商群 Z₂、Z₃ ↔ 卡尔达诺的 √ 与 ∛；四次 S₄ ⊃ A₄ ⊃ V₄ ⊃ {e}，商群 Z₂、Z₃、Z₂×Z₂ ↔ 费拉里的根式塔；五次断在 A₅——根式求解的时代到此终结，群论的时代从此开始。</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  拖动滑块或按 <kbd>空格</kbd> 播放 · <kbd>←</kbd><kbd>→</kbd> 逐帧步进 · 点击 ③④⑤⑥ 把作用追加进序列 —— 四个相邻对换生成整个 S₅，试试 1-2-1、2-3-2、3-4-3，看左上计数器涨到 120
+</footer>
+
+<script>
+"use strict";
+/* ================================================================
+   数学核心：y⁵ − 5y³ + 4y = x 的五个根，随复参数 x 连续追踪
+   ================================================================ */
+const $ = id=>document.getElementById(id);
+const C = {
+  add:(a,b)=>({re:a.re+b.re, im:a.im+b.im}),  sub:(a,b)=>({re:a.re-b.re, im:a.im-b.im}),
+  mul:(a,b)=>({re:a.re*b.re-a.im*b.im, im:a.re*b.im+a.im*b.re}),
+  div:(a,b)=>{const d=b.re*b.re+b.im*b.im;return {re:(a.re*b.re+a.im*b.im)/d, im:(a.im*b.re-a.re*b.im)/d};},
+  abs:a=>Math.hypot(a.re,a.im),
+};
+
+/* P(z) = z⁵ − 5z³ + 4z − x */
+function polyP(z, x){
+  const z2=C.mul(z,z), z3=C.mul(z2,z), z5=C.mul(z2,z3);
+  let r=C.sub(z5, {re:5*z3.re, im:5*z3.im});
+  r=C.add(r, {re:4*z.re, im:4*z.im});
+  return C.sub(r, x);
+}
+
+/* Durand–Kerner 求五个复根；每次从固定初值出发（支点附近 prev 初值会发散），
+   连续性由 matchRoots 的标签匹配负责 */
+function quinticRoots(x){
+  const r=2.3;
+  let z=[0,1,2,3,4].map(k=>{const a=0.9+k*2*Math.PI/5; return {re:r*Math.cos(a), im:r*Math.sin(a)};});
+  for(let it=0; it<400; it++){
+    const dz=z.map((zk,k)=>{
+      let den={re:1,im:0};
+      for(let j=0;j<5;j++) if(j!==k) den=C.mul(den,C.sub(zk,z[j]));
+      return C.div(polyP(zk,x), den);
+    });
+    let md=0;
+    for(let k=0;k<5;k++){ z[k]=C.sub(z[k],dz[k]); md=Math.max(md,C.abs(dz[k])); }
+    if(md<1e-13) break;
+  }
+  return z;
+}
+
+/* 120 种排列里挑"离上一帧最近"的标签贴法 */
+const PERMS = (()=>{const out=[];
+  function rec(s){ if(s.length===5){out.push(s.slice());return;}
+    for(const v of [0,1,2,3,4]) if(!s.includes(v)){s.push(v);rec(s);s.pop();} }
+  rec([]); return out; })();
+function matchRoots(prev, roots){
+  let best=null, bestCost=Infinity;
+  for(const p of PERMS){
+    let cost=0;
+    for(let k=0;k<5;k++){
+      const d=Math.hypot(roots[p[k]].re-prev[k].re, roots[p[k]].im-prev[k].im);
+      cost+=d*d;
+    }
+    if(cost<bestCost){bestCost=cost; best=p;}
+  }
+  return best.map(i=>roots[i]);
+}
+
+/* 支点：f'(y)=5y⁴−15y²+4=0 → y²=(15±√145)/10，四个临界点对应四个临界值 */
+const f5=y=>y*y*y*y*y-5*y*y*y+4*y;
+const SQ145=Math.sqrt(145);
+const Y1=Math.sqrt((15+SQ145)/10);   // ≈ 1.6444
+const Y2=Math.sqrt((15-SQ145)/10);   // ≈ 0.5439
+const BP = { ys:[-Y1,-Y2,Y2,Y1], b:[
+  {x:f5(Y1),  pair:"DE", pn:"D、E", my:Y1},    // x₁ ≈ −3.6314
+  {x:f5(-Y2), pair:"BC", pn:"B、C", my:-Y2},   // x₂ ≈ −1.4187
+  {x:f5(Y2),  pair:"CD", pn:"C、D", my:Y2},    // x₃ ≈ +1.4187
+  {x:f5(-Y1), pair:"AB", pn:"A、B", my:-Y1},   // x₄ ≈ +3.6314
+]};
+
+/* ---------------- 全局状态 ---------------- */
+const HOME = 0;                  // 出发基点（五个根在此处为 −2,−1,0,1,2）
+let loopR = 0.6;
+let mode = "real";
+let frames = [];
+let idxF = 0, playing = false, speed = 1, showTrails = true;
+let sequence = [];
+let compositeActive = false, compositeSig = "", compositeDur = 20;
+
+/* ---------------- 分段路径 ---------------- */
+function buildLoopSegs(k, r){
+  const b=BP.b[k-1], bx=b.x, segs=[];
+  if(k===1){                       // 最左支点：借道绕开 x₂
+    const b2=BP.b[1].x, Rd=Math.min(0.5, 0.4*(b2-bx));
+    segs.push({kind:'line', a:{re:HOME,im:0}, b:{re:b2+Rd,im:0}, phase:'approach'});
+    segs.push({kind:'arc', c:{re:b2,im:0}, r:Rd, a0:0, a1:Math.PI, phase:'detour'});
+    segs.push({kind:'line', a:{re:b2-Rd,im:0}, b:{re:bx+r,im:0}, phase:'approach'});
+    segs.push({kind:'arc', c:{re:bx,im:0}, r:r, a0:0, a1:2*Math.PI, phase:'circle'});
+    segs.push({kind:'line', a:{re:bx+r,im:0}, b:{re:b2-Rd,im:0}, phase:'return'});
+    segs.push({kind:'arc', c:{re:b2,im:0}, r:Rd, a0:Math.PI, a1:0, phase:'detour'});
+    segs.push({kind:'line', a:{re:b2+Rd,im:0}, b:{re:HOME,im:0}, phase:'return'});
+  } else if(k===2){                // x₂：直线直达（左侧）
+    segs.push({kind:'line', a:{re:HOME,im:0}, b:{re:bx+r,im:0}, phase:'approach'});
+    segs.push({kind:'arc', c:{re:bx,im:0}, r:r, a0:0, a1:2*Math.PI, phase:'circle'});
+    segs.push({kind:'line', a:{re:bx+r,im:0}, b:{re:HOME,im:0}, phase:'return'});
+  } else if(k===3){                // x₃：直线直达（右侧）
+    segs.push({kind:'line', a:{re:HOME,im:0}, b:{re:bx-r,im:0}, phase:'approach'});
+    segs.push({kind:'arc', c:{re:bx,im:0}, r:r, a0:Math.PI, a1:3*Math.PI, phase:'circle'});
+    segs.push({kind:'line', a:{re:bx-r,im:0}, b:{re:HOME,im:0}, phase:'return'});
+  } else {                         // 最右支点：借道绕开 x₃
+    const b3=BP.b[2].x, Rd=Math.min(0.5, 0.4*(bx-b3));
+    segs.push({kind:'line', a:{re:HOME,im:0}, b:{re:b3-Rd,im:0}, phase:'approach'});
+    segs.push({kind:'arc', c:{re:b3,im:0}, r:Rd, a0:Math.PI, a1:0, phase:'detour'});
+    segs.push({kind:'line', a:{re:b3+Rd,im:0}, b:{re:bx-r,im:0}, phase:'approach'});
+    segs.push({kind:'arc', c:{re:bx,im:0}, r:r, a0:Math.PI, a1:3*Math.PI, phase:'circle'});
+    segs.push({kind:'line', a:{re:bx-r,im:0}, b:{re:b3+Rd,im:0}, phase:'return'});
+    segs.push({kind:'arc', c:{re:b3,im:0}, r:Rd, a0:0, a1:Math.PI, phase:'detour'});
+    segs.push({kind:'line', a:{re:b3-Rd,im:0}, b:{re:HOME,im:0}, phase:'return'});
+  }
+  return segs;
+}
+function buildIdentitySegs(){
+  const r=0.8;
+  return [
+    {kind:'line', a:{re:HOME,im:0}, b:{re:HOME+r,im:0}, phase:'approach'},
+    {kind:'arc', c:{re:HOME,im:0}, r:r, a0:0, a1:2*Math.PI, phase:'circle'},
+    {kind:'line', a:{re:HOME+r,im:0}, b:{re:HOME,im:0}, phase:'return'},
+  ];
+}
+/* 按弧长匀速采样 */
+function makeSampler(segs){
+  const lens=segs.map(s=>s.kind==='line'
+    ? Math.hypot(s.b.re-s.a.re, s.b.im-s.a.im)
+    : s.r*Math.abs(s.a1-s.a0));
+  const tot=lens.reduce((a,b)=>a+b,0), cum=[0];
+  lens.forEach(l=>cum.push(cum[cum.length-1]+l));
+  return function(t){
+    const d=t*tot;
+    let i=0; while(i<segs.length-1 && d>cum[i+1]) i++;
+    const s=segs[i], u=Math.min(1,(d-cum[i])/(lens[i]||1e-9));
+    let x;
+    if(s.kind==='line'){
+      x={re:s.a.re+(s.b.re-s.a.re)*u, im:s.a.im+(s.b.im-s.a.im)*u};
+    } else {
+      const a=s.a0+(s.a1-s.a0)*u;
+      x={re:s.c.re+s.r*Math.cos(a), im:s.c.im+s.r*Math.sin(a)};
+    }
+    return {x, phase:s.phase, circ:(s.kind==='arc'&&s.phase==='circle')?u:null};
+  };
+}
+
+/* ---------------- 模式 ---------------- */
+const MODES = {
+  real:    {N:1100, dur:15, loop:false, record:false,
+            make:()=>makeSampler([{kind:'line',a:{re:HOME,im:0},b:{re:4.6,im:0},phase:'real'}])},
+  realNeg: {N:1100, dur:15, loop:false, record:false,
+            make:()=>makeSampler([{kind:'line',a:{re:HOME,im:0},b:{re:-4.6,im:0},phase:'realNeg'}])},
+  loop1:   {N:1900, dur:24, loop:true, record:true, make:()=>makeSampler(buildLoopSegs(1,loopR))},
+  loop2:   {N:1500, dur:20, loop:true, record:true, make:()=>makeSampler(buildLoopSegs(2,loopR))},
+  loop3:   {N:1500, dur:20, loop:true, record:true, make:()=>makeSampler(buildLoopSegs(3,loopR))},
+  loop4:   {N:1900, dur:24, loop:true, record:true, make:()=>makeSampler(buildLoopSegs(4,loopR))},
+  identity:{N:1100, dur:16, loop:true, record:false, make:()=>makeSampler(buildIdentitySegs())},
+};
+
+function initialRoots(){
+  return quinticRoots({re:HOME,im:0}).sort((a,b)=>a.re-b.re);
+}
+function buildFrames(m){
+  const cfg=MODES[m], N=cfg.N, sampler=cfg.make();
+  const fr=new Array(N);
+  let prev=initialRoots();
+  for(let i=0;i<N;i++){
+    const t=i/(N-1), s=sampler(t);
+    const roots=matchRoots(prev, quinticRoots(s.x));
+    fr[i]={t, x:s.x, roots, phase:s.phase, circ:s.circ};
+    prev=roots;
+  }
+  return fr;
+}
+
+/* 序列合成：依次执行记录框中的作用 */
+function buildComposite(seq){
+  const per=900, n=seq.length, N=per*n;
+  const fr=new Array(N);
+  let prev=initialRoots();
+  for(let k=0;k<n;k++){
+    const sampler=makeSampler(buildLoopSegs(+seq[k], loopR));
+    for(let i=0;i<per;i++){
+      const t=i/(per-1), s=sampler(t);
+      const roots=matchRoots(prev, quinticRoots(s.x));
+      fr[k*per+i]={t:(k*per+i)/(N-1), tSub:t, x:s.x, roots,
+        phase:`${k+1}:${seq[k]}:${s.phase}`, circ:s.circ};
+      prev=roots;
+    }
+  }
+  frames=fr;
+  compositeActive=true;
+  compositeSig=seq.join("")+"@"+loopR;
+  compositeDur=12*n;
+  slider.max=N-1;
+}
+</script>
+
+<script>
+"use strict";
+/* ================================================================
+   画布渲染：Y-平面（五根） / X-平面（路径与四支点） / 实数图像
+   ================================================================ */
+const COL = {A:"#22d3ee", B:"#fbbf24", C:"#34d399", D:"#a78bfa", E:"#fb7185", red:"#f87171",
+  grid:"#141e33", axis:"#2b3c5f", text:"#5f7194", bright:"#d7e0ee"};
+const DPR = Math.min(window.devicePixelRatio||1, 2);
+
+function makeView(id, xr, yr){
+  const cv = $(id), ctx = cv.getContext("2d");
+  const v = {cv, ctx, xr, yr, w:0, h:0, s:1, cx:0, cy:0};
+  v.resize = ()=>{
+    const cw = cv.clientWidth, ch = cv.clientHeight;
+    if(!cw||!ch) return;
+    cv.width = cw*DPR; cv.height = ch*DPR;
+    v.w=cw; v.h=ch;
+    v.s = Math.min(cw/(xr[1]-xr[0]), ch/(yr[1]-yr[0]));
+    v.cx = cw/2 - (xr[0]+xr[1])/2*v.s;
+    v.cy = ch/2 + (yr[0]+yr[1])/2*v.s;
+  };
+  v.px = x=> v.cx + x*v.s;
+  v.py = y=> v.cy - y*v.s;
+  return v;
+}
+const vY = makeView("cvY", [-3.4,3.4], [-3,3]);
+const vX = makeView("cvX", [-2.8,2.8], [-5.6,5.6]);   // 横轴 Im x，纵轴 Re x
+const vG = makeView("cvG", [-3.2,3.2], [-6,6]);       // 横轴 y，纵轴 f(y)
+
+function drawGrid(v, step=1){
+  const {ctx}=v;
+  ctx.lineWidth=1;
+  for(let gx=Math.ceil(v.xr[0]); gx<=v.xr[1]; gx+=step){
+    ctx.strokeStyle = gx===0 ? COL.axis : COL.grid;
+    ctx.beginPath(); ctx.moveTo(v.px(gx),0); ctx.lineTo(v.px(gx),v.h); ctx.stroke();
+  }
+  for(let gy=Math.ceil(v.yr[0]); gy<=v.yr[1]; gy+=step){
+    ctx.strokeStyle = gy===0 ? COL.axis : COL.grid;
+    ctx.beginPath(); ctx.moveTo(0,v.py(gy)); ctx.lineTo(v.w,v.py(gy)); ctx.stroke();
+  }
+}
+function axisLabels(v, marks, axis){
+  const {ctx}=v;
+  ctx.fillStyle=COL.text; ctx.font=`${9.5}px 'JetBrains Mono',monospace`; ctx.textAlign="center";
+  for(const m of marks){
+    if(axis==="x") ctx.fillText(m.label, v.px(m.v), v.py(0)+14);
+    else { ctx.textAlign="right"; ctx.fillText(m.label, v.px(0)-6, v.py(m.v)+3); ctx.textAlign="center"; }
+  }
+}
+function glowDot(v, x, y, color, r=6, glow=14){
+  const {ctx}=v;
+  ctx.save();
+  ctx.shadowColor=color; ctx.shadowBlur=glow;
+  ctx.fillStyle=color;
+  ctx.beginPath(); ctx.arc(v.px(x),v.py(y),r,0,7); ctx.fill();
+  ctx.restore();
+  ctx.fillStyle="rgba(255,255,255,.85)";
+  ctx.beginPath(); ctx.arc(v.px(x),v.py(y),r*0.38,0,7); ctx.fill();
+}
+function crossMark(v, x, y, color, size=7){
+  const {ctx}=v;
+  ctx.strokeStyle=color; ctx.lineWidth=2;
+  ctx.beginPath();
+  ctx.moveTo(v.px(x)-size,v.py(y)-size); ctx.lineTo(v.px(x)+size,v.py(y)+size);
+  ctx.moveTo(v.px(x)+size,v.py(y)-size); ctx.lineTo(v.px(x)-size,v.py(y)+size);
+  ctx.stroke();
+}
+const NAMES=["A","B","C","D","E"], COLS=[COL.A,COL.B,COL.C,COL.D,COL.E];
+const MINUS="−";
+function fnum(v,d=4){ if(Math.abs(v)<0.5*Math.pow(10,-d)) v=0; return v.toFixed(d).replace("-",MINUS); }
+function fcplx(z,d=4){
+  const im=Math.abs(z.im);
+  if(im<5e-5) return fnum(z.re,d);
+  const sign=z.im<0?" − ":" + ";
+  return fnum(z.re,d)+sign+im.toFixed(d)+"i";
+}
+
+/* ---------- Y-平面 ---------- */
+function drawY(idx, time){
+  const v=vY, {ctx}=v;
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  ctx.fillStyle="#070c16"; ctx.fillRect(0,0,v.w,v.h);
+  drawGrid(v);
+  axisLabels(v,[{v:-3,label:"−3"},{v:-1,label:"−1"},{v:1,label:"1"},{v:2,label:"2"},{v:3,label:"3"}],"x");
+  axisLabels(v,[{v:-2,label:"−2i"},{v:-1,label:"−i"},{v:1,label:"i"},{v:2,label:"2i"}],"y");
+  ctx.fillStyle=COL.text; ctx.font=`10px 'JetBrains Mono',monospace`; ctx.textAlign="left";
+  ctx.fillText("Re y →", v.w-58, v.py(0)-8);
+  ctx.fillText("Im y ↑", v.px(0)+8, 14);
+
+  // 四个相遇点（临界 y 值）
+  const meetNames=["A∧B","B∧C","C∧D","D∧E"];
+  BP.ys.forEach((my,i)=>{
+    ctx.save();
+    ctx.strokeStyle="rgba(215,224,238,.4)"; ctx.setLineDash([3,4]); ctx.lineWidth=1;
+    ctx.beginPath(); ctx.arc(v.px(my),v.py(0),10+2*Math.sin(time*2.4+i),0,7); ctx.stroke();
+    ctx.restore();
+    ctx.fillStyle="rgba(215,224,238,.55)"; ctx.font=`10px 'JetBrains Mono',monospace`;
+    ctx.textAlign="center";
+    const dy = i%2===0 ? 96 : -96;
+    ctx.fillText("相遇点 "+meetNames[i], v.px(my), v.py(0)+dy);
+  });
+  ctx.textAlign="left";
+
+  const fr=frames, cur=fr[idx];
+
+  // 尾迹
+  if(showTrails && idx>0){
+    for(let k=0;k<5;k++){
+      const col=COLS[k];
+      ctx.lineWidth=2; ctx.lineCap="round"; ctx.lineJoin="round";
+      let px0=v.px(fr[0].roots[k].re), py0=v.py(fr[0].roots[k].im);
+      for(let i=1;i<=idx;i++){
+        const p=fr[i].roots[k];
+        const px1=v.px(p.re), py1=v.py(p.im);
+        const jump=Math.hypot(px1-px0,py1-py0);
+        if(jump<60){
+          ctx.strokeStyle=col; ctx.globalAlpha=0.06+0.5*(i/idx);
+          ctx.beginPath(); ctx.moveTo(px0,py0); ctx.lineTo(px1,py1); ctx.stroke();
+        }
+        px0=px1; py0=py1;
+      }
+      ctx.globalAlpha=1;
+    }
+  }
+
+  // 共轭复根连线（自动识别任意一对）
+  const pts=cur.roots;
+  ctx.save(); ctx.strokeStyle="rgba(215,224,238,.25)"; ctx.setLineDash([2,4]); ctx.lineWidth=1;
+  for(let i=0;i<5;i++) for(let j=i+1;j<5;j++){
+    const p=pts[i], q=pts[j];
+    if(Math.abs(p.im)>1e-3 && Math.abs(p.re-q.re)<1e-3 && Math.abs(p.im+q.im)<1e-3){
+      ctx.beginPath(); ctx.moveTo(v.px(p.re),v.py(p.im)); ctx.lineTo(v.px(q.re),v.py(q.im)); ctx.stroke();
+    }
+  }
+  ctx.restore();
+
+  // 当前根
+  const offs=[[12,-12],[10,14],[-20,12],[-20,-14],[12,12]];
+  for(let k=0;k<5;k++){
+    glowDot(v, pts[k].re, pts[k].im, COLS[k], 6.5);
+    ctx.fillStyle=COLS[k]; ctx.font=`bold 12px 'JetBrains Mono',monospace`; ctx.textAlign="left";
+    ctx.fillText(NAMES[k], v.px(pts[k].re)+offs[k][0], v.py(pts[k].im)+offs[k][1]);
+  }
+}
+
+/* ---------- X-平面（纵轴 Re x，横轴 Im x） ---------- */
+function drawX(idx, time){
+  const v=vX, {ctx}=v;
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  ctx.fillStyle="#070c16"; ctx.fillRect(0,0,v.w,v.h);
+  drawGrid(v, 2);
+  axisLabels(v,[{v:-2,label:"−2i"},{v:-1,label:"−i"},{v:1,label:"i"},{v:2,label:"2i"}],"x");
+  axisLabels(v,[{v:-4,label:"−4"},{v:-2,label:"−2"},{v:2,label:"2"},{v:4,label:"4"}],"y");
+  ctx.fillStyle=COL.text; ctx.font=`10px 'JetBrains Mono',monospace`; ctx.textAlign="left";
+  ctx.fillText("Im x →", v.w-58, v.py(0)-8);
+  ctx.textAlign="right"; ctx.fillText("Re x ↑", v.px(0)-8, 14); ctx.textAlign="left";
+
+  // 实轴强调
+  ctx.strokeStyle="rgba(251,191,36,.28)"; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(v.px(0),0); ctx.lineTo(v.px(0),v.h); ctx.stroke();
+
+  // 基点 HOME
+  ctx.fillStyle="rgba(215,224,238,.6)";
+  ctx.beginPath(); ctx.arc(v.px(0),v.py(HOME),3,0,7); ctx.fill();
+  ctx.font=`10px 'JetBrains Mono',monospace`;
+  ctx.textAlign="right";
+  ctx.fillText("基点 x = 0（五根 −2,−1,0,1,2）", v.px(0)-10, v.py(HOME)-8);
+  ctx.textAlign="left";
+
+  // 四个支点
+  const zv=v=>Math.abs(v)<1e-12?0:v;
+  const marks = BP.b.map((b,i)=>({x:b.x, label:"x"+["₁","₂","₃","₄"][i]+" = "+fnum(zv(b.x),2)+"（"+b.pn+"）"}));
+  marks.forEach((m,i)=>{
+    crossMark(v,0,m.x,COL.red,6);
+    ctx.save();
+    ctx.strokeStyle=`rgba(248,113,113,${0.5-0.35*Math.abs(Math.sin(time*2+i))})`;
+    ctx.lineWidth=1;
+    ctx.beginPath(); ctx.arc(v.px(0),v.py(m.x),9+4*Math.abs(Math.sin(time*2+i)),0,7); ctx.stroke();
+    ctx.restore();
+    ctx.fillStyle=COL.red; ctx.font=`10px 'JetBrains Mono',monospace`;
+    ctx.fillText(m.label, v.px(0)+12, v.py(m.x)-8);
+  });
+
+  // 路径（淡） + 已走（亮）
+  const N=frames.length;
+  ctx.lineWidth=1.5;
+  ctx.strokeStyle="rgba(95,113,148,.5)";
+  ctx.beginPath();
+  for(let i=0;i<N;i++){const p=frames[i].x; i?ctx.lineTo(v.px(p.im),v.py(p.re)):ctx.moveTo(v.px(p.im),v.py(p.re));}
+  ctx.stroke();
+  if(idx>0){
+    ctx.strokeStyle=COL.E; ctx.lineWidth=2;
+    ctx.save(); ctx.shadowColor=COL.E; ctx.shadowBlur=6;
+    ctx.beginPath();
+    for(let i=0;i<=idx;i++){const p=frames[i].x; i?ctx.lineTo(v.px(p.im),v.py(p.re)):ctx.moveTo(v.px(p.im),v.py(p.re));}
+    ctx.stroke(); ctx.restore();
+  }
+
+  const x=frames[idx].x;
+  glowDot(v,x.im,x.re,"#ffffff",5.5,12);
+  ctx.fillStyle="#fff"; ctx.font=`bold 11px 'JetBrains Mono',monospace`;
+  ctx.fillText("x", v.px(x.im)+10, v.py(x.re)-8);
+}
+
+/* ---------- 实数图像 ---------- */
+function drawG(idx){
+  const v=vG, {ctx}=v;
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  ctx.fillStyle="#070c16"; ctx.fillRect(0,0,v.w,v.h);
+  drawGrid(v, 2);
+  axisLabels(v,[{v:-2,label:"−2"},{v:-1,label:"−1"},{v:1,label:"1"},{v:2,label:"2"}],"x");
+  axisLabels(v,[{v:-4,label:"−4"},{v:-2,label:"−2"},{v:2,label:"2"},{v:4,label:"4"}],"y");
+  ctx.fillStyle=COL.text; ctx.font=`10px 'JetBrains Mono',monospace`; ctx.textAlign="left";
+  ctx.fillText("y →", v.w-30, v.py(0)-8);
+  ctx.fillText("x = f(y) ↑", v.px(0)+8, 14);
+  ctx.fillStyle="rgba(95,113,148,.8)";
+  ctx.fillText("横轴为 y，纵轴为 x", 12, 14);
+
+  // 曲线 f(y)=y⁵−5y³+4y
+  ctx.strokeStyle="#7dd3fc"; ctx.lineWidth=2; ctx.beginPath();
+  let started=false;
+  for(let y=-3.2; y<=3.2; y+=0.01){
+    const f=f5(y);
+    if(f<v.yr[0]||f>v.yr[1]){started=false;continue;}
+    const X=v.px(y), Y=v.py(f);
+    started?ctx.lineTo(X,Y):ctx.moveTo(X,Y); started=true;
+  }
+  ctx.stroke();
+
+  // 临界点（支点的来源）
+  const ext=[
+    {y:-Y1, x:BP.b[3].x, lab:"x₄"},
+    {y:-Y2, x:BP.b[1].x, lab:"x₂"},
+    {y: Y2, x:BP.b[2].x, lab:"x₃"},
+    {y: Y1, x:BP.b[0].x, lab:"x₁"},
+  ];
+  ext.forEach((e,i)=>{
+    glowDot(v,e.y,e.x,COL.red,4.5,10);
+    ctx.fillStyle=COL.red; ctx.font=`10px 'JetBrains Mono',monospace`;
+    const dy = (i===1||i===2) ? -8 : 14;
+    ctx.fillText(e.lab+" = "+fnum(Math.abs(e.x)<1e-12?0:e.x,2), v.px(e.y)+9, v.py(e.x)+dy);
+  });
+
+  const cur=frames[idx], x=cur.x;
+  const xre=Math.max(v.yr[0],Math.min(v.yr[1],x.re));
+  const complex = Math.abs(x.im)>1e-3;
+
+  ctx.save();
+  ctx.strokeStyle= complex ? "rgba(251,191,36,.35)" : COL.amber;
+  ctx.setLineDash(complex?[4,5]:[]); ctx.lineWidth=1.6;
+  ctx.beginPath(); ctx.moveTo(0,v.py(xre)); ctx.lineTo(v.w,v.py(xre)); ctx.stroke();
+  ctx.restore();
+  ctx.fillStyle=COL.amber; ctx.font=`10px 'JetBrains Mono',monospace`; ctx.textAlign="right";
+  ctx.fillText(complex?`Re(x) = ${fnum(x.re,2)}（x 为复数）`:`x = ${fnum(x.re,2)}`, v.w-8, v.py(xre)-6);
+  ctx.textAlign="left";
+
+  let nReal=0;
+  cur.roots.forEach((r,k)=>{
+    if(Math.abs(r.im)<1e-3 && r.re>=v.xr[0] && r.re<=v.xr[1]){
+      glowDot(v,r.re,xre,COLS[k],5.5,10);
+      ctx.fillStyle=COLS[k]; ctx.font=`bold 11px 'JetBrains Mono',monospace`;
+      ctx.fillText(NAMES[k], v.px(r.re)+9, v.py(xre)-7);
+      nReal++;
+    }
+  });
+  if(!complex && nReal<5){
+    ctx.fillStyle="rgba(248,113,113,.85)"; ctx.font=`10px 'JetBrains Mono',monospace`;
+    ctx.fillText(`实数交点只剩 ${nReal} 个 —— 其余根在复平面里`, 12, v.h-12);
+  }
+}
+</script>
+
+<script>
+"use strict";
+/* ================================================================
+   讲解文案 / 读数 / 判决 / 子群计数 / A₅ 检验器 / 交互 / 主循环
+   ================================================================ */
+const slider=$("slider"), btnPlay=$("btnPlay"), btnReset=$("btnReset"), btnSpeed=$("btnSpeed");
+const tabIds={real:"tabReal", realNeg:"tabRealNeg", loop1:"tabLoop1", loop2:"tabLoop2",
+  loop3:"tabLoop3", loop4:"tabLoop4", identity:"tabIdentity"};
+const radiusRow=$("radiusRow"), radius=$("radius"), radiusVal=$("radiusVal");
+const bpLine=$("bpLine"), genLine=$("genLine");
+const seqRow=$("seqRow"), seqBox=$("seqBox"), seqClear=$("seqClear");
+const chkTrail=$("chkTrail");
+const roX=$("roX"), roA=$("roA"), roB=$("roB"), roC=$("roC"), roD=$("roD"), roE=$("roE"), roNote=$("roNote");
+const narr=$("narr"), narrText=$("narrText"), phaseTag=$("phaseTag");
+const progLabel=$("progLabel"), progVal=$("progVal");
+const verdict=$("verdict"), vMap=$("vMap"), vNote=$("vNote");
+const panelY=$("panelY"), cvY=$("cvY");
+const tl1=$("tl1"), tl2=$("tl2"), tl3=$("tl3"), tl4=$("tl4");
+
+const zz=v=>Math.abs(v)<1e-12?0:v;
+
+function updateTabLabels(){
+  tl1.textContent="绕 x₁ ≈ "+fnum(BP.b[0].x,2)+" · D、E 交换";
+  tl2.textContent="绕 x₂ ≈ "+fnum(BP.b[1].x,2)+" · B、C 交换";
+  tl3.textContent="绕 x₃ ≈ "+fnum(BP.b[2].x,2)+" · C、D 交换";
+  tl4.textContent="绕 x₄ ≈ "+fnum(BP.b[3].x,2)+" · A、B 交换";
+}
+function updateBpLine(){
+  bpLine.innerHTML=`支点：<b>x₁ = ${fnum(BP.b[0].x,3)}</b>（D、E）· <b>x₂ = ${fnum(BP.b[1].x,3)}</b>（B、C）· <b>x₃ = ${fnum(BP.b[2].x,3)}</b>（C、D）· <b>x₄ = ${fnum(BP.b[3].x,3)}</b>（A、B）　→　四个相邻对换生成 S₅（120 元）`;
+}
+
+/* ---------------- 讲解 ---------------- */
+function narrativeFor(idx){
+  const fr=frames[idx], N=frames.length, last=idx>=N-1;
+  if(compositeActive){
+    const parts=fr.phase.split(":");
+    const k=parts[0], stage=parts[1], sub=parts[2];
+    const total=sequence.length, b=BP.b[+stage-1];
+    if(last) return {tag:"全部作用完成 · 回到 x = 0", cls:"done",
+      text:"序列执行完毕：五个根一个不少——但枝条经历了多次交换。最终置换见右下判决：120 个元素里的哪一个？"};
+    if(sub==="approach") return {tag:`第 ${k}/${total} 段 · 作用${stage} · 靠近支点`, cls:"",
+      text:`沿实轴靠近支点，在距离 r 处停下。五个根仍是实数，即将相遇的 ${b.pn} 已经挨得很近。`};
+    if(sub==="detour") return {tag:`第 ${k}/${total} 段 · 作用${stage} · 借道`, cls:"",
+      text:"从上方绕过途中的另一个支点——只借道、不绕圈：去程与回程的两个半圈相互抵消。（这正是黎曼的建议：绕开它！）"};
+    if(sub==="circle"){
+      const s=fr.circ||0, th=2*Math.PI*s;
+      return {tag:`第 ${k}/${total} 段 · 作用${stage} · 绕支点 x = ${fnum(zz(b.x),2)}`, cls:"warn",
+        text:`辐角已增加 ${th.toFixed(2)} rad（${Math.round(s*100)}%）。${b.pn} 正在悄悄交换位置。`};
+    }
+    return {tag:`第 ${k}/${total} 段 · 作用${stage} · 原路返回`, cls:"",
+      text:(+k<total)?"沿原路返回 x = 0，稍作停留，即将进入下一段。":"沿原路返回 x = 0，最终置换即将尘埃落定。"};
+  }
+  if(mode==="real"){
+    const x=fr.x.re, x3=BP.b[2].x, x4=BP.b[3].x;
+    if(last)        return {tag:"PHASE 5 · 穿过之后", cls:"warn",
+      text:"x 已越过 x₄：实数图像上只剩 E 一个交点。其余四个根并没有消失——它们是两对共轭复根，看 Y-平面里的两条竖直虚线。"};
+    if(x<x3-0.5)    return {tag:"PHASE 1 · 沿实轴向右", cls:"",
+      text:"x 从 0 增大：C、D 相互靠近，滑向 y ≈ 0.544 的相遇点；A、B 也在远处悄悄靠拢。"};
+    if(x<x3-0.06)   return {tag:"PHASE 2 · 逼近支点 x₃", cls:"",
+      text:`水平线越来越接近曲线的极大值 x₃ = ${fnum(x3,3)}。C 与 D 加速靠近——在实数世界里，它们即将「无路可走」。`};
+    if(x<=x3+0.06)  return {tag:"PHASE 3 · 相遇 x₃", cls:"warn",
+      text:`x = x₃ = ${fnum(x3,3)}：C 与 D 相遇！出现二重根。这个支点正是作用3环绕的对象。`};
+    if(x<x4-0.4)    return {tag:"PHASE 4 · 两支点之间", cls:"",
+      text:`C、D 已成共轭复根对；继续向右，A、B 逼近 y ≈ −1.644 的相遇点——x₄ = ${fnum(x4,3)} 就在前方。`};
+    if(x<=x4+0.06)  return {tag:"PHASE 5 · 相遇 x₄", cls:"warn",
+      text:`x = x₄ = ${fnum(x4,3)}：A 与 B 相遇！第二对二重根。`};
+    return {tag:"PHASE 5 · 穿过之后", cls:"warn",
+      text:"x > x₄：四个根离开实轴，成为两对共轭复根，只剩 E 独自留在实轴上。"};
+  }
+  if(mode==="realNeg"){
+    const x=fr.x.re, x1=BP.b[0].x, x2=BP.b[1].x;
+    if(last)          return {tag:"PHASE 5 · 穿过之后", cls:"warn",
+      text:"x 已越过 x₁：实数图像上只剩 A 一个交点——其余四个根是两对共轭复根。Y-平面里两条竖直虚线各连一对。"};
+    if(x>x2+0.4)      return {tag:"PHASE 1 · 沿实轴向左", cls:"",
+      text:"x 从 0 减小：B、C 相互靠近，滑向 y ≈ −0.544 的相遇点；D、E 也在远处悄悄靠拢。"};
+    if(x>x2+0.06)     return {tag:"PHASE 2 · 逼近支点 x₂", cls:"",
+      text:`水平线逼近极小值 x₂ = ${fnum(x2,3)}。B 与 C 加速靠近。`};
+    if(x>=x2-0.06)    return {tag:"PHASE 3 · 相遇 x₂", cls:"warn",
+      text:`x = x₂ = ${fnum(x2,3)}：B 与 C 相遇！出现二重根。`};
+    if(x>x1+0.06)     return {tag:"PHASE 4 · 两支点之间", cls:"",
+      text:`B、C 已成共轭复根对；继续向左，D、E 逼近 y ≈ 1.644 的相遇点——x₁ = ${fnum(x1,3)} 就在前方。`};
+    if(x>=x1-0.06)    return {tag:"PHASE 5 · 相遇 x₁", cls:"warn",
+      text:`x = x₁ = ${fnum(x1,3)}：D 与 E 相遇！第二对二重根。`};
+    return {tag:"PHASE 5 · 穿过之后", cls:"warn",
+      text:"x < x₁：四个根全部离开实轴，成为两对共轭复根，只剩 A 独自留在实轴上。"};
+  }
+  if(mode.startsWith("loop")){
+    const k=+mode.slice(4), b=BP.b[k-1];
+    if(last) return {tag:"终点 · 回到 x = 0", cls:"done",
+      text:"回到出发点：五个根仍然是原来五个值，一个不少。但注意标签——交换在绕圈时已经完成。最终置换见右下判决。"};
+    if(fr.phase==="approach") return {tag:"第一段 · 靠近支点", cls:"",
+      text:`从 x = 0 沿实轴靠近支点 x${k} = ${fnum(zz(b.x),3)}，在距离 r 处停下。五个根仍是实数，${b.pn} 已经挨得很近。`};
+    if(fr.phase==="detour") return {tag:"借道 · 绕开途中支点", cls:"",
+      text:"从上方绕过途中的另一个支点——只借道、不绕圈：去程与回程的两个半圈相互抵消。（这正是黎曼的建议：绕开它！）"};
+    if(fr.phase==="circle"){
+      const s=fr.circ||0, th=2*Math.PI*s;
+      return {tag:"第二段 · 绕支点一周", cls:"warn",
+        text:`绕 x${k} = ${fnum(zz(b.x),3)} 转圈：辐角已增加 ${th.toFixed(2)} rad（${Math.round(s*100)}%）。${b.pn} 正在悄悄交换位置。`};
+    }
+    return {tag:"第三段 · 原路返回", cls:"",
+      text:"沿原路返回 x = 0。路径完全重合，但标签已经与出发时不同——交换在绕圈时就完成了。"};
+  }
+  if(mode==="identity"){
+    if(last) return {tag:"终点 · 回到 x = 0", cls:"done",
+      text:"小圈转完：A、B、C、D、E 各自画了一个小小的闭环，精确回到自己——没有支点被围住，什么置换也没有发生。这就是恒等映射 e。"};
+    if(fr.phase==="approach") return {tag:"第一段 · 出发", cls:"",
+      text:"x 从 0 走到 0.8：五根微微移动，但都乖乖待在实轴上。"};
+    if(fr.phase==="circle"){
+      const s=fr.circ||0;
+      return {tag:"第二段 · 原地打转", cls:"",
+        text:`绕 x = 0 转圈（${Math.round(s*100)}%）：这个小圈不含任何支点（最近的支点在 ±1.419）。五根各自画出闭合小环，互不相撞。`};
+    }
+    return {tag:"第三段 · 返回", cls:"",
+      text:"沿原路返回 x = 0。五根也将精确归位。"};
+  }
+}
+
+/* ---------------- 读数 ---------------- */
+function updateReadout(idx){
+  const fr=frames[idx];
+  roX.textContent=fcplx(fr.x);
+  roA.textContent=fcplx(fr.roots[0]);
+  roB.textContent=fcplx(fr.roots[1]);
+  roC.textContent=fcplx(fr.roots[2]);
+  roD.textContent=fcplx(fr.roots[3]);
+  roE.textContent=fcplx(fr.roots[4]);
+  const nReal=fr.roots.filter(r=>Math.abs(r.im)<1e-4).length;
+  if(nReal===5)      roNote.innerHTML="实根 × 5 → <b class='pos'>五个互不相同的实根</b>";
+  else if(nReal===4) roNote.innerHTML="实根 × 4 → <b class='zero'>出现重根（支点）——有一对正在相撞</b>";
+  else if(nReal===3) roNote.innerHTML="实根 × 3 → <b class='neg'>三个实根 + 一对共轭复根</b>";
+  else               roNote.innerHTML="实根 × 1 → <b class='neg'>一个实根 + 两对共轭复根</b>";
+  const n=narrativeFor(idx);
+  phaseTag.textContent=n.tag; narrText.textContent=n.text;
+  narr.className="narrative "+n.cls;
+  progVal.textContent = MODES[mode].loop ? `${Math.round(fr.t*100)}%` : fnum(fr.x.re,3);
+}
+
+/* ---------------- 判决 ---------------- */
+function cycleInfo(map){
+  const m=map.map(n=>NAMES.indexOf(n));
+  const seen=[false,false,false,false,false], cyc=[];
+  for(let i=0;i<5;i++){
+    if(seen[i]) continue;
+    let j=i; const c=[];
+    while(!seen[j]){ seen[j]=true; c.push(j); j=m[j]; }
+    cyc.push(c);
+  }
+  cyc.sort((a,b)=>b.length-a.length);
+  const lens=cyc.map(c=>c.length);
+  const notation=cyc.filter(c=>c.length>1).map(c=>"（"+c.map(i=>NAMES[i]).join(" ")+"）").join("");
+  return {lens, notation:notation||"e"};
+}
+
+/* 已生成子群：把见过的不动置换作为生成元，BFS 求闭包 */
+const seenPerms=new Set(["ABCDE"]);
+function permCompose(p,q){ return p.map((_,i)=>p[q[i]]); }
+function permInv(p){ const r=new Array(5); p.forEach((v,i)=>r[v]=i); return r; }
+function closureSize(){
+  const gens=[...seenPerms].map(k=>k.split("").map(ch=>NAMES.indexOf(ch)));
+  const gs=[];
+  gens.forEach(g=>{ if(g.join("")!=="01234"){ gs.push(g); gs.push(permInv(g)); } });
+  const e=[0,1,2,3,4];
+  const seen=new Map([[e.join(""),e]]);
+  const queue=[e];
+  while(queue.length){
+    const cur=queue.pop();
+    for(const g of gs){
+      const c=permCompose(cur,g), key=c.join("");
+      if(!seen.has(key)){ seen.set(key,c); queue.push(key.split("").map(Number)); }
+    }
+  }
+  return seen.size;
+}
+function updateGenLine(){
+  const n=closureSize();
+  if(n>=120){
+    genLine.innerHTML=`你已生成的子群　|H| = <b class="ok">120</b> / 120　—— <b class="ok">整个 S₅ 都在你手里！</b>这就是阿贝尔面对的群：它不可解，所以根式无解`;
+  } else {
+    genLine.innerHTML=`你已生成的子群　|H| = <b>${n}</b> / 120　—— 继续组合作用，把它填满（120 的因子：${n<60?"还差得远":"快了"}）`;
+  }
+}
+
+function updateVerdict(idx){
+  if(!MODES[mode].loop || idx<frames.length-1){ verdict.classList.remove("show"); return; }
+  const init=initialRoots();
+  const fin=frames[frames.length-1].roots;
+  const map=fin.map(f=>{
+    let bi=0,bd=1e9;
+    init.forEach((p,i)=>{const d=Math.hypot(f.re-p.re,f.im-p.im); if(d<bd){bd=d;bi=i;}});
+    return NAMES[bi];
+  });
+  vMap.innerHTML=map.map((m,i)=>`<span class="${NAMES[i]}">${NAMES[i]}</span> ↦ <span class="${m}">${m}</span>`).join("　");
+  const {lens, notation}=cycleInfo(map);
+  const key=map.join("");
+  seenPerms.add(key);
+  updateGenLine();
+  let note;
+  if(key==="ABCDE"){
+    note = (mode==="identity" && !compositeActive)
+      ? "恒等 e：小圈里没有支点，五根各自兜了个小圈回到自己——什么置换也没有发生。"
+      : "恒等 e：五个根各归各位。例如序列 1-1、1-2-1-2-1-2 都能回到恒等。";
+  } else if(lens[0]===2 && lens[1]===1){
+    note = `对换 ${notation}：奇置换——四个绕圈作用都是这种砖块。相邻对换是生成整个 S₅ 的最基本零件。`;
+  } else if(lens[0]===2 && lens[1]===2){
+    note = `双对换 ${notation}：偶置换，A₅ 的 15 个双对换之一（正是下面 A₅ 检验器里大小为 15 的共轭类）。`;
+  } else if(lens[0]===3 && lens[1]===1){
+    note = `三循环 ${notation}：偶置换，A₅ 的 20 个三循环之一。`;
+  } else if(lens[0]===3 && lens[1]===2){
+    note = `三循环×对换 ${notation}：奇置换，阶 6——S₅ 的 20 个此类元素之一。`;
+  } else if(lens[0]===4){
+    note = `四循环 ${notation}：奇置换，阶 4，S₅ 中有 30 个。`;
+  } else {
+    note = `五循环 ${notation}：偶置换，A₅ 的 24 个五循环之一——注意它们在 A₅ 里分成两个共轭类（各 12 个），这就是检验器里两个 12 的由来。`;
+  }
+  vNote.textContent=note;
+  verdict.classList.add("show");
+}
+
+/* ---------------- A₅ 单群检验器 ---------------- */
+const a5Verdict=$("a5Verdict");
+function updateA5(){
+  let n=1;
+  document.querySelectorAll(".a5 input").forEach(cb=>{ if(cb.checked) n+=+cb.dataset.size; });
+  if(n===1){
+    a5Verdict.innerHTML=`<span class="pass">|H| = 1：{e} —— 平凡正规子群 ✓（整除 60）</span>`;
+  } else if(n===60){
+    a5Verdict.innerHTML=`<span class="pass">|H| = 60：A₅ 自身 ✓ —— 但这只是"整体"情形，不算真子群</span>`;
+  } else if(60%n===0){
+    a5Verdict.innerHTML=`<span class="fail">|H| = ${n}：整除 60？！——但正规子群还要对乘法封闭，逐类相乘验证仍会失败</span>`;
+  } else {
+    a5Verdict.innerHTML=`<span class="fail">|H| = ${n} ✗ —— ${n} 不整除 60，拉格朗日定理直接排除！换一组再试</span>`;
+  }
+}
+document.querySelectorAll(".a5 input").forEach(cb=>cb.addEventListener("change",updateA5));
+$("a5All").addEventListener("click",()=>{ document.querySelectorAll(".a5 input").forEach(cb=>cb.checked=true); updateA5(); });
+$("a5None").addEventListener("click",()=>{ document.querySelectorAll(".a5 input").forEach(cb=>cb.checked=false); updateA5(); });
+
+/* ---------------- 主循环 ---------------- */
+let lastTs=0;
+function tick(ts){
+  requestAnimationFrame(tick);
+  const dt=Math.min((ts-lastTs)/1000,0.1); lastTs=ts;
+  const N=frames.length;
+  if(playing){
+    const dur=compositeActive?compositeDur:MODES[mode].dur;
+    idxF+=dt*(N-1)/dur*speed;
+    if(idxF>=N-1){ idxF=N-1; setPlaying(false); }
+    slider.value=Math.round(idxF);
+  }
+  const idx=Math.max(0,Math.min(N-1,Math.round(idxF)));
+  drawY(idx, ts/1000);
+  drawX(idx, ts/1000);
+  drawG(idx);
+  updateReadout(idx);
+  updateVerdict(idx);
+}
+
+/* ---------------- 交互 ---------------- */
+function setPlaying(p){
+  playing=p;
+  btnPlay.textContent=p?"⏸ 暂停":"▶ 播放";
+}
+btnPlay.addEventListener("click",()=>{
+  if(!playing){
+    if(MODES[mode].record && sequence.length>0){
+      const sig=sequence.join("")+"@"+loopR;
+      if(!compositeActive || compositeSig!==sig){
+        buildComposite(sequence);
+        idxF=0;
+      }
+    }
+    if(idxF>=frames.length-1) idxF=0;
+  }
+  setPlaying(!playing);
+});
+btnReset.addEventListener("click",()=>{ setPlaying(false); idxF=0; slider.value=0; });
+const SPEEDS=[0.5,1,2,4];
+btnSpeed.addEventListener("click",()=>{
+  const i=(SPEEDS.indexOf(speed)+1)%SPEEDS.length;
+  speed=SPEEDS[i]; btnSpeed.textContent=speed+"×";
+});
+slider.addEventListener("input",()=>{ setPlaying(false); idxF=+slider.value; });
+chkTrail.addEventListener("change",()=>{ showTrails=chkTrail.checked; });
+
+document.querySelectorAll(".p-toggle-head").forEach(head=>{
+  head.addEventListener("click",()=>{
+    const body=$(head.dataset.target);
+    const btn=head.querySelector(".toggle-btn");
+    const panel=head.closest(".panel");
+    const hidden=!panel.classList.contains("collapsed");
+    panel.classList.toggle("collapsed",hidden);
+    body.style.display=hidden?"none":"";
+    btn.textContent=hidden?"显示 ▼":"隐藏 ▲";
+    resizeAll();
+  });
+});
+
+function rebuild(){
+  setPlaying(false); idxF=0; slider.value=0;
+  if(compositeActive && sequence.length>0){ buildComposite(sequence); }
+  else { frames=buildFrames(mode); slider.max=frames.length-1; }
+  updateReadout(0);
+  resizeAll();
+}
+radius.addEventListener("input",()=>{
+  loopR=(+radius.value)/100; radiusVal.textContent=loopR.toFixed(2);
+  if(MODES[mode].loop || compositeActive) rebuild();
+});
+
+function updateSeqUI(){
+  if(sequence.length===0){
+    seqBox.innerHTML='<span class="seq-empty">（空 —— 播放时只演当前选中的作用）</span>';
+  } else {
+    seqBox.innerHTML=sequence.map(s=>`<span class="seq-chip s${s}">作用${s}</span>`)
+                             .join('<span class="seq-arrow">→</span>');
+  }
+}
+seqClear.addEventListener("click",()=>{
+  sequence=[]; updateSeqUI();
+  compositeActive=false; compositeSig="";
+  rebuild();
+});
+
+function setMode(m, record=true){
+  if(record && MODES[m].record){
+    if(sequence.length<12){ sequence.push(m.slice(-1)); updateSeqUI(); }
+  }
+  mode=m;
+  compositeActive=false; compositeSig="";
+  for(const k in tabIds) $(tabIds[k]).classList.toggle("active",k===m);
+  radiusRow.style.display=MODES[m].record?"":"none";
+  seqRow.style.display=MODES[m].record?"":"none";
+  progLabel.textContent=MODES[m].loop?"路径进度":"参数 x";
+  rebuild();
+}
+for(const k in tabIds) $(tabIds[k]).addEventListener("click",()=>setMode(k));
+window.addEventListener("keydown",e=>{
+  if(e.code==="Space"){ e.preventDefault(); btnPlay.click(); }
+  if(e.code==="ArrowRight"){ setPlaying(false); idxF=Math.min(frames.length-1,idxF+1); slider.value=Math.round(idxF); }
+  if(e.code==="ArrowLeft"){ setPlaying(false); idxF=Math.max(0,idxF-1); slider.value=Math.round(idxF); }
+});
+
+/* ---------------- 尺寸自适应 ---------------- */
+function resizeAll(){
+  const leftEl=document.querySelector(".left");
+  if(window.innerWidth>1180){
+    const leftBottom=leftEl.getBoundingClientRect().bottom;
+    const headBottom=panelY.querySelector(".p-head").getBoundingClientRect().bottom;
+    if(leftBottom>0) cvY.style.height=Math.max(260,Math.round(leftBottom-headBottom-1))+"px";
+  } else {
+    cvY.style.height="480px";
+  }
+  vY.resize(); vX.resize(); vG.resize();
+}
+window.addEventListener("resize",resizeAll);
+
+/* ---------------- 启动 ---------------- */
+updateTabLabels();
+updateBpLine();
+updateGenLine();
+updateA5();
+frames=buildFrames(mode);
+slider.max=frames.length-1;
+updateReadout(0);
+resizeAll();
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>

@@ -1,0 +1,2687 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Möbius 变换交互式演示</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    width: 100%;
+    height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #f8f9fa;
+    overflow: hidden;
+  }
+  body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+  }
+  .rotated-container {
+    display: flex;
+    flex-direction: row;
+    gap: 16px;
+    align-items: flex-start;
+  }
+  .canvas-wrapper {
+    flex-shrink: 0;
+    width: 600px;
+    height: 600px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    overflow: hidden;
+    position: relative;
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    cursor: grab;
+  }
+  canvas:active { cursor: grabbing; }
+  .det-zero-warning {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    background: rgba(255, 0, 0, 0.85);
+    color: #fff;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: bold;
+    display: none;
+    z-index: 10;
+  }
+  .zoom-bar {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 92%;
+    background: rgba(255,255,255,0.95);
+    padding: 8px 12px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    z-index: 10;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.1);
+  }
+  .zoom-bar input[type="range"] {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 10px;
+    background: #e0e0e0;
+    border-radius: 5px;
+    outline: none;
+  }
+  .zoom-bar input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 28px;
+    height: 28px;
+    background: #fd79a8;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 3px solid #fff;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+  }
+  .zoom-bar input[type="range"]::-moz-range-thumb {
+    width: 28px;
+    height: 28px;
+    background: #fd79a8;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 3px solid #fff;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+  }
+  .zoom-btn {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 50%;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    color: #fff;
+    background: #fd79a8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.1s, opacity 0.2s;
+    user-select: none;
+    flex-shrink: 0;
+  }
+  .zoom-btn:hover { opacity: 0.85; }
+  .zoom-btn:active { transform: scale(0.92); }
+  .view-reset-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    color: #fff;
+    background: #b2bec3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, transform 0.1s;
+    z-index: 10;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+    user-select: none;
+  }
+  .view-reset-btn:hover { background: #95a5a6; }
+  .view-reset-btn:active { transform: scale(0.92); }
+  .panel {
+    flex-shrink: 0;
+    width: 300px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .param-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 0;
+  }
+  .param-label {
+    width: 22px;
+    font-weight: bold;
+    font-size: 14px;
+    color: #555;
+  }
+  .param-value {
+    width: 44px;
+    text-align: center;
+    font-family: "SF Mono", monospace;
+    font-size: 13px;
+    color: #2e86de;
+    font-weight: bold;
+  }
+  input[type="range"] {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 5px;
+    background: #e0e0e0;
+    border-radius: 3px;
+    outline: none;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    background: #2e86de;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    background: #2e86de;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .btn {
+    width: 26px;
+    height: 24px;
+    border: none;
+    border-radius: 5px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    color: #fff;
+    transition: transform 0.1s, opacity 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .btn:hover { opacity: 0.85; }
+  .btn:active { transform: scale(0.92); }
+  .btn-minus { background: #ff6b6b; }
+  .btn-plus { background: #1dd1a1; }
+  .play-btn, .rewind-btn {
+    width: 26px;
+    height: 24px;
+    border: none;
+    border-radius: 5px;
+    font-size: 11px;
+    font-weight: bold;
+    cursor: pointer;
+    color: #fff;
+    transition: transform 0.1s, opacity 0.2s, background 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .play-btn:hover, .rewind-btn:hover { opacity: 0.85; }
+  .play-btn:active, .rewind-btn:active { transform: scale(0.92); }
+  .play-btn { background: #a29bfe; }
+  .play-btn.active { background: #6c5ce7; }
+  .rewind-btn { background: #fdcb6e; color: #2d3436; }
+  .rewind-btn.active { background: #e17055; color: #fff; }
+  .formula {
+    background: #f1f3f5;
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 12px;
+    color: #495057;
+    text-align: center;
+    line-height: 1.5;
+  }
+  .formula code {
+    font-family: "KaTeX_Math", "Times New Roman", serif;
+    font-style: italic;
+  }
+  .reset-btn {
+    width: 100%;
+    padding: 10px;
+    background: #8395a7;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s;
+    margin-top: 4px;
+  }
+  .reset-btn:hover { background: #576574; }
+  .step-selector, .mode-selector {
+    display: flex;
+    gap: 4px;
+    justify-content: center;
+  }
+  .step-btn, .mode-btn {
+    padding: 4px 12px;
+    border: 2px solid #dee2e6;
+    background: #fff;
+    border-radius: 5px;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    color: #495057;
+    transition: all 0.15s;
+  }
+  .step-btn:hover, .mode-btn:hover { border-color: #adb5bd; }
+  .step-btn.active {
+    background: #2e86de;
+    color: #fff;
+    border-color: #2e86de;
+  }
+  .mode-btn.active {
+    background: #6c5ce7;
+    color: #fff;
+    border-color: #6c5ce7;
+  }
+  .legend {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    margin-top: 6px;
+    font-size: 12px;
+    color: #666;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .legend-line {
+    width: 20px;
+    height: 2px;
+  }
+  .legend-dash { border-top: 2px dashed #cccccc; }
+  .title-bar {
+    text-align: center;
+    font-size: 15px;
+    font-weight: bold;
+    color: #333;
+  }
+  .section-label {
+    text-align: center;
+    font-size: 10px;
+    color: #888;
+    margin-bottom: -2px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  select {
+    width: 100%;
+    padding: 6px 8px;
+    border: 2px solid #dee2e6;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #495057;
+    background: #fff;
+    cursor: pointer;
+    outline: none;
+  }
+  select:focus { border-color: #2e86de; }
+  .curve-param-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+  }
+  .curve-param-row label {
+    width: 28px;
+    font-weight: bold;
+    font-size: 13px;
+    color: #495057;
+  }
+  .curve-param-row .param-display {
+    flex: 1;
+    padding: 6px 8px;
+    border: 2px solid #dee2e6;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #495057;
+    background: #fff;
+    text-align: left;
+    outline: none;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+  }
+  .curve-param-row .param-display:hover {
+    border-color: #adb5bd;
+  }
+  .curve-param-row .param-display.active {
+    border-color: #2e86de;
+    background: #e8f4fd;
+  }
+  #curve-params-box {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    padding: 8px;
+  }
+  .sound-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #555;
+    cursor: pointer;
+    padding: 4px;
+  }
+  .sound-toggle input {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+  }
+  .custom-select-wrap {
+    position: relative;
+    width: 100%;
+  }
+  .custom-select-trigger {
+    width: 100%;
+    padding: 6px 8px;
+    border: 2px solid #dee2e6;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #495057;
+    background: #fff;
+    cursor: pointer;
+    outline: none;
+    text-align: left;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .custom-select-trigger:focus { border-color: #2e86de; }
+  .custom-select-trigger::after {
+    content: "▼";
+    font-size: 10px;
+    color: #888;
+    margin-left: 4px;
+  }
+  .custom-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    background: #fff;
+    border: 2px solid #dee2e6;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 100;
+    display: none;
+    overflow: hidden;
+    transform: rotate(0deg);
+    transform-origin: top left;
+    font-size: 12px;
+  }
+  .custom-dropdown.open { display: block; }
+  .custom-option {
+    padding: 8px 10px;
+    cursor: pointer;
+    color: #495057;
+    white-space: nowrap;
+    transition: background 0.15s;
+  }
+  .custom-option:hover { background: #e8f4fd; }
+  .custom-option.selected { background: #d0ebff; font-weight: bold; }
+  #curve-select { display: none; }
+
+  .modulus-wrap { position: relative; }
+  .modulus-btn {
+    width: 44px;
+    height: 24px;
+    border: none;
+    border-radius: 5px;
+    font-size: 10px;
+    font-weight: bold;
+    cursor: pointer;
+    color: #fff;
+    background: #6c5ce7;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.1s, opacity 0.2s;
+    user-select: none;
+    -webkit-user-select: none;
+    flex-shrink: 0;
+  }
+  .modulus-btn:hover { opacity: 0.85; }
+  .modulus-btn:active { transform: scale(0.92); }
+  .modulus-popover {
+    position: absolute;
+    top: 28px;
+    right: 0;
+    background: #fff;
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    padding: 8px 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 100;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    min-width: 40px;
+  }
+  .modulus-popover.open { display: flex; }
+  .modulus-popover input[type="range"] {
+    -webkit-appearance: slider-vertical;
+    width: 20px;
+    height: 100px;
+  }
+  .touch-toggle {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255,255,255,0.95);
+    padding: 6px 10px;
+    border-radius: 8px;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.1);
+    font-size: 12px;
+    font-weight: bold;
+    color: #495057;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    transition: all 0.2s;
+  }
+  .touch-toggle:hover { background: rgba(255,255,255,1); }
+  .touch-toggle.active { background: #2e86de; color: #fff; }
+  .touch-toggle .toggle-switch {
+    width: 32px;
+    height: 18px;
+    background: #dee2e6;
+    border-radius: 9px;
+    position: relative;
+    transition: background 0.2s;
+    flex-shrink: 0;
+  }
+  .touch-toggle.active .toggle-switch { background: #1dd1a1; }
+  .touch-toggle .toggle-switch::after {
+    content: '';
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    background: #fff;
+    border-radius: 50%;
+    top: 2px;
+    left: 2px;
+    transition: transform 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .touch-toggle.active .toggle-switch::after { transform: translateX(14px); }
+</style>
+</head>
+<body>
+<div class="rotated-container">
+  <div class="canvas-wrapper">
+    <canvas id="plot" width="600" height="600"></canvas>
+    <div class="det-zero-warning" id="det-warning">⚠ 行列式 ad−bc = 0</div>
+    <div class="touch-toggle" id="touch-toggle" onclick="toggleTouchMode()">
+      <div class="toggle-switch"></div>
+      <span id="touch-label">Sliding</span>
+    </div>
+    <button class="view-reset-btn" onclick="resetView()">⟲</button>
+    <div class="zoom-bar">
+      <button class="zoom-btn" onclick="zoomAdjust(-0.2)">−</button>
+      <input type="range" min="-4" max="3" step="0.1" value="0" id="zoom-slider" oninput="updateZoom()">
+      <button class="zoom-btn" onclick="zoomAdjust(0.2)">+</button>
+      <span id="zoom-label" style="min-width:60px;text-align:center;font-weight:bold;color:#fd79a8;font-size:14px;">1.00×</span>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="title-bar">Möbius 变换演示</div>
+    <div class="section-label">空间模式</div>
+    <div class="mode-selector">
+      <button class="mode-btn active" data-mode="RP1" onclick="setMode('RP1')">ℝP¹</button>
+      <button class="mode-btn" data-mode="CP1" onclick="setMode('CP1')">ℂP¹</button>
+    </div>
+    <div class="section-label">原始曲线</div>
+    <div class="custom-select-wrap" id="custom-select-wrap">
+      <div class="custom-select-trigger" id="custom-select-trigger" onclick="toggleDropdown()">单位圆 x² + y² = 1</div>
+      <div class="custom-dropdown" id="custom-dropdown">
+        <div class="custom-option selected" data-value="circle" onclick="selectCurve('circle')">单位圆 x² + y² = 1</div>
+        <div class="custom-option" data-value="line" onclick="selectCurve('line')">直线 y = tx + s</div>
+        <div class="custom-option" data-value="ellipse" onclick="selectCurve('ellipse')">椭圆 x²/m² + y²/n² = 1</div>
+        <div class="custom-option" data-value="parabola" onclick="selectCurve('parabola')">抛物线 y = tx² + sx + r</div>
+        <div class="custom-option" data-value="hyperbola" onclick="selectCurve('hyperbola')">双曲线 x²/m² − y²/n² = 1</div>
+        <div class="custom-option" data-value="elliptic" onclick="selectCurve('elliptic')">椭圆曲线 y² = ux³ − vx + w</div>
+      </div>
+    </div>
+    <select id="curve-select" onchange="changeCurve()" style="display:none;">
+      <option value="circle">单位圆 x² + y² = 1</option>
+      <option value="line">直线 y = tx + s</option>
+      <option value="ellipse">椭圆 x²/m² + y²/n² = 1</option>
+      <option value="parabola">抛物线 y = tx² + sx + r</option>
+      <option value="hyperbola">双曲线 x²/m² − y²/n² = 1</option>
+      <option value="elliptic">椭圆曲线 y² = ux³ − vx + w</option>
+    </select>
+    <div id="curve-params-box"></div>
+    <div class="formula" id="formula-box">
+      <code id="formula-text">X = (a·x + b) / (c·x + d)<br>Y = (a·y + b) / (c·y + d)</code>
+    </div>
+    <div class="section-label">步长</div>
+    <div class="step-selector">
+      <button class="step-btn" data-step="0.1" onclick="setStep(0.1)">0.1°</button>
+      <button class="step-btn active" data-step="1" onclick="setStep(1)">1°</button>
+      <button class="step-btn" data-step="10" onclick="setStep(10)">10°</button>
+    </div>
+    <div id="param-container"></div>
+    <button class="reset-btn" onclick="resetMobiusParams()">重置 Möbius 参数</button>
+    <label class="sound-toggle">
+      <input type="checkbox" id="sound-check" checked onchange="toggleSound()">
+      <span>🔊 音效开启</span>
+    </label>
+    <div class="legend" id="legend-box">
+      <div class="legend-item"><div class="legend-line legend-dash"></div>原始曲线</div>
+      <div class="legend-item"><div class="legend-line" id="legend-solid" style="border-top:2.5px solid #20bf6b;"></div>变换后曲线</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const curveColors = {
+  circle: '#20bf6b', line: '#fd79a8', ellipse: '#fdcb6e',
+  parabola: '#0984e3', hyperbola: '#8B4513', elliptic: '#1a237e'
+};
+
+let audioCtx = null;
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+const majorScales = {
+  a: [220.00,246.94,261.63,293.66,329.63,349.23,392.00,440.00,493.88,523.25,587.33,659.25,698.46,783.99,880.00,987.77,1046.50],
+  b: [246.94,277.18,293.66,329.63,369.99,392.00,440.00,493.88,554.37,587.33,659.25,739.99,783.99,880.00,987.77,1108.73,1174.66],
+  c: [261.63,293.66,329.63,349.23,392.00,440.00,493.88,523.25,587.33,659.25,698.46,783.99,880.00,987.77,1046.50,1174.66,1318.51],
+  d: [293.66,329.63,369.99,392.00,440.00,493.88,554.37,587.33,659.25,739.99,783.99,880.00,987.77,1108.73,1174.66,1318.51,1479.98]
+};
+
+function playPianoTone(freq, duration) {
+  const ctx = getAudioCtx();
+  const t = ctx.currentTime;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = 'triangle';
+  osc.frequency.value = freq;
+  gain.gain.setValueAtTime(0, t);
+  gain.gain.linearRampToValueAtTime(0.3, t + 0.01);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + duration);
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start(t);
+  osc.stop(t + duration);
+}
+
+function paramToNote(paramName, value) {
+  const scale = majorScales[paramName];
+  if (!scale) return null;
+  const minVal = -50, maxVal = 50;
+  const ratio = (value - minVal) / (maxVal - minVal);
+  const idx = Math.max(0, Math.min(scale.length - 1, Math.round(ratio * (scale.length - 1))));
+  return scale[idx];
+}
+
+function playAngleSound(value) {
+  if (!soundEnabled) return;
+  const now = Date.now();
+  const key = 'angle';
+  if (lastSoundTime[key] && now - lastSoundTime[key] < 80) return;
+  lastSoundTime[key] = now;
+  const freq = 220 + (value / 360) * 660;
+  playPianoTone(freq, 0.15);
+}
+
+let soundEnabled = true;
+let lastSoundTime = {};
+let touchMode = false; // false = Sliding, true = Touching
+let draggingPoint = null; // 'zero' or 'singularity' or null
+let dragOffsetX = 0, dragOffsetY = 0;
+let touchPointMap = {}; // 多指拖拽时记录每个手指对应的点
+
+// ==================== 自定义数字键盘 ====================
+let numPadTarget = null;
+let numPadKey = null;
+let numPadExpr = '';
+let numPadOriginalValue = '';
+
+const CREAM = '#FFF8F0';
+const RED_ORANGE = '#E85D04';
+
+function showNumPad(key, displayEl) {
+  if (numPadTarget && numPadTarget !== displayEl) {
+    numpadCancel();
+  }
+  numPadKey = key;
+  numPadTarget = displayEl;
+  numPadOriginalValue = displayEl.textContent;
+  numPadExpr = String(displayEl.textContent || '');
+  document.querySelectorAll('.param-display').forEach(el => el.classList.remove('active'));
+  displayEl.classList.add('active');
+  let pad = document.getElementById('custom-numpad');
+  if (!pad) {
+    pad = document.createElement('div');
+    pad.id = 'custom-numpad';
+    pad.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);' +
+      'background:rgba(255,255,255,0.98);border:2px solid #dee2e6;border-radius:16px;' +
+      'padding:20px;z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.2);display:none;' +
+      'flex-direction:column;align-items:center;gap:12px;';
+
+    const display = document.createElement('div');
+    display.id = 'numpad-display';
+    display.style.cssText = 'font-size:18px;font-weight:bold;color:#2e86de;' +
+      'min-width:200px;text-align:center;padding:10px 16px;' +
+      'background:#f8f9fa;border-radius:8px;border:2px solid #dee2e6;word-break:break-all;' +
+      'min-height:46px;display:flex;align-items:center;justify-content:center;';
+    pad.appendChild(display);
+
+    const grid = document.createElement('div');
+    grid.style.cssText = 'display:grid;grid-template-columns:repeat(5,52px);gap:6px;';
+
+    const buttons = [
+      {ch:'C', type:'clear'}, {ch:'(', type:'op'}, {ch:')', type:'op'}, {ch:'←', type:'back'}, {ch:'✔', type:'ok'},
+      {ch:'7', type:'num'}, {ch:'8', type:'num'}, {ch:'9', type:'num'}, {ch:'/', type:'op'}, {ch:'×', type:'op'},
+      {ch:'4', type:'num'}, {ch:'5', type:'num'}, {ch:'6', type:'num'}, {ch:'-', type:'op'}, {ch:'+', type:'op'},
+      {ch:'1', type:'num'}, {ch:'2', type:'num'}, {ch:'3', type:'num'}, {ch:'√', type:'op'}, {ch:'^', type:'op'},
+      {ch:'0', type:'num'}, {ch:'.', type:'num'}, {ch:'π', type:'const'}, {ch:'e', type:'const'}, {ch:'ln', type:'ln'}
+    ];
+
+    buttons.forEach(btnInfo => {
+      const btn = document.createElement('button');
+      btn.textContent = btnInfo.ch;
+      const isOk = btnInfo.type === 'ok';
+      const isClear = btnInfo.type === 'clear';
+      const isFn = btnInfo.type === 'ln';
+      const isOp = btnInfo.type === 'op' || btnInfo.type === 'const';
+      btn.style.cssText = 'width:52px;height:52px;border:none;' +
+        'border-radius:10px;font-size:' + (btnInfo.ch.length > 1 ? '13px' : '16px') + ';font-weight:bold;' +
+        'cursor:pointer;transition:all 0.1s;user-select:none;-webkit-user-select:none;' +
+        'display:flex;align-items:center;justify-content:center;' +
+        (isOk 
+          ? 'background:' + RED_ORANGE + ';color:' + CREAM + ';box-shadow:0 2px 8px rgba(232,93,4,0.3);font-size:20px;'
+          : isClear
+            ? 'background:' + CREAM + ';color:' + RED_ORANGE + ';box-shadow:0 2px 8px rgba(0,0,0,0.08);'
+            : isFn
+              ? 'background:#74b9ff;color:#fff;box-shadow:0 2px 8px rgba(116,185,255,0.3);'
+              : isOp
+                ? 'background:#f0f0f0;color:#666;box-shadow:0 1px 4px rgba(0,0,0,0.08);'
+                : 'background:' + CREAM + ';color:' + RED_ORANGE + ';box-shadow:0 2px 8px rgba(0,0,0,0.08);');
+
+      btn.onmousedown = (e) => { e.preventDefault(); handleNumpad(btnInfo.ch, btnInfo.type); };
+      btn.ontouchstart = (e) => { e.preventDefault(); handleNumpad(btnInfo.ch, btnInfo.type); };
+      grid.appendChild(btn);
+    });
+
+    pad.appendChild(grid);
+    document.body.appendChild(pad);
+  }
+
+  updateNumpadDisplay();
+  pad.style.display = 'flex';
+}
+
+function updateNumpadDisplay() {
+  const display = document.getElementById('numpad-display');
+  if (display) display.textContent = numPadExpr;
+}
+
+function handleNumpad(ch, type) {
+  if (type === 'ok') {
+    numpadConfirm();
+    return;
+  }
+  if (type === 'clear') {
+    numPadExpr = '';
+    updateNumpadDisplay();
+    return;
+  }
+  if (type === 'back') {
+    if (numPadExpr.length > 0) {
+      numPadExpr = numPadExpr.slice(0, -1);
+    }
+    updateNumpadDisplay();
+    return;
+  }
+  if (type === 'ln') {
+    numPadExpr += 'ln(';
+    updateNumpadDisplay();
+    return;
+  }
+  numPadExpr += ch;
+  updateNumpadDisplay();
+}
+
+function safeEval(expr) {
+  // 预处理：替换显示符号
+  let jsExpr = expr
+    .replace(/×/g, '*')
+    .replace(/÷/g, '/');
+
+  // 辅助函数：获取表达式中从某位置开始的下一个完整操作数
+  function getOperand(str, start) {
+    let i = start;
+    while (i < str.length && str[i] === ' ') i++;
+    if (i >= str.length) return { text: '', end: i };
+
+    // 如果是括号
+    if (str[i] === '(') {
+      let depth = 1;
+      i++;
+      while (i < str.length && depth > 0) {
+        if (str[i] === '(') depth++;
+        else if (str[i] === ')') depth--;
+        i++;
+      }
+      return { text: str.substring(start, i), end: i };
+    }
+
+    // 如果是函数调用（Math.xxx(...)）
+    if (str.substring(i, i + 5) === 'Math.') {
+      let j = i + 5;
+      while (j < str.length && /[a-zA-Z]/.test(str[j])) j++;
+      while (j < str.length && str[j] === ' ') j++;
+      if (j < str.length && str[j] === '(') {
+        let depth = 1;
+        j++;
+        while (j < str.length && depth > 0) {
+          if (str[j] === '(') depth++;
+          else if (str[j] === ')') depth--;
+          j++;
+        }
+        return { text: str.substring(start, j), end: j };
+      }
+    }
+
+    // 如果是数字（包括小数）
+    if (/[\d.]/.test(str[i])) {
+      let j = i;
+      while (j < str.length && /[\d.]/.test(str[j])) j++;
+      return { text: str.substring(start, j), end: j };
+    }
+
+    // 单字符
+    return { text: str[i], end: i + 1 };
+  }
+
+  // 辅助函数：获取 ^ 左边的操作数（从 ^ 往前解析）
+  function getLeftOperand(str, caretIdx) {
+    let i = caretIdx - 1;
+    while (i >= 0 && str[i] === ' ') i--;
+    if (i < 0) return { text: '', start: 0 };
+
+    // 如果是括号 )，找到匹配的 (
+    if (str[i] === ')') {
+      let depth = 1;
+      i--;
+      while (i >= 0 && depth > 0) {
+        if (str[i] === ')') depth++;
+        else if (str[i] === '(') depth--;
+        i--;
+      }
+      return { text: str.substring(i + 1, caretIdx), start: i + 1 };
+    }
+
+    // 如果是数字
+    if (/[\d.]/.test(str[i])) {
+      let j = i;
+      while (j >= 0 && /[\d.]/.test(str[j])) j--;
+      return { text: str.substring(j + 1, caretIdx), start: j + 1 };
+    }
+
+    // 单字符（如 π, e 等常量）
+    return { text: str[i], start: i };
+  }
+
+  // 第一步：替换常量 π 和 e 为实际数值
+  jsExpr = jsExpr.replace(/π/g, '(' + Math.PI + ')');
+  jsExpr = jsExpr.replace(/(?<![a-zA-Z])e(?![a-zA-Z])/g, '(' + Math.E + ')');
+
+  // 第二步：处理 √ 和 ln（此时 π/e 已经是数值，不会冲突）
+  // 处理 √数字
+  jsExpr = jsExpr.replace(/√(\d+(?:\.\d+)?)/g, 'Math.sqrt($1)');
+  // 处理 √( → 需要找到匹配的 )
+  while (/√\(/.test(jsExpr)) {
+    jsExpr = jsExpr.replace(/√\(([^()]*)\)/g, 'Math.sqrt($1)');
+  }
+  // 处理 √ 后面跟函数调用或括号（如 √Math.sqrt(...)）
+  while (/√Math\./.test(jsExpr)) {
+    jsExpr = jsExpr.replace(/√(Math\.[a-z]+\([^)]*\))/g, 'Math.sqrt($1)');
+  }
+  // 处理剩余的 √（如 √3.14...）
+  jsExpr = jsExpr.replace(/√(\d+\.\d+)/g, 'Math.sqrt($1)');
+  jsExpr = jsExpr.replace(/√/g, 'Math.sqrt');
+
+  // 处理 ln(
+  while (/ln\(/.test(jsExpr)) {
+    jsExpr = jsExpr.replace(/ln\(([^()]*)\)/g, 'Math.log($1)');
+  }
+  jsExpr = jsExpr.replace(/ln/g, 'Math.log');
+
+  // 第三步：处理连写乘法（数字后面直接跟 Math. 或 ( ）
+  jsExpr = jsExpr.replace(/(\d+(?:\.\d+)?)(Math\.|\()/g, '$1*$2');
+
+  // 第四步：处理 ^ 指数运算（右结合：从右往左找最后一个 ^）
+  while (true) {
+    const caretIdx = jsExpr.lastIndexOf('^');
+    if (caretIdx === -1) break;
+
+    const leftResult = getLeftOperand(jsExpr, caretIdx);
+    const leftOp = leftResult.text;
+    const leftStart = leftResult.start;
+
+    const rightResult = getOperand(jsExpr, caretIdx + 1);
+    const rightOp = rightResult.text;
+
+    jsExpr = jsExpr.substring(0, leftStart) + 'Math.pow(' + leftOp + ',' + rightOp + ')' + jsExpr.substring(rightResult.end);
+  }
+
+  try {
+    const result = new Function('return ' + jsExpr)();
+    if (!isFinite(result) || isNaN(result)) return NaN;
+    return result;
+  } catch (e) {
+    return NaN;
+  }
+}
+
+function numpadConfirm() {
+  if (numPadTarget && numPadKey) {
+    // 空表达式默认为 0
+    const exprToEval = numPadExpr || '0';
+    const val = safeEval(exprToEval);
+    if (!isNaN(val) && isFinite(val)) {
+      curveParams[currentCurve][numPadKey] = val;
+      numPadTarget.textContent = exprToEval;
+      numPadTarget.classList.remove('active');
+      draw();
+      document.getElementById('custom-numpad').style.display = 'none';
+      numPadTarget = null;
+      numPadKey = null;
+      numPadExpr = '';
+      numPadOriginalValue = '';
+    } else {
+      const display = document.getElementById('numpad-display');
+      if (display) {
+        display.style.color = '#ff0000';
+        display.textContent = '错误: 无效表达式';
+        setTimeout(() => {
+          display.style.color = '#2e86de';
+          updateNumpadDisplay();
+        }, 1500);
+      }
+    }
+  }
+}
+
+function numpadCancel() {
+  if (numPadTarget) {
+    numPadTarget.textContent = numPadOriginalValue;
+    numPadTarget.classList.remove('active');
+  }
+  const pad = document.getElementById('custom-numpad');
+  if (pad) pad.style.display = 'none';
+  numPadTarget = null;
+  numPadKey = null;
+  numPadExpr = '';
+  numPadOriginalValue = '';
+}
+
+function toggleTouchMode() {
+  touchMode = !touchMode;
+  const toggle = document.getElementById('touch-toggle');
+  const label = document.getElementById('touch-label');
+  toggle.classList.toggle('active', touchMode);
+  label.textContent = touchMode ? 'Touching' : 'Sliding';
+  draw();
+}
+
+function getCanvasXY(clientX, clientY) {
+  const rect = canvas.getBoundingClientRect();
+  const cssX = clientX - rect.left;
+  const cssY = clientY - rect.top;
+  return {
+    x: cssX * (W / rect.width),
+    y: cssY * (H / rect.height)
+  };
+}
+
+function getZeroPoint() {
+  if (mode === 'RP1') {
+    const { a, b } = params;
+    if (Math.abs(a) < 0.1) return null;
+    return { x: -b / a, y: -b / a };
+  } else {
+    const [a_re, a_im] = getComplexParam('a');
+    const [b_re, b_im] = getComplexParam('b');
+    const a_mag_sq = a_re * a_re + a_im * a_im;
+    if (a_mag_sq < 1e-6) return null;
+    const num_re = b_re * a_re + b_im * a_im;
+    const num_im = b_im * a_re - b_re * a_im;
+    return { x: -num_re / a_mag_sq, y: -num_im / a_mag_sq };
+  }
+}
+
+function getSingularityPoint() {
+  if (mode === 'RP1') {
+    const { c, d } = params;
+    if (Math.abs(c) < 0.1) return null;
+    return { x: -d / c, y: -d / c };
+  } else {
+    const [c_re, c_im] = getComplexParam('c');
+    const [d_re, d_im] = getComplexParam('d');
+    const c_mag_sq = c_re * c_re + c_im * c_im;
+    if (c_mag_sq < 1e-6) return null;
+    const num_re = d_re * c_re + d_im * c_im;
+    const num_im = d_im * c_re - d_re * c_im;
+    return { x: -num_re / c_mag_sq, y: -num_im / c_mag_sq };
+  }
+}
+
+function hitTestPoint(canvasX, canvasY, worldX, worldY) {
+  const px = toCanvasX(worldX);
+  const py = toCanvasY(worldY);
+  const RADIUS = touchMode ? 45 : 9; // 大触控区域：touchMode 45px, 正常 9px
+  const dx = canvasX - px;
+  const dy = canvasY - py;
+  return Math.sqrt(dx * dx + dy * dy) < RADIUS;
+}
+
+function updateParamsFromZero(newX, newY) {
+  if (mode === 'RP1') {
+    // z0 = -b/a => b = -a * z0
+    params.b = -params.a * newX;
+    document.getElementById('slider-b').value = params.b;
+    document.getElementById('val-b').textContent = params.b.toFixed(2);
+  } else {
+    const [a_re, a_im] = getComplexParam('a');
+    const b_re = -(a_re * newX - a_im * newY);
+    const b_im = -(a_re * newY + a_im * newX);
+    const rb = Math.sqrt(b_re * b_re + b_im * b_im);
+    const thetaB = Math.atan2(b_im, b_re) * 180 / Math.PI;
+    complexParams.rb = Math.min(50, Math.max(0, rb));
+    complexParams.thetaB = ((thetaB % 360) + 360) % 360;
+    document.getElementById('slider-thetaB').value = complexParams.thetaB;
+    document.getElementById('val-thetaB').textContent = complexParams.thetaB.toFixed(1) + '°';
+    const modBtn = document.getElementById('mod-btn-b');
+    if (modBtn) modBtn.innerHTML = 'r<sub>b</sub>=' + complexParams.rb.toFixed(1);
+    const popoverVal = document.getElementById('popover-val-b');
+    if (popoverVal) popoverVal.textContent = complexParams.rb.toFixed(1);
+    const popoverSlider = document.querySelector('#popover-b input[type="range"]');
+    if (popoverSlider) popoverSlider.value = complexParams.rb;
+  }
+}
+
+function updateParamsFromSingularity(newX, newY) {
+  if (mode === 'RP1') {
+    // z∞ = -d/c => d = -c * z∞
+    params.d = -params.c * newX;
+    document.getElementById('slider-d').value = params.d;
+    document.getElementById('val-d').textContent = params.d.toFixed(2);
+  } else {
+    const [c_re, c_im] = getComplexParam('c');
+    const d_re = -(c_re * newX - c_im * newY);
+    const d_im = -(c_re * newY + c_im * newX);
+    const rd = Math.sqrt(d_re * d_re + d_im * d_im);
+    const thetaD = Math.atan2(d_im, d_re) * 180 / Math.PI;
+    complexParams.rd = Math.min(50, Math.max(0, rd));
+    complexParams.thetaD = ((thetaD % 360) + 360) % 360;
+    document.getElementById('slider-thetaD').value = complexParams.thetaD;
+    document.getElementById('val-thetaD').textContent = complexParams.thetaD.toFixed(1) + '°';
+    const modBtn = document.getElementById('mod-btn-d');
+    if (modBtn) modBtn.innerHTML = 'r<sub>d</sub>=' + complexParams.rd.toFixed(1);
+    const popoverVal = document.getElementById('popover-val-d');
+    if (popoverVal) popoverVal.textContent = complexParams.rd.toFixed(1);
+    const popoverSlider = document.querySelector('#popover-d input[type="range"]');
+    if (popoverSlider) popoverSlider.value = complexParams.rd;
+  }
+}
+
+function worldFromCanvas(canvasX, canvasY) {
+  const x = xMin + (canvasX - margin) / (W - 2 * margin) * (xMax - xMin);
+  const y = yMin + (H - margin - canvasY) / (H - 2 * margin) * (yMax - yMin);
+  return { x, y };
+}
+
+function triggerSound(paramName, value) {
+  if (!soundEnabled) return;
+  const now = Date.now();
+  if (lastSoundTime[paramName] && now - lastSoundTime[paramName] < 80) return;
+  lastSoundTime[paramName] = now;
+  const freq = paramToNote(paramName, value);
+  if (freq) playPianoTone(freq, 0.15);
+}
+
+function toggleSound() {
+  soundEnabled = document.getElementById('sound-check').checked;
+  document.querySelector('.sound-toggle span').textContent = soundEnabled ? '🔊 音效开启' : '🔇 音效关闭';
+}
+
+const canvas = document.getElementById('plot');
+const ctx = canvas.getContext('2d');
+const W = 600, H = 600;
+
+let BASE_RANGE = 3;
+let zoomFactor = 1;
+let panX = 0, panY = 0;
+let xMin = -BASE_RANGE, xMax = BASE_RANGE, yMin = -BASE_RANGE, yMax = BASE_RANGE;
+const margin = 40;
+
+function updateView() {
+  const range = BASE_RANGE / zoomFactor;
+  xMin = panX - range;
+  xMax = panX + range;
+  yMin = panY - range;
+  yMax = panY + range;
+}
+
+function toCanvasX(x) {
+  return margin + (x - xMin) / (xMax - xMin) * (W - 2 * margin);
+}
+function toCanvasY(y) {
+  return margin + (H - 2 * margin) - (y - yMin) / (yMax - yMin) * (H - 2 * margin);
+}
+
+let params = { a: 1, b: 0, c: 0, d: 1 };
+let complexParams = {
+  ra: 1.0, thetaA: 0,
+  rb: 0.0, thetaB: 0,
+  rc: 0.0, thetaC: 0,
+  rd: 1.0, thetaD: 0
+};
+const VAL_MIN = -50, VAL_MAX = 50;
+const paramNames = ['a', 'b', 'c', 'd'];
+let stepSize = 1;
+let keyTimers = {};
+let playTimers = {};
+let playDirections = {};
+let rewindTimers = {};
+let rewindDirections = {};
+let mode = 'CP1';
+
+const curveDefaults = {
+  circle: {},
+  line: { t: 1, s: 0 },
+  ellipse: { m: 2, n: 3 },
+  parabola: { t: 1, s: 0, r: 0 },
+  hyperbola: { m: 2, n: 3 },
+  elliptic: { u: 1, v: 1, w: 1 }
+};
+
+let curveParams = JSON.parse(JSON.stringify(curveDefaults));
+let currentCurve = 'circle';
+
+function mobius(z, a, b, c, d) {
+  const denom = c * z + d;
+  if (Math.abs(denom) < 1e-12) return NaN;
+  const result = (a * z + b) / denom;
+  if (!isFinite(result) || Math.abs(result) > 1e6) return NaN;
+  return result;
+}
+
+function mobiusComplex(x, y, a_re, a_im, b_re, b_im, c_re, c_im, d_re, d_im) {
+  const num_re = (a_re * x - a_im * y) + b_re;
+  const num_im = (a_re * y + a_im * x) + b_im;
+  const den_re = (c_re * x - c_im * y) + d_re;
+  const den_im = (c_re * y + c_im * x) + d_im;
+  const den_sq = den_re * den_re + den_im * den_im;
+  if (den_sq < 1e-20) return [NaN, NaN];
+  const X = (num_re * den_re + num_im * den_im) / den_sq;
+  const Y = (num_im * den_re - num_re * den_im) / den_sq;
+  if (!isFinite(X) || !isFinite(Y) || Math.abs(X) > 1e6 || Math.abs(Y) > 1e6) return [NaN, NaN];
+  return [X, Y];
+}
+
+function getComplexParam(name) {
+  const r = complexParams['r' + name];
+  const theta = complexParams['theta' + name.toUpperCase()] * Math.PI / 180;
+  return [r * Math.cos(theta), r * Math.sin(theta)];
+}
+
+function findEllipticDomains(u, v, w) {
+  const f = (x) => u * x * x * x - v * x + w;
+  const roots = [];
+  const scanMin = -500, scanMax = 500, step = 0.1;
+  let prevX = scanMin, prevY = f(prevX);
+  for (let x = scanMin + step; x <= scanMax; x += step) {
+    const y = f(x);
+    if (prevY === 0) roots.push(prevX);
+    else if (y === 0) roots.push(x);
+    else if (prevY * y < 0) {
+      let lo = prevX, hi = x, mid;
+      for (let iter = 0; iter < 25; iter++) {
+        mid = (lo + hi) / 2;
+        const fm = f(mid);
+        if (Math.abs(fm) < 1e-12) break;
+        if (f(lo) * fm <= 0) hi = mid; else lo = mid;
+      }
+      roots.push((lo + hi) / 2);
+    }
+    prevX = x; prevY = y;
+  }
+  roots.sort((a, b) => a - b);
+  const uniq = [];
+  for (const r of roots) {
+    if (uniq.length === 0 || Math.abs(r - uniq[uniq.length - 1]) > 1e-5) uniq.push(r);
+  }
+  const intervals = [];
+  const tests = [scanMin, ...uniq, scanMax];
+  for (let i = 0; i < tests.length - 1; i++) {
+    const mid = (tests[i] + tests[i + 1]) / 2;
+    if (f(mid) >= 0) intervals.push([tests[i], tests[i + 1]]);
+  }
+  return intervals;
+}
+
+function generateOriginalPoints() {
+  const N = 4000;
+  const cp = curveParams[currentCurve];
+  let pts = [];
+
+  switch (currentCurve) {
+    case 'circle':
+      for (let i = 0; i <= N; i++) {
+        const t = i * 2 * Math.PI / N;
+        pts.push([Math.cos(t), Math.sin(t)]);
+      }
+      break;
+    case 'line': {
+      const t = cp.t, s = cp.s;
+      const eps = 1e-4;
+      for (let i = 0; i <= N; i++) {
+        const theta = -Math.PI / 2 + eps + (Math.PI - 2 * eps) * i / N;
+        const x = Math.tan(theta);
+        pts.push([x, t * x + s]);
+      }
+      break;
+    }
+    case 'ellipse': {
+      const m = cp.m, n = cp.n;
+      for (let i = 0; i <= N; i++) {
+        const theta = i * 2 * Math.PI / N;
+        pts.push([m * Math.cos(theta), n * Math.sin(theta)]);
+      }
+      break;
+    }
+    case 'parabola': {
+      const t = cp.t, s = cp.s, r = cp.r;
+      const eps = 1e-4;
+      for (let i = 0; i <= N; i++) {
+        const theta = -Math.PI / 2 + eps + (Math.PI - 2 * eps) * i / N;
+        const x = Math.tan(theta);
+        pts.push([x, t * x * x + s * x + r]);
+      }
+      break;
+    }
+    case 'hyperbola': {
+      const m = cp.m, n = cp.n;
+      const eps = 1e-4;
+      for (let i = 0; i <= N / 2; i++) {
+        const theta = -Math.PI / 2 + eps + (Math.PI - 2 * eps) * i / (N / 2);
+        pts.push([m / Math.cos(theta), n * Math.tan(theta)]);
+      }
+      for (let i = 0; i <= N / 2; i++) {
+        const theta = Math.PI / 2 + eps + (Math.PI - 2 * eps) * i / (N / 2);
+        pts.push([m / Math.cos(theta), n * Math.tan(theta)]);
+      }
+      break;
+    }
+    case 'elliptic': {
+      const u = cp.u, v = cp.v, w = cp.w;
+      const intervals = findEllipticDomains(u, v, w);
+      if (intervals.length === 0) break;
+      const ptsPerInterval = Math.max(80, Math.floor(N / intervals.length));
+      for (const [xa, xb] of intervals) {
+        for (let i = 0; i <= ptsPerInterval; i++) {
+          const x = xa + (xb - xa) * i / ptsPerInterval;
+          const rhs = u * x * x * x - v * x + w;
+          if (rhs >= 0) pts.push([x, Math.sqrt(rhs)]);
+        }
+      }
+      for (let idx = intervals.length - 1; idx >= 0; idx--) {
+        const [xa, xb] = intervals[idx];
+        for (let i = ptsPerInterval; i >= 0; i--) {
+          const x = xa + (xb - xa) * i / ptsPerInterval;
+          const rhs = u * x * x * x - v * x + w;
+          if (rhs >= 0) pts.push([x, -Math.sqrt(rhs)]);
+        }
+      }
+      break;
+    }
+  }
+  return pts;
+}
+
+function drawCurvePath(pts, color, width, dash, usePhaseColor) {
+  ctx.lineWidth = width;
+  ctx.setLineDash(dash ? [6, 4] : []);
+
+  let valid = [];
+  for (let i = 0; i < pts.length; i++) {
+    const [x, y] = pts[i];
+    if (isFinite(x) && isFinite(y)) {
+      valid.push({ x, y, idx: i });
+    }
+  }
+  if (valid.length < 2) return;
+
+  const MAX_JUMP = 250;
+
+  let segments = [];
+  let current = [valid[0]];
+  for (let i = 1; i < valid.length; i++) {
+    const prev = valid[i - 1];
+    const curr = valid[i];
+    let shouldBreak = false;
+    if (curr.idx !== prev.idx + 1) {
+      shouldBreak = true;
+    } else {
+      const dx = toCanvasX(curr.x) - toCanvasX(prev.x);
+      const dy = toCanvasY(curr.y) - toCanvasY(prev.y);
+      if (Math.sqrt(dx * dx + dy * dy) > MAX_JUMP) shouldBreak = true;
+    }
+    if (shouldBreak) {
+      if (current.length > 1) segments.push(current);
+      current = [curr];
+    } else {
+      current.push(curr);
+    }
+  }
+  if (current.length > 1) segments.push(current);
+
+  // HSL 色相映射：辐角 -> 色相 (0~360)
+  // 辐角 0 (正x轴) → 红色 (hue=0)，逆时针增加
+  function phaseToHue(x, y) {
+    const angle = Math.atan2(y, x); // -π ~ π，0 在正x轴
+    // 将 angle 映射到 hue：0 → 0°(红)，π/2 → 90°(绿)，π → 180°(青)，-π/2 → 270°(紫)
+    let hue = (-angle / (2 * Math.PI)) * 360;
+    while (hue < 0) hue += 360;
+    while (hue >= 360) hue -= 360;
+    return hue;
+  }
+
+  for (let seg of segments) {
+    if (usePhaseColor && mode === 'CP1') {
+      // CP1 模式：逐段彩虹色
+      for (let i = 0; i < seg.length - 1; i++) {
+        const cx1 = toCanvasX(seg[i].x);
+        const cy1 = toCanvasY(seg[i].y);
+        const cx2 = toCanvasX(seg[i + 1].x);
+        const cy2 = toCanvasY(seg[i + 1].y);
+        const hue = phaseToHue(seg[i].x, seg[i].y);
+        ctx.strokeStyle = 'hsl(' + hue.toFixed(1) + ', 85%, 50%)';
+        ctx.beginPath();
+        ctx.moveTo(cx1, cy1);
+        ctx.lineTo(cx2, cy2);
+        ctx.stroke();
+      }
+    } else {
+      // RP1 模式或原始曲线：纯色
+      ctx.strokeStyle = color;
+      ctx.beginPath();
+      for (let i = 0; i < seg.length; i++) {
+        const cx = toCanvasX(seg[i].x);
+        const cy = toCanvasY(seg[i].y);
+        if (i === 0) ctx.moveTo(cx, cy);
+        else ctx.lineTo(cx, cy);
+      }
+      ctx.stroke();
+    }
+  }
+}
+
+function transformPoint(x, y) {
+  if (mode === 'RP1') {
+    return [mobius(x, params.a, params.b, params.c, params.d), mobius(y, params.a, params.b, params.c, params.d)];
+  } else {
+    const [a_re, a_im] = getComplexParam('a');
+    const [b_re, b_im] = getComplexParam('b');
+    const [c_re, c_im] = getComplexParam('c');
+    const [d_re, d_im] = getComplexParam('d');
+    return mobiusComplex(x, y, a_re, a_im, b_re, b_im, c_re, c_im, d_re, d_im);
+  }
+}
+
+// ==================== 零点标记 ====================
+function drawZeroMarkers() {
+  let zx, zy, label;
+  if (mode === 'RP1') {
+    const { a, b } = params;
+    if (Math.abs(a) < 0.1) return;
+    const zeroX = -b / a;
+    const zeroY = -b / a;
+    zx = toCanvasX(zeroX);
+    zy = toCanvasY(zeroY);
+    label = 'z₀';
+  } else {
+    const [a_re, a_im] = getComplexParam('a');
+    const [b_re, b_im] = getComplexParam('b');
+    const a_mag_sq = a_re * a_re + a_im * a_im;
+    if (a_mag_sq < 1e-6) return;
+    const num_re = b_re * a_re + b_im * a_im;
+    const num_im = b_im * a_re - b_re * a_im;
+    const zero_re = -num_re / a_mag_sq;
+    const zero_im = -num_im / a_mag_sq;
+    zx = toCanvasX(zero_re);
+    zy = toCanvasY(zero_im);
+    label = 'z₀';
+  }
+
+  // Touching 模式：画扩大的黑色环（3倍半径=27px，环粗细3px）
+  if (touchMode && zx >= -40 && zx <= W + 40 && zy >= -40 && zy <= H + 40) {
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.35)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(zx, zy, 27, 0, 2 * Math.PI);
+    ctx.stroke();
+  }
+
+  if (zx >= -20 && zx <= W + 20 && zy >= -20 && zy <= H + 20) {
+    // 外圈白色光晕
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.beginPath();
+    ctx.arc(zx, zy, 9, 0, 2 * Math.PI);
+    ctx.fill();
+
+    // 黑色实心圆点
+    ctx.fillStyle = '#000000';
+    ctx.beginPath();
+    ctx.arc(zx, zy, 6, 0, 2 * Math.PI);
+    ctx.fill();
+
+    // 白色细描边
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // 文字标签
+    ctx.font = 'bold 12px "PingFang SC", "Microsoft YaHei", sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+
+    const textX = zx + 14;
+    const textY = zy - 2;
+    const textWidth = ctx.measureText(label).width;
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+    ctx.fillRect(textX - 3, textY - 8, textWidth + 6, 18);
+    ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+    ctx.lineWidth = 0.5;
+    ctx.strokeRect(textX - 3, textY - 8, textWidth + 6, 18);
+
+    // 绘制 "z" 正常大小
+    ctx.fillStyle = '#000000';
+    ctx.fillText('z', textX, textY);
+    // 绘制下标 "₀"
+    const zWidth0 = ctx.measureText('z').width;
+    ctx.font = 'bold 9px "PingFang SC", "Microsoft YaHei", sans-serif';
+    ctx.fillText('₀', textX + zWidth0, textY + 3);
+  }
+}
+
+function drawSingularityMarkers() {
+  let sx, sy, label;
+  if (mode === 'RP1') {
+    const { a, b, c, d } = params;
+    if (Math.abs(c) < 0.1) return;
+    const singularityX = -d / c;
+    const singularityY = -d / c;
+    sx = toCanvasX(singularityX);
+    sy = toCanvasY(singularityY);
+    label = 'z∞';
+  } else {
+    const [c_re, c_im] = getComplexParam('c');
+    const [d_re, d_im] = getComplexParam('d');
+    const c_mag_sq = c_re * c_re + c_im * c_im;
+    if (c_mag_sq < 1e-6) return;
+    const num_re = d_re * c_re + d_im * c_im;
+    const num_im = d_im * c_re - d_re * c_im;
+    const sing_re = -num_re / c_mag_sq;
+    const sing_im = -num_im / c_mag_sq;
+    sx = toCanvasX(sing_re);
+    sy = toCanvasY(sing_im);
+    label = 'z∞';
+  }
+
+  // Touching 模式：画扩大的红色环（3倍半径=27px，环粗细3px）
+  if (touchMode && sx >= -40 && sx <= W + 40 && sy >= -40 && sy <= H + 40) {
+    ctx.strokeStyle = 'rgba(255, 0, 0, 0.35)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(sx, sy, 27, 0, 2 * Math.PI);
+    ctx.stroke();
+  }
+
+  if (sx >= -20 && sx <= W + 20 && sy >= -20 && sy <= H + 20) {
+    // 外圈白色光晕
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.beginPath();
+    ctx.arc(sx, sy, 9, 0, 2 * Math.PI);
+    ctx.fill();
+
+    // 红色实心圆点
+    ctx.fillStyle = '#ff0000';
+    ctx.beginPath();
+    ctx.arc(sx, sy, 6, 0, 2 * Math.PI);
+    ctx.fill();
+
+    // 白色细描边
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // 文字标签
+    ctx.font = 'bold 12px "PingFang SC", "Microsoft YaHei", sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+
+    const textX = sx + 14;
+    const textY = sy - 2;
+    const textWidth = ctx.measureText(label).width;
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+    ctx.fillRect(textX - 3, textY - 8, textWidth + 6, 18);
+    ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+    ctx.lineWidth = 0.5;
+    ctx.strokeRect(textX - 3, textY - 8, textWidth + 6, 18);
+
+    // 绘制 "z" 正常大小
+    ctx.fillStyle = '#ff0000';
+    ctx.fillText('z', textX, textY);
+    // 绘制下标 "∞"
+    const zWidth = ctx.measureText('z').width;
+    ctx.font = 'bold 9px "PingFang SC", "Microsoft YaHei", sans-serif';
+    ctx.fillText('∞', textX + zWidth, textY + 3);
+  }
+}
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.strokeStyle = '#e8e8e8';
+  ctx.lineWidth = 1;
+  for (let x = Math.ceil(xMin); x <= Math.floor(xMax); x++) {
+    const cx = toCanvasX(x);
+    ctx.beginPath(); ctx.moveTo(cx, margin); ctx.lineTo(cx, H - margin); ctx.stroke();
+  }
+  for (let y = Math.ceil(yMin); y <= Math.floor(yMax); y++) {
+    const cy = toCanvasY(y);
+    ctx.beginPath(); ctx.moveTo(margin, cy); ctx.lineTo(W - margin, cy); ctx.stroke();
+  }
+
+  ctx.strokeStyle = '#333';
+  ctx.lineWidth = 1.2;
+  const ox = toCanvasX(0), oy = toCanvasY(0);
+  ctx.beginPath(); ctx.moveTo(margin, oy); ctx.lineTo(W - margin, oy); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(ox, margin); ctx.lineTo(ox, H - margin); ctx.stroke();
+
+  const range = xMax - xMin;
+  let tickStep = 2;
+  if (range > 80) tickStep = 20;
+  else if (range > 40) tickStep = 10;
+  else if (range > 20) tickStep = 5;
+  else if (range > 10) tickStep = 2;
+  else if (range > 5) tickStep = 1;
+  else tickStep = 0.5;
+
+  ctx.fillStyle = '#666';
+  ctx.font = '12px sans-serif';
+  ctx.textAlign = 'center';
+  for (let x = Math.ceil(xMin / tickStep) * tickStep; x <= Math.floor(xMax); x += tickStep) {
+    if (Math.abs(x) < 1e-6) continue;
+    ctx.fillText(String(x), toCanvasX(x), oy + 16);
+  }
+  ctx.textAlign = 'right';
+  for (let y = Math.ceil(yMin / tickStep) * tickStep; y <= Math.floor(yMax); y += tickStep) {
+    if (Math.abs(y) < 1e-6) continue;
+    ctx.fillText(String(y), ox - 6, toCanvasY(y) + 4);
+  }
+
+  const origPts = generateOriginalPoints();
+  drawCurvePath(origPts, '#cccccc', 1.5, true);
+
+  const transPts = [];
+  for (let i = 0; i < origPts.length; i++) {
+    const [x, y] = origPts[i];
+    transPts.push(transformPoint(x, y));
+  }
+  const color = curveColors[currentCurve] || '#20bf6b';
+  // CP1 模式下使用相位颜色映射，RP1 模式下使用纯色
+  drawCurvePath(transPts, color, 2.5, false, mode === 'CP1');
+
+  drawZeroMarkers();
+  drawSingularityMarkers();
+
+  if (mode === 'RP1') {
+    const det = params.a * params.d - params.b * params.c;
+    document.getElementById('det-warning').style.display = (Math.abs(det) < 0.01) ? 'block' : 'none';
+  } else {
+    const [a_re, a_im] = getComplexParam('a');
+    const [b_re, b_im] = getComplexParam('b');
+    const [c_re, c_im] = getComplexParam('c');
+    const [d_re, d_im] = getComplexParam('d');
+    const det_re = (a_re * d_re - a_im * d_im) - (b_re * c_re - b_im * c_im);
+    const det_im = (a_re * d_im + a_im * d_re) - (b_re * c_im + b_im * c_re);
+    const det_mag = Math.sqrt(det_re * det_re + det_im * det_im);
+    document.getElementById('det-warning').style.display = (det_mag < 0.01) ? 'block' : 'none';
+  }
+}
+
+function updateLegendColor() {
+  const color = curveColors[currentCurve] || '#20bf6b';
+  document.getElementById('legend-solid').style.borderTopColor = color;
+}
+
+function setMode(m) {
+  if (mode === m) return;
+
+  // 1. 记录当前播放与倒放状态（旧模式）
+  const wasPlaying = {};
+  const wasRewinding = {};
+  if (mode === 'RP1') {
+    paramNames.forEach(name => {
+      if (playTimers[name]) wasPlaying[name] = true;
+      if (rewindTimers[name]) wasRewinding[name] = true;
+    });
+  } else {
+    ['thetaA', 'thetaB', 'thetaC', 'thetaD'].forEach(name => {
+      if (playTimers[name]) wasPlaying[name] = true;
+      if (rewindTimers[name]) wasRewinding[name] = true;
+    });
+  }
+
+  // 2. 参数值双向继承
+  if (mode === 'RP1' && m === 'CP1') {
+    // RP1 → CP1：实数值 → 模长 + 角度（0° 或 180°）
+    paramNames.forEach(name => {
+      const val = params[name];
+      complexParams['r' + name] = Math.abs(val);
+      complexParams['theta' + name.toUpperCase()] = val >= 0 ? 0 : 180;
+    });
+  } else if (mode === 'CP1' && m === 'RP1') {
+    // CP1 → RP1：取复数实部
+    paramNames.forEach(name => {
+      const r = complexParams['r' + name];
+      const theta = complexParams['theta' + name.toUpperCase()] * Math.PI / 180;
+      params[name] = r * Math.cos(theta);
+    });
+  }
+
+  // 3. 清理旧模式的自动播放与 UI
+  stopAllAuto();
+
+  // 4. 切换模式并重建面板
+  mode = m;
+  document.querySelectorAll('.mode-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.mode === m);
+  });
+
+  const formulaText = document.getElementById('formula-text');
+  if (mode === 'RP1') {
+    formulaText.innerHTML = 'X = (a·x + b) / (c·x + d)<br>Y = (a·y + b) / (c·y + d)';
+    buildRP1Params();
+  } else {
+    formulaText.innerHTML = 'z = x + i·y<br>w = (a·z + b) / (c·z + d)<br>a,b,c,d ∈ ℂ';
+    buildCP1Params();
+  }
+  updateStepButtons();
+
+  // 5. 恢复播放状态（映射到新模式对应参数）
+  if (mode === 'RP1') {
+    paramNames.forEach(name => {
+      const cpName = 'theta' + name.toUpperCase();
+      if (wasPlaying[cpName]) togglePlay(name);
+      if (wasRewinding[cpName]) toggleRewind(name);
+    });
+  } else {
+    ['thetaA', 'thetaB', 'thetaC', 'thetaD'].forEach(name => {
+      const rpName = name.replace('theta', '').toLowerCase();
+      if (wasPlaying[rpName]) toggleCP1Play(name);
+      if (wasRewinding[rpName]) toggleCP1Rewind(name);
+    });
+  }
+
+  draw();
+}
+
+function updateStepButtons() {
+  const unit = mode === 'CP1' ? '°' : '';
+  document.querySelectorAll('.step-btn').forEach(btn => {
+    const clean = btn.dataset.step.replace(/°/g, '');
+    btn.textContent = clean + unit;
+  });
+}
+
+function setStep(s) {
+  stepSize = s;
+  document.querySelectorAll('.step-btn').forEach(btn => {
+    const clean = btn.dataset.step.replace(/°/g, '');
+    btn.classList.toggle('active', parseFloat(clean) === s);
+  });
+  if (mode === 'RP1') {
+    paramNames.forEach(name => {
+      const slider = document.getElementById(`slider-${name}`);
+      if (slider) slider.step = stepSize;
+    });
+    const precision = stepSize < 0.05 ? 2 : (stepSize < 0.5 ? 1 : 0);
+    paramNames.forEach(name => {
+      const val = document.getElementById(`val-${name}`);
+      if (val) val.textContent = params[name].toFixed(precision);
+    });
+  } else {
+    ['thetaA', 'thetaB', 'thetaC', 'thetaD'].forEach(name => {
+      const slider = document.getElementById(`slider-${name}`);
+      if (slider) slider.step = stepSize;
+    });
+    const precision = stepSize < 1 ? 1 : 0;
+    ['thetaA', 'thetaB', 'thetaC', 'thetaD'].forEach(name => {
+      const val = document.getElementById(`val-${name}`);
+      if (val) val.textContent = complexParams[name].toFixed(precision) + '°';
+    });
+  }
+}
+
+function adjustParam(name, direction) {
+  let newVal = params[name] + direction * stepSize;
+  newVal = Math.max(VAL_MIN, Math.min(VAL_MAX, newVal));
+  const precision = stepSize < 0.05 ? 2 : (stepSize < 0.5 ? 1 : 0);
+  newVal = parseFloat(newVal.toFixed(precision));
+  params[name] = newVal;
+  document.getElementById(`slider-${name}`).value = newVal;
+  document.getElementById(`val-${name}`).textContent = newVal.toFixed(precision);
+  triggerSound(name, newVal);
+  draw();
+}
+
+function startAdjust(name, direction) {
+  const key = name + '_' + direction;
+  if (keyTimers[key]) return;
+  adjustParam(name, direction);
+  keyTimers[key] = setInterval(() => adjustParam(name, direction), 100);
+}
+
+function stopAdjust(name, direction) {
+  const key = name + '_' + direction;
+  if (keyTimers[key]) {
+    clearInterval(keyTimers[key]);
+    delete keyTimers[key];
+  }
+}
+
+function togglePlay(name) {
+  const btn = document.getElementById(`play-${name}`);
+  if (playTimers[name]) {
+    clearInterval(playTimers[name]);
+    delete playTimers[name];
+    delete playDirections[name];
+    btn.textContent = '▶';
+    btn.classList.remove('active');
+  } else {
+    playDirections[name] = 1;
+    playTimers[name] = setInterval(() => {
+      let dir = playDirections[name];
+      let newVal = params[name] + dir * stepSize;
+      if (newVal > VAL_MAX) { newVal = VAL_MAX; playDirections[name] = -1; }
+      else if (newVal < VAL_MIN) { newVal = VAL_MIN; playDirections[name] = 1; }
+      const precision = stepSize < 0.05 ? 2 : (stepSize < 0.5 ? 1 : 0);
+      newVal = parseFloat(newVal.toFixed(precision));
+      params[name] = newVal;
+      document.getElementById(`slider-${name}`).value = newVal;
+      document.getElementById(`val-${name}`).textContent = newVal.toFixed(precision);
+      triggerSound(name, newVal);
+      draw();
+    }, 120);
+    btn.textContent = '⏸';
+    btn.classList.add('active');
+  }
+}
+
+function toggleRewind(name) {
+  const btn = document.getElementById(`rewind-${name}`);
+  if (rewindTimers[name]) {
+    clearInterval(rewindTimers[name]);
+    delete rewindTimers[name];
+    delete rewindDirections[name];
+    btn.textContent = '◀';
+    btn.classList.remove('active');
+  } else {
+    rewindDirections[name] = -1;
+    rewindTimers[name] = setInterval(() => {
+      let dir = rewindDirections[name];
+      let newVal = params[name] + dir * stepSize;
+      if (newVal > VAL_MAX) { newVal = VAL_MAX; rewindDirections[name] = -1; }
+      else if (newVal < VAL_MIN) { newVal = VAL_MIN; rewindDirections[name] = 1; }
+      const precision = stepSize < 0.05 ? 2 : (stepSize < 0.5 ? 1 : 0);
+      newVal = parseFloat(newVal.toFixed(precision));
+      params[name] = newVal;
+      document.getElementById(`slider-${name}`).value = newVal;
+      document.getElementById(`val-${name}`).textContent = newVal.toFixed(precision);
+      triggerSound(name, newVal);
+      draw();
+    }, 120);
+    btn.textContent = '⏸';
+    btn.classList.add('active');
+  }
+}
+
+function adjustCP1Param(name, direction) {
+  let newVal = complexParams[name] + direction * stepSize;
+  newVal = ((newVal % 360) + 360) % 360;
+  const precision = stepSize < 1 ? 1 : 0;
+  newVal = parseFloat(newVal.toFixed(precision));
+  complexParams[name] = newVal;
+  const slider = document.getElementById(`slider-${name}`);
+  const val = document.getElementById(`val-${name}`);
+  if (slider) slider.value = newVal;
+  if (val) val.textContent = newVal.toFixed(precision) + '°';
+  playAngleSound(newVal);
+  draw();
+}
+
+function startCP1Adjust(name, direction) {
+  const key = name + '_' + direction;
+  if (keyTimers[key]) return;
+  adjustCP1Param(name, direction);
+  keyTimers[key] = setInterval(() => adjustCP1Param(name, direction), 100);
+}
+
+function stopCP1Adjust(name, direction) {
+  const key = name + '_' + direction;
+  if (keyTimers[key]) {
+    clearInterval(keyTimers[key]);
+    delete keyTimers[key];
+  }
+}
+
+function toggleCP1Play(name) {
+  const btn = document.getElementById(`play-${name}`);
+  if (playTimers[name]) {
+    clearInterval(playTimers[name]);
+    delete playTimers[name];
+    delete playDirections[name];
+    btn.textContent = '▶';
+    btn.classList.remove('active');
+  } else {
+    playDirections[name] = 1;
+    playTimers[name] = setInterval(() => {
+      let dir = playDirections[name];
+      let newVal = complexParams[name] + dir * stepSize;
+      if (newVal > 360) newVal -= 360;
+      else if (newVal < 0) newVal += 360;
+      const precision = stepSize < 1 ? 1 : 0;
+      newVal = parseFloat(newVal.toFixed(precision));
+      complexParams[name] = newVal;
+      const slider = document.getElementById(`slider-${name}`);
+      const val = document.getElementById(`val-${name}`);
+      if (slider) slider.value = newVal;
+      if (val) val.textContent = newVal.toFixed(precision) + '°';
+      playAngleSound(newVal);
+      draw();
+    }, 120);
+    btn.textContent = '⏸';
+    btn.classList.add('active');
+  }
+}
+
+function toggleCP1Rewind(name) {
+  const btn = document.getElementById(`rewind-${name}`);
+  if (rewindTimers[name]) {
+    clearInterval(rewindTimers[name]);
+    delete rewindTimers[name];
+    delete rewindDirections[name];
+    btn.textContent = '◀';
+    btn.classList.remove('active');
+  } else {
+    rewindDirections[name] = -1;
+    rewindTimers[name] = setInterval(() => {
+      let dir = rewindDirections[name];
+      let newVal = complexParams[name] + dir * stepSize;
+      if (newVal > 360) newVal -= 360;
+      else if (newVal < 0) newVal += 360;
+      const precision = stepSize < 1 ? 1 : 0;
+      newVal = parseFloat(newVal.toFixed(precision));
+      complexParams[name] = newVal;
+      const slider = document.getElementById(`slider-${name}`);
+      const val = document.getElementById(`val-${name}`);
+      if (slider) slider.value = newVal;
+      if (val) val.textContent = newVal.toFixed(precision) + '°';
+      playAngleSound(newVal);
+      draw();
+    }, 120);
+    btn.textContent = '⏸';
+    btn.classList.add('active');
+  }
+}
+
+function toggleModulusPopover(param) {
+  const popover = document.getElementById(`popover-${param}`);
+  const isOpen = popover.classList.contains('open');
+  document.querySelectorAll('.modulus-popover').forEach(p => p.classList.remove('open'));
+  if (!isOpen) popover.classList.add('open');
+}
+
+function updateModulus(param, value) {
+  const v = parseFloat(value);
+  complexParams['r' + param] = v;
+  const btn = document.getElementById(`mod-btn-${param}`);
+  if (btn) btn.innerHTML = 'r<sub>' + param + '</sub>=' + v.toFixed(1);
+  const popoverVal = document.getElementById(`popover-val-${param}`);
+  if (popoverVal) popoverVal.textContent = v.toFixed(1);
+  draw();
+}
+
+function adjustModulus(param, delta) {
+  let newVal = complexParams['r' + param] + delta;
+  newVal = Math.max(0, Math.min(50, newVal));
+  newVal = parseFloat(newVal.toFixed(1));
+  complexParams['r' + param] = newVal;
+  // 更新按钮显示
+  const btn = document.getElementById(`mod-btn-${param}`);
+  if (btn) btn.innerHTML = 'r<sub>' + param + '</sub>=' + newVal.toFixed(1);
+  // 更新 popover 内的值和滑块
+  const popoverVal = document.getElementById(`popover-val-${param}`);
+  if (popoverVal) popoverVal.textContent = newVal.toFixed(1);
+  const popoverSlider = document.querySelector(`#popover-${param} input[type="range"]`);
+  if (popoverSlider) popoverSlider.value = newVal;
+  draw();
+}
+
+function stopAllAuto() {
+  if (mode === 'RP1') {
+    paramNames.forEach(name => {
+      if (playTimers[name]) {
+        clearInterval(playTimers[name]);
+        delete playTimers[name];
+        delete playDirections[name];
+        const btn = document.getElementById(`play-${name}`);
+        if (btn) { btn.textContent = '▶'; btn.classList.remove('active'); }
+      }
+      if (rewindTimers[name]) {
+        clearInterval(rewindTimers[name]);
+        delete rewindTimers[name];
+        delete rewindDirections[name];
+        const btn = document.getElementById(`rewind-${name}`);
+        if (btn) { btn.textContent = '◀'; btn.classList.remove('active'); }
+      }
+    });
+  } else {
+    ['thetaA', 'thetaB', 'thetaC', 'thetaD'].forEach(name => {
+      if (playTimers[name]) {
+        clearInterval(playTimers[name]);
+        delete playTimers[name];
+        delete playDirections[name];
+        const btn = document.getElementById(`play-${name}`);
+        if (btn) { btn.textContent = '▶'; btn.classList.remove('active'); }
+      }
+      if (rewindTimers[name]) {
+        clearInterval(rewindTimers[name]);
+        delete rewindTimers[name];
+        delete rewindDirections[name];
+        const btn = document.getElementById(`rewind-${name}`);
+        if (btn) { btn.textContent = '◀'; btn.classList.remove('active'); }
+      }
+    });
+  }
+}
+
+function zoomAdjust(delta) {
+  const slider = document.getElementById('zoom-slider');
+  let newVal = parseFloat(slider.value) + delta;
+  newVal = Math.max(-4, Math.min(3, newVal));
+  slider.value = newVal;
+  updateZoom();
+}
+
+function updateZoom() {
+  const logZoom = parseFloat(document.getElementById('zoom-slider').value);
+  zoomFactor = Math.pow(2, logZoom);
+  updateView();
+  document.getElementById('zoom-label').textContent = zoomFactor.toFixed(2) + '×';
+  draw();
+}
+
+function resetView() {
+  panX = 0;
+  panY = 0;
+  zoomFactor = 1;
+  document.getElementById('zoom-slider').value = 0;
+  updateView();
+  document.getElementById('zoom-label').textContent = '1.00×';
+  draw();
+}
+
+let isDragging = false;
+let lastMouseX = 0, lastMouseY = 0;
+let dragPausedPlay = [];
+let dragPausedRewind = [];
+let isPinching = false;
+let pinchStartDist = 0;
+let pinchPausedPlay = [];
+let pinchPausedRewind = [];
+let pinchStartZoom = 1;
+let pinchCenterX = 0, pinchCenterY = 0;
+let pinchStartPanX = 0, pinchStartPanY = 0;
+
+canvas.addEventListener('mousedown', (e) => {
+  if (touchMode) {
+    const { x: cx, y: cy } = getCanvasXY(e.clientX, e.clientY);
+    const zeroPt = getZeroPoint();
+    const singPt = getSingularityPoint();
+    let hit = null;
+    if (zeroPt && hitTestPoint(cx, cy, zeroPt.x, zeroPt.y)) {
+      hit = 'zero';
+      dragOffsetX = cx - toCanvasX(zeroPt.x);
+      dragOffsetY = cy - toCanvasY(zeroPt.y);
+    } else if (singPt && hitTestPoint(cx, cy, singPt.x, singPt.y)) {
+      hit = 'singularity';
+      dragOffsetX = cx - toCanvasX(singPt.x);
+      dragOffsetY = cy - toCanvasY(singPt.y);
+    }
+    if (hit) {
+      draggingPoint = hit;
+      canvas.style.cursor = 'grabbing';
+      return;
+    }
+    // 没点到点，继续画布拖拽
+  }
+  isDragging = true;
+  dragPausedPlay = Object.keys(playTimers);
+  dragPausedRewind = Object.keys(rewindTimers);
+  stopAllAuto();
+  lastMouseX = e.clientX;
+  lastMouseY = e.clientY;
+  canvas.style.cursor = 'grabbing';
+});
+
+canvas.addEventListener('mousemove', (e) => {
+  if (draggingPoint) {
+    const { x: cx, y: cy } = getCanvasXY(e.clientX, e.clientY);
+    const worldPt = worldFromCanvas(cx, cy);
+    if (draggingPoint === 'zero') {
+      updateParamsFromZero(worldPt.x, worldPt.y);
+    } else if (draggingPoint === 'singularity') {
+      updateParamsFromSingularity(worldPt.x, worldPt.y);
+    }
+    draw();
+    return;
+  }
+  if (!isDragging) return;
+  const dx = e.clientX - lastMouseX;
+  const dy = e.clientY - lastMouseY;
+  lastMouseX = e.clientX;
+  lastMouseY = e.clientY;
+  const range = xMax - xMin;
+  const worldDx = -dx * range / (W - 2 * margin);
+  const worldDy = dy * range / (H - 2 * margin);
+  panX += worldDx;
+  panY += worldDy;
+  updateView();
+  draw();
+});
+
+canvas.addEventListener('mouseup', () => {
+  if (draggingPoint) {
+    draggingPoint = null;
+    canvas.style.cursor = touchMode ? 'crosshair' : 'grab';
+    return;
+  }
+  isDragging = false;
+  canvas.style.cursor = 'grab';
+  for (const name of dragPausedPlay) {
+    if (!playTimers[name]) {
+      if (mode === 'RP1') togglePlay(name);
+      else toggleCP1Play(name);
+    }
+  }
+  for (const name of dragPausedRewind) {
+    if (!rewindTimers[name]) {
+      if (mode === 'RP1') toggleRewind(name);
+      else toggleCP1Rewind(name);
+    }
+  }
+  dragPausedPlay = [];
+  dragPausedRewind = [];
+});
+
+canvas.addEventListener('mouseleave', () => {
+  if (draggingPoint) {
+    draggingPoint = null;
+    canvas.style.cursor = touchMode ? 'crosshair' : 'grab';
+    return;
+  }
+  isDragging = false;
+  canvas.style.cursor = 'grab';
+  for (const name of dragPausedPlay) {
+    if (!playTimers[name]) {
+      if (mode === 'RP1') togglePlay(name);
+      else toggleCP1Play(name);
+    }
+  }
+  for (const name of dragPausedRewind) {
+    if (!rewindTimers[name]) {
+      if (mode === 'RP1') toggleRewind(name);
+      else toggleCP1Rewind(name);
+    }
+  }
+  dragPausedPlay = [];
+  dragPausedRewind = [];
+});
+
+canvas.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  zoomAdjust(e.deltaY > 0 ? -0.2 : 0.2);
+}, { passive: false });
+
+canvas.addEventListener('touchstart', (e) => {
+  if (e.touches.length === 2 && touchMode) {
+    // 检查两个手指是否都在环上
+    const p0 = getCanvasXY(e.touches[0].clientX, e.touches[0].clientY);
+    const p1 = getCanvasXY(e.touches[1].clientX, e.touches[1].clientY);
+    const zeroPt = getZeroPoint();
+    const singPt = getSingularityPoint();
+    const hit0_zero = zeroPt && hitTestPoint(p0.x, p0.y, zeroPt.x, zeroPt.y);
+    const hit0_sing = singPt && hitTestPoint(p0.x, p0.y, singPt.x, singPt.y);
+    const hit1_zero = zeroPt && hitTestPoint(p1.x, p1.y, zeroPt.x, zeroPt.y);
+    const hit1_sing = singPt && hitTestPoint(p1.x, p1.y, singPt.x, singPt.y);
+
+    // 如果两个手指分别在不同点上，或都在同一个点上
+    if ((hit0_zero && hit1_sing) || (hit0_sing && hit1_zero) ||
+        (hit0_zero && hit1_zero) || (hit0_sing && hit1_sing)) {
+      // 多指拖拽模式
+      isPinching = false;
+      isDragging = false;
+      // 记录每个手指对应的点
+      touchPointMap = {};
+      if (hit0_zero) touchPointMap[0] = 'zero';
+      else if (hit0_sing) touchPointMap[0] = 'singularity';
+      if (hit1_zero) touchPointMap[1] = 'zero';
+      else if (hit1_sing) touchPointMap[1] = 'singularity';
+      e.preventDefault();
+      return;
+    }
+    // 否则继续 pinch 缩放
+    isPinching = true;
+    isDragging = false;
+    draggingPoint = null;
+    touchPointMap = {};
+    pinchPausedPlay = Object.keys(playTimers);
+    pinchPausedRewind = Object.keys(rewindTimers);
+    stopAllAuto();
+    const dx = e.touches[0].clientX - e.touches[1].clientX;
+    const dy = e.touches[0].clientY - e.touches[1].clientY;
+    pinchStartDist = Math.sqrt(dx * dx + dy * dy);
+    pinchStartZoom = zoomFactor;
+    pinchCenterX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+    pinchCenterY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+    pinchStartPanX = panX;
+    pinchStartPanY = panY;
+    e.preventDefault();
+  } else if (e.touches.length === 2) {
+    isPinching = true;
+    isDragging = false;
+    draggingPoint = null;
+    touchPointMap = {};
+    pinchPausedPlay = Object.keys(playTimers);
+    pinchPausedRewind = Object.keys(rewindTimers);
+    stopAllAuto();
+    const dx = e.touches[0].clientX - e.touches[1].clientX;
+    const dy = e.touches[0].clientY - e.touches[1].clientY;
+    pinchStartDist = Math.sqrt(dx * dx + dy * dy);
+    pinchStartZoom = zoomFactor;
+    pinchCenterX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+    pinchCenterY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+    pinchStartPanX = panX;
+    pinchStartPanY = panY;
+    e.preventDefault();
+  } else if (e.touches.length === 1 && touchMode) {
+    const { x: cx, y: cy } = getCanvasXY(e.touches[0].clientX, e.touches[0].clientY);
+    const zeroPt = getZeroPoint();
+    const singPt = getSingularityPoint();
+    let hit = null;
+    if (zeroPt && hitTestPoint(cx, cy, zeroPt.x, zeroPt.y)) {
+      hit = 'zero';
+      dragOffsetX = cx - toCanvasX(zeroPt.x);
+      dragOffsetY = cy - toCanvasY(zeroPt.y);
+    } else if (singPt && hitTestPoint(cx, cy, singPt.x, singPt.y)) {
+      hit = 'singularity';
+      dragOffsetX = cx - toCanvasX(singPt.x);
+      dragOffsetY = cy - toCanvasY(singPt.y);
+    }
+    if (hit) {
+      draggingPoint = hit;
+      touchPointMap = { 0: hit };
+      e.preventDefault();
+      return;
+    }
+    // 没点到点，继续画布拖拽
+    isDragging = true;
+    dragPausedPlay = Object.keys(playTimers);
+    dragPausedRewind = Object.keys(rewindTimers);
+    stopAllAuto();
+    lastMouseX = e.touches[0].clientX;
+    lastMouseY = e.touches[0].clientY;
+    e.preventDefault();
+  } else if (e.touches.length === 1) {
+    isDragging = true;
+    dragPausedPlay = Object.keys(playTimers);
+    dragPausedRewind = Object.keys(rewindTimers);
+    stopAllAuto();
+    lastMouseX = e.touches[0].clientX;
+    lastMouseY = e.touches[0].clientY;
+    e.preventDefault();
+  }
+}, { passive: false });
+
+canvas.addEventListener('touchmove', (e) => {
+  if (e.touches.length === 2 && Object.keys(touchPointMap).length === 2) {
+    // 多指拖拽模式：两个手指分别移动两个点
+    for (let i = 0; i < 2; i++) {
+      const pointType = touchPointMap[i];
+      if (!pointType) continue;
+      const { x: cx, y: cy } = getCanvasXY(e.touches[i].clientX, e.touches[i].clientY);
+      const worldPt = worldFromCanvas(cx, cy);
+      if (pointType === 'zero') {
+        updateParamsFromZero(worldPt.x, worldPt.y);
+      } else if (pointType === 'singularity') {
+        updateParamsFromSingularity(worldPt.x, worldPt.y);
+      }
+    }
+    draw();
+    e.preventDefault();
+  } else if (e.touches.length === 2 && isPinching) {
+    const dx = e.touches[0].clientX - e.touches[1].clientX;
+    const dy = e.touches[0].clientY - e.touches[1].clientY;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (pinchStartDist > 0) {
+      const scale = dist / pinchStartDist;
+      const newZoom = pinchStartZoom * scale;
+      zoomFactor = Math.max(0.0625, Math.min(8, newZoom));
+      const logZoom = Math.log2(zoomFactor);
+      document.getElementById('zoom-slider').value = logZoom;
+      document.getElementById('zoom-label').textContent = zoomFactor.toFixed(2) + '×';
+      updateView();
+      draw();
+    }
+    e.preventDefault();
+  } else if (draggingPoint && e.touches.length === 1) {
+    const { x: cx, y: cy } = getCanvasXY(e.touches[0].clientX, e.touches[0].clientY);
+    const worldPt = worldFromCanvas(cx, cy);
+    if (draggingPoint === 'zero') {
+      updateParamsFromZero(worldPt.x, worldPt.y);
+    } else if (draggingPoint === 'singularity') {
+      updateParamsFromSingularity(worldPt.x, worldPt.y);
+    }
+    draw();
+    e.preventDefault();
+  } else if (isDragging && e.touches.length === 1) {
+    const dx = e.touches[0].clientX - lastMouseX;
+    const dy = e.touches[0].clientY - lastMouseY;
+    lastMouseX = e.touches[0].clientX;
+    lastMouseY = e.touches[0].clientY;
+    const range = xMax - xMin;
+    const worldDx = -dx * range / (W - 2 * margin);
+    const worldDy = dy * range / (H - 2 * margin);
+    panX += worldDx;
+    panY += worldDy;
+    updateView();
+    draw();
+    e.preventDefault();
+  }
+}, { passive: false });
+
+canvas.addEventListener('touchend', (e) => {
+  if (e.touches.length < 2) {
+    if (isPinching) {
+      isPinching = false;
+      for (const name of pinchPausedPlay) {
+        if (!playTimers[name]) {
+          if (mode === 'RP1') togglePlay(name);
+          else toggleCP1Play(name);
+        }
+      }
+      for (const name of pinchPausedRewind) {
+        if (!rewindTimers[name]) {
+          if (mode === 'RP1') toggleRewind(name);
+          else toggleCP1Rewind(name);
+        }
+      }
+      pinchPausedPlay = [];
+      pinchPausedRewind = [];
+    }
+    // 清理多指拖拽状态
+    if (Object.keys(touchPointMap).length > 0 && e.touches.length === 0) {
+      touchPointMap = {};
+      draggingPoint = null;
+      return;
+    }
+    if (Object.keys(touchPointMap).length > 0 && e.touches.length === 1) {
+      // 还剩一个手指，检查是否还在点上
+      const { x: cx, y: cy } = getCanvasXY(e.touches[0].clientX, e.touches[0].clientY);
+      const zeroPt = getZeroPoint();
+      const singPt = getSingularityPoint();
+      let remainingHit = null;
+      if (zeroPt && hitTestPoint(cx, cy, zeroPt.x, zeroPt.y)) {
+        remainingHit = 'zero';
+      } else if (singPt && hitTestPoint(cx, cy, singPt.x, singPt.y)) {
+        remainingHit = 'singularity';
+      }
+      if (remainingHit) {
+        draggingPoint = remainingHit;
+        touchPointMap = { 0: remainingHit };
+        dragOffsetX = cx - toCanvasX(remainingHit === 'zero' ? zeroPt.x : singPt.x);
+        dragOffsetY = cy - toCanvasY(remainingHit === 'zero' ? zeroPt.y : singPt.y);
+      } else {
+        touchPointMap = {};
+        draggingPoint = null;
+      }
+      return;
+    }
+  }
+  if (e.touches.length === 0) {
+    if (draggingPoint) {
+      draggingPoint = null;
+      return;
+    }
+    isDragging = false;
+    for (const name of dragPausedPlay) {
+      if (!playTimers[name]) {
+        if (mode === 'RP1') togglePlay(name);
+        else toggleCP1Play(name);
+      }
+    }
+    for (const name of dragPausedRewind) {
+      if (!rewindTimers[name]) {
+        if (mode === 'RP1') toggleRewind(name);
+        else toggleCP1Rewind(name);
+      }
+    }
+    dragPausedPlay = [];
+    dragPausedRewind = [];
+  }
+});
+
+function buildCurveParams() {
+  const box = document.getElementById('curve-params-box');
+  box.innerHTML = '';
+  const defs = curveDefaults[currentCurve];
+  if (!defs || Object.keys(defs).length === 0) {
+    box.style.display = 'none';
+    return;
+  }
+  box.style.display = 'flex';
+  for (const key of Object.keys(defs)) {
+    const row = document.createElement('div');
+    row.className = 'curve-param-row';
+    const label = document.createElement('label');
+    label.textContent = key + '=';
+    const display = document.createElement('div');
+    display.className = 'param-display';
+    display.textContent = curveParams[currentCurve][key];
+    display.dataset.paramKey = key;
+    display.addEventListener('click', function(e) {
+      e.stopPropagation();
+      const k = this.dataset.paramKey;
+      showNumPad(k, this);
+    });
+    display.addEventListener('touchstart', function(e) {
+      e.stopPropagation();
+      e.preventDefault();
+      const k = this.dataset.paramKey;
+      showNumPad(k, this);
+    }, {passive: false});
+    row.appendChild(label);
+    row.appendChild(display);
+    box.appendChild(row);
+  }
+}
+
+function changeCurve() {
+  currentCurve = document.getElementById('curve-select').value;
+  buildCurveParams();
+  updateLegendColor();
+  draw();
+}
+
+let dropdownOpen = false;
+function toggleDropdown() {
+  dropdownOpen = !dropdownOpen;
+  document.getElementById('custom-dropdown').classList.toggle('open', dropdownOpen);
+}
+
+function selectCurve(value) {
+  document.getElementById('curve-select').value = value;
+  const trigger = document.getElementById('custom-select-trigger');
+  const options = document.querySelectorAll('.custom-option');
+  options.forEach(opt => {
+    opt.classList.toggle('selected', opt.dataset.value === value);
+    if (opt.dataset.value === value) {
+      trigger.textContent = opt.textContent;
+    }
+  });
+  dropdownOpen = false;
+  document.getElementById('custom-dropdown').classList.remove('open');
+  changeCurve();
+}
+
+function buildRP1Params() {
+  const container = document.getElementById('param-container');
+  container.innerHTML = '';
+  paramNames.forEach(name => {
+    const row = document.createElement('div');
+    row.className = 'param-row';
+    row.style.gap = '4px';
+
+    const label = document.createElement('span');
+    label.className = 'param-label';
+    label.textContent = name;
+    label.style.width = '22px';
+
+    const rewind = document.createElement('button');
+    rewind.className = 'rewind-btn';
+    rewind.id = `rewind-${name}`;
+    rewind.textContent = '◀';
+    rewind.onclick = () => toggleRewind(name);
+
+    const minus = document.createElement('button');
+    minus.className = 'btn btn-minus';
+    minus.textContent = '−';
+    minus.onmousedown = (e) => { e.preventDefault(); startAdjust(name, -1); };
+    minus.onmouseup = (e) => { e.preventDefault(); stopAdjust(name, -1); };
+    minus.onmouseleave = (e) => { stopAdjust(name, -1); };
+    minus.ontouchstart = (e) => { e.preventDefault(); startAdjust(name, -1); };
+    minus.ontouchend = (e) => { e.preventDefault(); stopAdjust(name, -1); };
+    minus.ontouchcancel = (e) => { stopAdjust(name, -1); };
+
+    const slider = document.createElement('input');
+    slider.type = 'range';
+    slider.min = VAL_MIN;
+    slider.max = VAL_MAX;
+    slider.step = stepSize;
+    slider.value = params[name];
+    slider.id = `slider-${name}`;
+    slider.oninput = () => {
+      params[name] = parseFloat(slider.value);
+      const precision = stepSize < 0.05 ? 2 : (stepSize < 0.5 ? 1 : 0);
+      document.getElementById(`val-${name}`).textContent = params[name].toFixed(precision);
+      triggerSound(name, params[name]);
+      draw();
+    };
+
+    const val = document.createElement('span');
+    val.className = 'param-value';
+    val.id = `val-${name}`;
+    val.textContent = params[name].toFixed(0);
+    val.style.width = '44px';
+
+    const plus = document.createElement('button');
+    plus.className = 'btn btn-plus';
+    plus.textContent = '+';
+    plus.onmousedown = (e) => { e.preventDefault(); startAdjust(name, 1); };
+    plus.onmouseup = (e) => { e.preventDefault(); stopAdjust(name, 1); };
+    plus.onmouseleave = (e) => { stopAdjust(name, 1); };
+    plus.ontouchstart = (e) => { e.preventDefault(); startAdjust(name, 1); };
+    plus.ontouchend = (e) => { e.preventDefault(); stopAdjust(name, 1); };
+    plus.ontouchcancel = (e) => { stopAdjust(name, 1); };
+
+    const play = document.createElement('button');
+    play.className = 'play-btn';
+    play.id = `play-${name}`;
+    play.textContent = '▶';
+    play.onclick = () => togglePlay(name);
+
+    row.appendChild(label);
+    row.appendChild(rewind);
+    row.appendChild(minus);
+    row.appendChild(slider);
+    row.appendChild(val);
+    row.appendChild(plus);
+    row.appendChild(play);
+    container.appendChild(row);
+  });
+}
+
+function buildCP1Params() {
+  const container = document.getElementById('param-container');
+  container.innerHTML = '';
+  const angleNames = ['thetaA', 'thetaB', 'thetaC', 'thetaD'];
+  const labels = ['a', 'b', 'c', 'd'];
+
+  angleNames.forEach((name, idx) => {
+    const labelChar = labels[idx];
+    const row = document.createElement('div');
+    row.className = 'param-row';
+    row.style.gap = '2px';
+    row.style.position = 'relative';
+
+    const label = document.createElement('span');
+    label.className = 'param-label';
+    label.innerHTML = 'θ' + labelChar;
+    label.style.width = '22px';
+    label.style.fontSize = '12px';
+
+    const rewind = document.createElement('button');
+    rewind.className = 'rewind-btn';
+    rewind.id = `rewind-${name}`;
+    rewind.textContent = '◀';
+    rewind.style.width = '24px';
+    rewind.style.height = '24px';
+    rewind.style.padding = '0';
+    rewind.onclick = () => toggleCP1Rewind(name);
+
+    const minus = document.createElement('button');
+    minus.className = 'btn btn-minus';
+    minus.textContent = '−';
+    minus.style.width = '24px';
+    minus.style.height = '24px';
+    minus.style.padding = '0';
+    minus.onmousedown = (e) => { e.preventDefault(); startCP1Adjust(name, -1); };
+    minus.onmouseup = (e) => { e.preventDefault(); stopCP1Adjust(name, -1); };
+    minus.onmouseleave = (e) => { stopCP1Adjust(name, -1); };
+    minus.ontouchstart = (e) => { e.preventDefault(); startCP1Adjust(name, -1); };
+    minus.ontouchend = (e) => { e.preventDefault(); stopCP1Adjust(name, -1); };
+    minus.ontouchcancel = (e) => { stopCP1Adjust(name, -1); };
+
+    const slider = document.createElement('input');
+    slider.type = 'range';
+    slider.min = 0;
+    slider.max = 360;
+    slider.step = stepSize;
+    slider.value = complexParams[name];
+    slider.id = `slider-${name}`;
+    slider.oninput = () => {
+      complexParams[name] = parseFloat(slider.value);
+      const precision = stepSize < 1 ? 1 : 0;
+      document.getElementById(`val-${name}`).textContent = complexParams[name].toFixed(precision) + '°';
+      playAngleSound(complexParams[name]);
+      draw();
+    };
+
+    const val = document.createElement('span');
+    val.className = 'param-value';
+    val.id = `val-${name}`;
+    val.textContent = complexParams[name].toFixed(0) + '°';
+    val.style.width = '36px';
+    val.style.fontSize = '11px';
+
+    const plus = document.createElement('button');
+    plus.className = 'btn btn-plus';
+    plus.textContent = '+';
+    plus.style.width = '24px';
+    plus.style.height = '24px';
+    plus.style.padding = '0';
+    plus.onmousedown = (e) => { e.preventDefault(); startCP1Adjust(name, 1); };
+    plus.onmouseup = (e) => { e.preventDefault(); stopCP1Adjust(name, 1); };
+    plus.onmouseleave = (e) => { stopCP1Adjust(name, 1); };
+    plus.ontouchstart = (e) => { e.preventDefault(); startCP1Adjust(name, 1); };
+    plus.ontouchend = (e) => { e.preventDefault(); stopCP1Adjust(name, 1); };
+    plus.ontouchcancel = (e) => { stopCP1Adjust(name, 1); };
+
+    const play = document.createElement('button');
+    play.className = 'play-btn';
+    play.id = `play-${name}`;
+    play.textContent = '▶';
+    play.style.width = '24px';
+    play.style.height = '24px';
+    play.style.padding = '0';
+    play.onclick = () => toggleCP1Play(name);
+
+    const modWrap = document.createElement('div');
+    modWrap.className = 'modulus-wrap';
+
+    const modBtn = document.createElement('button');
+    modBtn.className = 'modulus-btn';
+    modBtn.id = `mod-btn-${labelChar}`;
+    modBtn.innerHTML = 'r<sub>' + labelChar + '</sub>=' + complexParams['r' + labelChar].toFixed(1);
+    modBtn.onclick = (e) => { e.stopPropagation(); toggleModulusPopover(labelChar); };
+
+    const popover = document.createElement('div');
+    popover.className = 'modulus-popover';
+    popover.id = `popover-${labelChar}`;
+    popover.innerHTML = `
+      <div style="font-size:11px;font-weight:bold;color:#495057;cursor:pointer;padding:2px 0;"
+           onclick="adjustModulus('${labelChar}', -0.1)">r<sub>${labelChar}</sub></div>
+      <input type="range" orient="vertical" min="0" max="50" step="0.1"
+             value="${complexParams['r' + labelChar]}"
+             oninput="updateModulus('${labelChar}', this.value)">
+      <div id="popover-val-${labelChar}" style="font-size:11px;color:#2e86de;font-weight:bold;cursor:pointer;padding:2px 0;"
+           onclick="adjustModulus('${labelChar}', 1)">
+        ${complexParams['r' + labelChar].toFixed(1)}
+      </div>
+    `;
+
+    modWrap.appendChild(modBtn);
+    modWrap.appendChild(popover);
+
+    row.appendChild(label);
+    row.appendChild(rewind);
+    row.appendChild(minus);
+    row.appendChild(slider);
+    row.appendChild(val);
+    row.appendChild(plus);
+    row.appendChild(play);
+    row.appendChild(modWrap);
+    container.appendChild(row);
+  });
+}
+
+function resetMobiusParams() {
+  stopAllAuto();
+  if (mode === 'RP1') {
+    params = { a: 1, b: 0, c: 0, d: 1 };
+    const precision = stepSize < 0.05 ? 2 : (stepSize < 0.5 ? 1 : 0);
+    paramNames.forEach(name => {
+      const slider = document.getElementById(`slider-${name}`);
+      const val = document.getElementById(`val-${name}`);
+      if (slider) slider.value = params[name];
+      if (val) val.textContent = params[name].toFixed(precision);
+    });
+  } else {
+    complexParams = {
+      ra: 1.0, thetaA: 0,
+      rb: 0.0, thetaB: 0,
+      rc: 0.0, thetaC: 0,
+      rd: 1.0, thetaD: 0
+    };
+    const precision = stepSize < 1 ? 1 : 0;
+    ['thetaA', 'thetaB', 'thetaC', 'thetaD'].forEach(name => {
+      const slider = document.getElementById(`slider-${name}`);
+      const val = document.getElementById(`val-${name}`);
+      if (slider) slider.value = complexParams[name];
+      if (val) val.textContent = complexParams[name].toFixed(precision) + '°';
+    });
+    ['a', 'b', 'c', 'd'].forEach(p => {
+      const btn = document.getElementById(`mod-btn-${p}`);
+      if (btn) btn.innerHTML = 'r<sub>' + p + '</sub>=' + complexParams['r' + p].toFixed(1);
+      const popoverSlider = document.querySelector(`#popover-${p} input[type="range"]`);
+      if (popoverSlider) popoverSlider.value = complexParams['r' + p];
+      const popoverVal = document.getElementById(`popover-val-${p}`);
+      if (popoverVal) popoverVal.textContent = complexParams['r' + p].toFixed(1);
+    });
+  }
+  draw();
+}
+
+updateView();
+buildCurveParams();
+updateLegendColor();
+
+// 初始化 CP1 模式（不通过 setMode 避免 early return）
+mode = 'CP1';
+// ==================== 视口自适应缩放 ====================
+function fitToViewport() {
+  const container = document.querySelector('.rotated-container');
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const padding = 40;
+  const preW = 600 + 16 + 300;
+  const preH = 600;
+  const scale = Math.min(
+    (vw - padding) / preW,
+    (vh - padding) / preH,
+    1.2
+  );
+  container.style.transform = `scale(${Math.max(0.5, scale)})`;
+}
+window.addEventListener('resize', fitToViewport);
+setTimeout(fitToViewport, 100);
+
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.classList.toggle('active', btn.dataset.mode === 'CP1');
+});
+const formulaText = document.getElementById('formula-text');
+formulaText.innerHTML = 'z = x + i·y<br>w = (a·z + b) / (c·z + d)<br>a,b,c,d ∈ ℂ';
+buildCP1Params();
+updateStepButtons();
+draw();
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.modulus-wrap')) {
+    document.querySelectorAll('.modulus-popover').forEach(p => p.classList.remove('open'));
+  }
+  const wrap = document.getElementById('custom-select-wrap');
+  if (wrap && !wrap.contains(e.target)) {
+    dropdownOpen = false;
+    document.getElementById('custom-dropdown').classList.remove('open');
+  }
+  // 点击数字键盘外部时取消编辑（恢复原始值）
+  const numpad = document.getElementById('custom-numpad');
+  if (numpad && numpad.style.display === 'flex' && !e.target.closest('#custom-numpad')) {
+    numpadCancel();
+  }
+});
+</script>
+</body>
+</html>

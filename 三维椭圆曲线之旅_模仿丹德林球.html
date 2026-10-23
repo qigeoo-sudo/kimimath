@@ -1,0 +1,1719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>z = ax³ + bx - y² — Section Curve Demo</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 100%; height: 100%; min-height: 100vh; }
+body { width: 100%; height: 100%; background: #0b0f19; color: #e0e6f0;
+  font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; overflow: hidden; }
+#app { width: 100%; height: 100%; min-height: 100vh; display: flex; flex-direction: column; }
+.toolbar { display: flex; flex-direction: column; gap: 6px; padding: 8px 14px;
+  background: #111827; border-bottom: 1px solid #1f2937; z-index: 10; }
+.toolbar-row { display: flex; align-items: center; gap: 10px; width: 100%; }
+.toolbar .title { font-weight: 700; font-size: 14px; color: #60a5fa; white-space: nowrap; }
+.radio-group { display: flex; align-items: center; gap: 4px; }
+.radio-label { padding: 4px 12px; border-radius: 5px; background: #1f2937; color: #9ca3af;
+  font-size: 13px; cursor: pointer; border: 1px solid #374151; font-weight: 600; transition: all 0.15s; }
+.radio-label.active { background: #2563eb; color: #fff; border-color: #2563eb; }
+.radio-label input { opacity: 0; width: 13px; height: 13px; margin: 0; cursor: pointer; }
+.param-val { font-size: 14px; color: #60a5fa; font-weight: 700; font-family: monospace;
+  min-width: 60px; text-align: right; cursor: pointer; user-select: none;
+  padding: 2px 6px; border-radius: 4px; transition: background 0.15s; }
+.param-val:hover { background: #1f2937; }
+.toolbar input[type=range] { flex: 1; width: 100%; accent-color: #60a5fa; }
+.toolbar .btn { padding: 5px 12px; border-radius: 5px; border: none; font-size: 12px;
+  cursor: pointer; font-weight: 600; white-space: nowrap; }
+.btn-primary { background: #2563eb; color: #fff; }
+.btn-primary:disabled { background: #4b5563 !important; color: #9ca3af !important; cursor: not-allowed; }
+.btn-secondary { background: #1f2937; color: #9ca3af; }
+.btn-ecc { background: #7c3aed; color: #fff; }
+.btn-ecc.active { background: #a855f7; }
+.btn-qige { background: #2563eb; color: #fff; transition: all 0.15s; }
+.btn-qige.active { box-shadow: 0 0 0 2px #60a5fa, 0 0 8px rgba(96,165,250,0.4); background: #3b82f6; }
+.btn-spencer { background: #059669; color: #fff; transition: all 0.15s; }
+.btn-spencer.active { box-shadow: 0 0 0 2px #34d399, 0 0 8px rgba(52,211,153,0.4); background: #10b981; }
+.btn-run { background: #ea580c; color: #fff; }
+.btn-run:disabled { background: #4b5563; color: #9ca3af; cursor: not-allowed; }
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.panel { flex: 1; display: flex; flex-direction: column; min-height: 80px;
+  border-bottom: 2px solid #1f2937; transition: flex 0.35s cubic-bezier(.4,0,.2,1); position: relative; }
+.panel.collapsed { flex: 0 0 32px; min-height: 32px; }
+.panel.expanded { flex: 3; }
+.panel-header { display: flex; align-items: center; justify-content: space-between;
+  padding: 6px 14px; background: #0f172a; border-bottom: 1px solid #1f2937;
+  cursor: pointer; user-select: none; }
+.panel-header .left { display: flex; align-items: center; gap: 8px; }
+.panel-header .icon { font-size: 11px; color: #60a5fa; transition: transform 0.2s; display: inline-block; }
+.panel.collapsed .icon { transform: rotate(-90deg); }
+.panel-header .name { font-size: 13px; font-weight: 600; color: #e0e6f0; }
+.panel-header .hint { font-size: 11px; color: #6b7280; }
+.panel-body { flex: 1; position: relative; overflow: hidden; display: flex; flex-direction: column; }
+.panel.collapsed .panel-body { display: none; }
+#three-container { width: 100%; height: 100%; }
+#three-container canvas { width: 100% !important; height: 100% !important; display: block; }
+#canvas-2d { flex: 1; width: 100%; min-height: 120px; display: block; touch-action: none; }
+
+.ecc-step-hint {
+  position: absolute; top: 8px; left: 12px; z-index: 6;
+  background: rgba(15, 23, 42, 0.92); border: 1px solid #1f2937;
+  border-radius: 6px; padding: 5px 10px;
+  font-size: 12px; font-weight: 600; color: #fbbf24;
+  font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  pointer-events: none; opacity: 0; transition: opacity 0.3s;
+  max-width: calc((100% - 24px) * 4 / 7);
+  line-height: 1.35;
+}
+.ecc-step-hint.visible { opacity: 1; }
+
+.ecc-controls { position: absolute; bottom: 0; left: 0; right: 0;
+  background: rgba(15, 23, 42, 0.95); border-top: 1px solid #1f2937;
+  padding: 8px 12px; display: flex; flex-direction: column; gap: 6px; z-index: 5;
+  max-height: 55%; overflow-y: auto; }
+.ecc-controls.hidden { display: none; }
+.ecc-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ecc-label { font-size: 12px; color: #9ca3af; font-weight: 600; white-space: nowrap; }
+.ecc-input { background: #1f2937; border: 1px solid #374151; color: #e0e6f0;
+  border-radius: 4px; padding: 4px 8px; font-size: 13px; width: 130px; font-family: monospace; }
+.ecc-input:disabled { opacity: 0.6; background: #111827; }
+.ecc-input:focus { outline: none; border-color: #60a5fa; box-shadow: 0 0 0 2px rgba(96,165,250,0.2); }
+.ecc-sk-display { font-size: 13px; color: #60a5fa; font-family: monospace; font-weight: 700; display: none; }
+.ecc-bits { font-family: monospace; font-size: 14px; color: #fbbf24;
+  letter-spacing: 4px; font-weight: 700; }
+.ecc-bits .active-bit { color: #ef4444; text-decoration: underline; }
+.ecc-progress-wrap { flex: 1; display: flex; align-items: center; gap: 8px; min-width: 120px; }
+.ecc-progress { flex: 1; accent-color: #fbbf24; }
+.ecc-step-label { font-size: 12px; color: #9ca3af; font-family: monospace; min-width: 60px; text-align: right; }
+.ecc-result { font-size: 12px; color: #e0e6f0; font-family: monospace; }
+.ecc-result span { color: #60a5fa; }
+.ecc-hint { font-size: 11px; color: #6b7280; }
+.ecc-compare { display: flex; gap: 20px; font-size: 12px; font-family: monospace; flex-wrap: wrap; }
+.ecc-compare-col { display: flex; flex-direction: column; gap: 2px; }
+.ecc-compare-title { color: #fbbf24; font-weight: 700; }
+.ecc-compare-val { color: #60a5fa; }
+</style>
+</head>
+<body>
+<div id="app">
+<div class="toolbar">
+  <div class="toolbar-row">
+    <span class="title">z = ax³ + bx - y²</span>
+    <div class="radio-group">
+      <label class="radio-label" data-value="a"><input type="radio" name="param" value="a"> a</label>
+      <label class="radio-label" data-value="b"><input type="radio" name="param" value="b"> b</label>
+      <label class="radio-label active" data-value="z"><input type="radio" name="param" value="z" checked> z</label>
+    </div>
+    <span id="param-val" class="param-val">0.00</span>
+  </div>
+  <div class="toolbar-row"><input id="slider" type="range" min="-20" max="20" step="0.001" value="0"></div>
+  <div class="toolbar-row">
+    <button id="btn-play" class="btn btn-primary">▶ Play</button>
+    <button id="btn-dir" class="btn btn-secondary">↓ Down</button>
+    <div style="flex:1;"></div>
+    <div style="display:flex;align-items:center;gap:8px;margin-left:12px;">
+      <span style="font-size:13px;color:#9ca3af;font-weight:600;">θ</span>
+      <input id="theta-slider" type="range" min="0" max="180" step="0.1" value="0" style="width:70px;accent-color:#fbbf24;margin-left:4px;">
+      <span id="theta-val" class="param-val" style="min-width:50px;color:#fbbf24;">0.0°</span>
+    </div>
+  </div>
+</div>
+<div class="main">
+  <div class="panel" id="panel-3d">
+    <div class="panel-header" id="header-3d">
+      <div class="left">
+        <span class="icon" id="icon-3d">▼</span>
+        <span class="name">3D</span>
+        <span class="hint" id="hint-3d">— z = -1.00x³ + 1.00x - y²</span>
+      </div>
+    </div>
+    <div class="panel-body" id="body-3d"><div id="three-container"></div></div>
+  </div>
+  <div class="panel" id="panel-2d">
+    <div class="panel-header" id="header-2d">
+      <div class="left">
+        <span class="icon" id="icon-2d">▼</span>
+        <span class="name">2D</span>
+        <span class="hint" id="formula-hint">— y² = -1.00x³ + 1.00x + 0.00</span>
+      </div>
+      <button id="btn-ecc" class="btn btn-ecc" style="font-size:11px;padding:3px 10px;">ECC</button>
+    </div>
+    <div class="panel-body" id="body-2d" style="position:relative;">
+      <canvas id="canvas-2d"></canvas>
+      <div id="ecc-step-hint" class="ecc-step-hint"></div>
+      <div id="ecc-controls" class="ecc-controls hidden">
+        <div class="ecc-row">
+          <button id="ecc-qige" class="btn btn-qige">Qige</button>
+          <button id="ecc-spencer" class="btn btn-spencer">Spencer</button>
+          <span class="ecc-label">Private Key:</span>
+          <input id="ecc-priv" class="ecc-input" type="text" enterkeyhint="run" placeholder="up to 6 chars" maxlength="6">
+          <button id="ecc-run" class="btn btn-run">Run</button>
+          <button id="ecc-play" class="btn btn-secondary">▶ Auto</button>
+          <div style="flex:1;"></div>
+        </div>
+        <div class="ecc-row">
+          <span class="ecc-label">Binary:</span>
+          <span id="ecc-bits" class="ecc-bits"></span>
+        </div>
+        <div class="ecc-row">
+          <span class="ecc-label">Progress:</span>
+          <div class="ecc-progress-wrap">
+            <input id="ecc-progress" class="ecc-progress" type="range" min="0" max="0" step="1" value="0">
+            <span id="ecc-step-label" class="ecc-step-label">0 / 0</span>
+          </div>
+        </div>
+        <div class="ecc-row" id="ecc-result-row" style="display:none;">
+          <span class="ecc-result" id="ecc-result-text"></span>
+        </div>
+        <div class="ecc-row" id="ecc-compare-row" style="display:none;">
+          <div class="ecc-compare" id="ecc-compare"></div>
+        </div>
+        <div class="ecc-row">
+          <span id="ecc-hint" class="ecc-hint">Press ECC button to enter ECC mode.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+let a = -1, b = 1, zVal = 0, theta = 0;
+let activeParam = "z";
+let isPlaying = false, playDir = 1;
+let animId = null, lastTime = 0;
+
+const slider = document.getElementById("slider");
+const paramVal = document.getElementById("param-val");
+const formulaHint = document.getElementById("formula-hint");
+const btnPlay = document.getElementById("btn-play");
+const btnDir = document.getElementById("btn-dir");
+const thetaSlider = document.getElementById("theta-slider");
+const thetaVal = document.getElementById("theta-val");
+
+const canvas2d = document.getElementById("canvas-2d");
+const ctx2d = canvas2d.getContext("2d");
+const xMin = -15, xMax = 15, yMin2D = -15, yMax2D = 15;
+
+/* ===================== 2D View Transform (pan/zoom) ===================== */
+/* ===================== ResizeObserver for 2D canvas ===================== */
+const ro2d = new ResizeObserver((entries) => {
+  for (const entry of entries) {
+    const { width, height } = entry.contentRect;
+    if (width > 0 && height > 0) {
+      resize2D();
+    }
+  }
+});
+ro2d.observe(canvas2d);
+
+
+let viewScale = 1;
+let viewPanX = 0;
+let viewPanY = 0;
+
+function toScreen(x, y) {
+  const w = canvas2d.width / (window.devicePixelRatio || 1);
+  const h = canvas2d.height / (window.devicePixelRatio || 1);
+  const baseScale = Math.min(w / (xMax - xMin), h / (yMax2D - yMin2D));
+  const scale = baseScale * viewScale;
+  const cx = w / 2 + viewPanX;
+  const cy = h / 2 + viewPanY;
+  return [cx + x * scale, cy - y * scale];
+}
+
+function toMath(sx, sy) {
+  const w = canvas2d.width / (window.devicePixelRatio || 1);
+  const h = canvas2d.height / (window.devicePixelRatio || 1);
+  const baseScale = Math.min(w / (xMax - xMin), h / (yMax2D - yMin2D));
+  const scale = baseScale * viewScale;
+  const cx = w / 2 + viewPanX;
+  const cy = h / 2 + viewPanY;
+  return [(sx - cx) / scale, (cy - sy) / scale];
+}
+
+/* ===================== Touch gestures for 2D ===================== */
+let touchState = { active: false, startX: 0, startY: 0, lastX: 0, lastY: 0, startDist: 0, isPinch: false, moved: false };
+
+canvas2d.addEventListener('touchstart', (e) => {
+  if (e.touches.length === 1) {
+    touchState.active = true;
+    touchState.isPinch = false;
+    touchState.moved = false;
+    touchState.startX = touchState.lastX = e.touches[0].clientX;
+    touchState.startY = touchState.lastY = e.touches[0].clientY;
+  } else if (e.touches.length === 2) {
+    touchState.isPinch = true;
+    touchState.active = false;
+    const dx = e.touches[0].clientX - e.touches[1].clientX;
+    const dy = e.touches[0].clientY - e.touches[1].clientY;
+    touchState.startDist = Math.sqrt(dx*dx + dy*dy);
+    touchState.lastX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+    touchState.lastY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+  }
+}, {passive: false});
+
+canvas2d.addEventListener('touchmove', (e) => {
+  if ((!touchState.active && !touchState.isPinch) || e.touches.length === 0) return;
+  e.preventDefault();
+  if (e.touches.length === 1 && !touchState.isPinch) {
+    const dx = e.touches[0].clientX - touchState.lastX;
+    const dy = e.touches[0].clientY - touchState.lastY;
+    viewPanX += dx;
+    viewPanY += dy;
+    touchState.lastX = e.touches[0].clientX;
+    touchState.lastY = e.touches[0].clientY;
+    if (Math.abs(dx) > 2 || Math.abs(dy) > 2) touchState.moved = true;
+    draw2D();
+  } else if (e.touches.length === 2 && touchState.isPinch) {
+    const dx = e.touches[0].clientX - e.touches[1].clientX;
+    const dy = e.touches[0].clientY - e.touches[1].clientY;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    if (touchState.startDist > 0) {
+      const scaleFactor = dist / touchState.startDist;
+      viewScale *= scaleFactor;
+      viewScale = Math.max(0.2, Math.min(15, viewScale));
+    }
+    touchState.startDist = dist;
+    const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+    const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+    viewPanX += (midX - touchState.lastX);
+    viewPanY += (midY - touchState.lastY);
+    touchState.lastX = midX;
+    touchState.lastY = midY;
+    draw2D();
+  }
+}, {passive: false});
+
+canvas2d.addEventListener('touchend', (e) => {
+  if (e.touches.length === 0) {
+    if (touchState.active && !touchState.moved && !touchState.isPinch) {
+      const rect = canvas2d.getBoundingClientRect();
+      const sx = touchState.startX - rect.left;
+      const sy = touchState.startY - rect.top;
+      handleCanvasClick(sx, sy);
+    }
+    touchState.active = false;
+    touchState.isPinch = false;
+  } else if (e.touches.length === 1 && touchState.isPinch) {
+    touchState.isPinch = false;
+    touchState.active = true;
+    touchState.lastX = e.touches[0].clientX;
+    touchState.lastY = e.touches[0].clientY;
+    touchState.moved = true;
+  }
+});
+
+/* ===================== ECC State ===================== */
+const ECC = {
+  active: false,
+  phase: 'idle',
+  base: null,
+  baseStd: null,
+  qige: { sk: null, pk: null, ss: null },
+  spencer: { sk: null, pk: null, ss: null },
+  role: null,
+  target: null,
+  steps: [],
+  totalSteps: 0,
+  currentStep: 0,
+  isAutoPlaying: false,
+  autoTimer: null,
+  bits: '',
+  chickenIdx: 0,
+  duckIdx: 0,
+};
+
+const C = Math.pow(5, 1/3);
+const A_std = -4.5 * C;
+const B_std = 11;
+
+const stepHints = {
+  'select_base': 'Step 1: Click on the blue curve to select Base point G',
+  'base_selected': 'Step 2: Press Qige or Spencer, then enter up to 6 characters',
+  'qige_wait': 'Step 2: Qige — Enter up to 6 characters and press Run',
+  'qige_run': 'Step 2: Qige — Computing public key A...',
+  'qige_done': 'Step 3: Press the other button to generate their public key',
+  'spencer_wait': 'Step 3: Spencer — Enter up to 6 characters and press Run',
+  'spencer_run': 'Step 3: Spencer — Computing public key B...',
+  'spencer_done': 'Step 4: Press the other button to generate their public key',
+  'shared_qige_wait': 'Step 4: Qige — Enter up to 6 characters to compute shared secret',
+  'shared_qige_run': 'Step 4: Qige — Computing shared secret...',
+  'shared_qige_done': 'Step 5: Press the other button to compute their shared secret',
+  'shared_spencer_wait': 'Step 5: Spencer — Enter up to 6 characters to compute shared secret',
+  'shared_spencer_run': 'Step 5: Spencer — Computing shared secret...',
+  'shared_spencer_done': 'Step 6: Press the other button to compute their shared secret',
+  'all_done': 'All steps completed. Review the comparison below.',
+};
+
+const eccControls = document.getElementById("ecc-controls");
+const eccStepHint = document.getElementById("ecc-step-hint");
+const eccQige = document.getElementById("ecc-qige");
+const eccSpencer = document.getElementById("ecc-spencer");
+const eccPriv = document.getElementById("ecc-priv");
+const eccRun = document.getElementById("ecc-run");
+const eccPlay = document.getElementById("ecc-play");
+const eccBits = document.getElementById("ecc-bits");
+const eccProgress = document.getElementById("ecc-progress");
+const eccStepLabel = document.getElementById("ecc-step-label");
+const eccResultRow = document.getElementById("ecc-result-row");
+const eccResultText = document.getElementById("ecc-result-text");
+const eccCompareRow = document.getElementById("ecc-compare-row");
+const eccCompare = document.getElementById("ecc-compare");
+const eccHint = document.getElementById("ecc-hint");
+
+/* ===================== Click-to-increment ===================== */
+function setupClickIncrement(el, getVal, setVal, step, getMin, getMax) {
+  let intervalId = null, timeoutId = null, started = false;
+  const doStep = () => {
+    let v = getVal() + step;
+    const min = getMin ? getMin() : undefined;
+    const max = getMax ? getMax() : undefined;
+    if (min !== undefined) v = Math.max(min, v);
+    if (max !== undefined) v = Math.min(max, v);
+    setVal(v);
+  };
+  const startRepeat = () => { if (started) return; started = true; doStep(); timeoutId = setTimeout(() => { intervalId = setInterval(doStep, 80); }, 400); };
+  const stopRepeat = () => { started = false; clearTimeout(timeoutId); clearInterval(intervalId); timeoutId = null; intervalId = null; };
+  el.addEventListener("mousedown", (e) => { if (e.button !== 0) return; e.preventDefault(); startRepeat(); });
+  el.addEventListener("touchstart", (e) => { e.preventDefault(); startRepeat(); }, { passive: false });
+  el.addEventListener("mouseup", stopRepeat);
+  el.addEventListener("mouseleave", stopRepeat);
+  el.addEventListener("touchend", stopRepeat);
+  el.addEventListener("touchcancel", stopRepeat);
+}
+
+/* ===================== 2D helpers ===================== */
+function resize2D() {
+  const dpr = window.devicePixelRatio || 1;
+  let w = canvas2d.clientWidth;
+  let h = canvas2d.clientHeight;
+  // If canvas has no CSS size yet (e.g. during flex transition), skip and let ResizeObserver handle it later
+  if (w <= 0 || h <= 0) {
+    // Only use fallback if this is the very first render and ResizeObserver hasn't fired
+    if (canvas2d.width <= 1 && canvas2d.height <= 1) {
+      const mainRect = document.querySelector('.main').getBoundingClientRect();
+      w = mainRect.width || window.innerWidth;
+      const panelCount = document.querySelectorAll('.panel:not(.collapsed)').length || 1;
+      h = (mainRect.height || window.innerHeight * 0.4) / panelCount;
+      if (h < 100) h = 200;
+    } else {
+      // Keep previous size, wait for ResizeObserver to fix when layout stabilizes
+      return;
+    }
+  }
+  canvas2d.width = Math.max(1, Math.floor(w * dpr));
+  canvas2d.height = Math.max(1, Math.floor(h * dpr));
+  ctx2d.setTransform(dpr, 0, 0, dpr, 0, 0);
+  draw2D();
+}
+
+function drawGrid2D() {
+  const w = canvas2d.width / (window.devicePixelRatio || 1);
+  const h = canvas2d.height / (window.devicePixelRatio || 1);
+  ctx2d.clearRect(0, 0, w, h);
+  ctx2d.fillStyle = "#0b0f19";
+  ctx2d.fillRect(0, 0, w, h);
+  ctx2d.strokeStyle = "#1f2937"; ctx2d.lineWidth = 1;
+  for (let x = Math.ceil(xMin); x <= Math.floor(xMax); x++) {
+    const [sx1, sy1] = toScreen(x, yMin2D);
+    const [sx2, sy2] = toScreen(x, yMax2D);
+    ctx2d.beginPath(); ctx2d.moveTo(sx1, sy1); ctx2d.lineTo(sx2, sy2); ctx2d.stroke();
+  }
+  for (let y = Math.ceil(yMin2D); y <= Math.floor(yMax2D); y++) {
+    const [sx1, sy1] = toScreen(xMin, y);
+    const [sx2, sy2] = toScreen(xMax, y);
+    ctx2d.beginPath(); ctx2d.moveTo(sx1, sy1); ctx2d.lineTo(sx2, sy2); ctx2d.stroke();
+  }
+  ctx2d.strokeStyle = "#4b5563"; ctx2d.lineWidth = 1.5;
+  const [ox1, oy1] = toScreen(xMin, 0), [ox2, oy2] = toScreen(xMax, 0);
+  ctx2d.beginPath(); ctx2d.moveTo(ox1, oy1); ctx2d.lineTo(ox2, oy2); ctx2d.stroke();
+  const [oyx1, oyy1] = toScreen(0, yMin2D), [oyx2, oyy2] = toScreen(0, yMax2D);
+  ctx2d.beginPath(); ctx2d.moveTo(oyx1, oyy1); ctx2d.lineTo(oyx2, oyy2); ctx2d.stroke();
+}
+
+function getIntervals(aa, bb, zz, thDeg) {
+  const th = thDeg * Math.PI / 180;
+  const cosT = Math.cos(th);
+  const steps = 4000;
+  const dxx = (xMax - xMin) / steps;
+  function f(x) {
+    if (Math.abs(cosT) < 1e-6) return -1;
+    return aa * x * x * x + bb * x - x * Math.tan(th) - zz / cosT;
+  }
+  if (Math.abs(cosT) < 1e-6) {
+    const xFixed = -zz / Math.sin(th);
+    if (xFixed >= xMin && xFixed <= xMax) return [{ left: xFixed, right: xFixed, vertical: true }];
+    return [];
+  }
+  const roots = [];
+  for (let i = 0; i <= steps; i++) {
+    const x = xMin + i * dxx, fx = f(x);
+    if (Math.abs(fx) < 1e-10) roots.push(x);
+  }
+  let prev = f(xMin);
+  for (let i = 1; i <= steps; i++) {
+    const x = xMin + i * dxx, curr = f(x);
+    if (prev * curr < 0) {
+      let lo = x - dxx, hi = x;
+      for (let k = 0; k < 25; k++) {
+        const mid = (lo + hi) / 2, vm = f(mid);
+        if (Math.abs(vm) < 1e-12) { lo = hi = mid; break; }
+        if (prev * vm < 0) hi = mid; else lo = mid;
+      }
+      roots.push((lo + hi) / 2);
+    }
+    prev = curr;
+  }
+  const uniq = [];
+  for (const r of roots) { if (!uniq.some(u => Math.abs(u - r) < 0.001)) uniq.push(r); }
+  uniq.sort((p, q) => p - q);
+  const pts = [xMin, ...uniq, xMax];
+  const intervals = [];
+  for (let i = 0; i < pts.length - 1; i++) {
+    const mid = (pts[i] + pts[i + 1]) / 2;
+    if (f(mid) > 0) intervals.push({ left: pts[i], right: pts[i + 1] });
+  }
+  return intervals;
+}
+
+function drawSection2D() {
+  const th = theta * Math.PI / 180;
+  const cosT = Math.cos(th);
+  const intervals = getIntervals(a, b, zVal, theta);
+  ctx2d.strokeStyle = "#60a5fa"; ctx2d.lineWidth = 2.5;
+  if (intervals.length === 1 && intervals[0].vertical) {
+    const xFixed = intervals[0].left;
+    const [sx, syTop] = toScreen(xFixed, yMax2D);
+    const [sx2, syBot] = toScreen(xFixed, yMin2D);
+    ctx2d.beginPath(); ctx2d.moveTo(sx, syTop); ctx2d.lineTo(sx2, syBot); ctx2d.stroke();
+    if (!ECC.active) {
+      ctx2d.fillStyle = "#fbbf24"; ctx2d.font = "12px sans-serif"; ctx2d.textAlign = "center";
+      ctx2d.fillText(`x = ${xFixed.toFixed(2)}`, sx, syTop - 8);
+    }
+    return;
+  }
+  intervals.forEach(({ left, right }) => {
+    const segSteps = Math.max(2, Math.ceil((right - left) / (xMax - xMin) * 800));
+    const ddx = (right - left) / segSteps;
+    const upper = [], lower = [];
+    for (let i = 0; i <= segSteps; i++) {
+      const x = left + i * ddx;
+      const fx = a * x * x * x + b * x - x * Math.tan(th) - zVal / cosT;
+      const y = Math.sqrt(Math.max(0, fx));
+      upper.push(toScreen(x, y));
+      lower.push(toScreen(x, -y));
+    }
+    const leftIsRoot = Math.abs(left - xMin) > 0.001;
+    const rightIsRoot = Math.abs(right - xMax) > 0.001;
+    const isClosed = leftIsRoot && rightIsRoot;
+    if (isClosed) {
+      const pts = [...upper, ...lower.reverse()];
+      if (pts.length > 2) { ctx2d.beginPath(); ctx2d.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) ctx2d.lineTo(pts[i][0], pts[i][1]); ctx2d.stroke(); }
+    } else {
+      if (upper.length > 1) { ctx2d.beginPath(); ctx2d.moveTo(upper[0][0], upper[0][1]); for (let i = 1; i < upper.length; i++) ctx2d.lineTo(upper[i][0], upper[i][1]); ctx2d.stroke(); }
+      if (lower.length > 1) { ctx2d.beginPath(); ctx2d.moveTo(lower[0][0], lower[0][1]); for (let i = 1; i < lower.length; i++) ctx2d.lineTo(lower[i][0], lower[i][1]); ctx2d.stroke(); }
+    }
+  });
+  if (!ECC.active) {
+    ctx2d.fillStyle = "#fbbf24";
+    const roots = [];
+    intervals.forEach(({ left, right }) => {
+      if (Math.abs(left - xMin) > 0.001) roots.push(left);
+      if (Math.abs(right - xMax) > 0.001) roots.push(right);
+    });
+    const uniqRoots = [];
+    for (const r of roots) { if (!uniqRoots.some(u => Math.abs(u - r) < 0.001)) uniqRoots.push(r); }
+    for (const r of uniqRoots) {
+      if (r >= xMin && r <= xMax) {
+        const [sx, sy] = toScreen(r, 0);
+        ctx2d.beginPath(); ctx2d.arc(sx, sy, 2, 0, Math.PI * 2); ctx2d.fill();
+      }
+    }
+  }
+}
+
+function draw2D() {
+  // Safety: ensure canvas has valid size
+  if (canvas2d.width <= 1 || canvas2d.height <= 1) {
+    resize2D();
+    return;
+  }
+  drawGrid2D();
+  drawSection2D();
+  if (ECC.active) drawECCOverlay();
+}
+
+/* ===================== Audio Effects ===================== */
+let audioCtx = null;
+function getAudioCtx() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+  return audioCtx;
+}
+
+const SCALE = [261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25, 587.33, 659.25, 698.46, 783.99, 880.00, 987.77];
+
+function playChicken(freq) {
+  try {
+    const ctx = getAudioCtx();
+    const t = ctx.currentTime;
+    // Two quick notes: "ge-ge" (咯咯)
+    [0, 0.06].forEach((offset, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq * (1 + i * 0.08), t + offset);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      gain.gain.setValueAtTime(0.001, t + offset);
+      gain.gain.linearRampToValueAtTime(0.25, t + offset + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + offset + 0.1);
+      osc.start(t + offset);
+      osc.stop(t + offset + 0.12);
+    });
+  } catch(e) {}
+}
+
+function playDuck(freq) {
+  try {
+    const ctx = getAudioCtx();
+    const t = ctx.currentTime;
+    // Single note with slight pitch drop: "ga" (嘎)
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(freq, t);
+    osc.frequency.exponentialRampToValueAtTime(freq * 0.7, t + 0.18);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    gain.gain.setValueAtTime(0.001, t);
+    gain.gain.linearRampToValueAtTime(0.3, t + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+    osc.start(t);
+    osc.stop(t + 0.25);
+  } catch(e) {}
+}
+
+function playSuccessSound() {
+  try {
+    const ctx = getAudioCtx();
+    const notes = [523.25, 659.25, 783.99, 1046.50]; // C5 E5 G5 C6
+    notes.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = freq;
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0, ctx.currentTime + i * 0.12);
+      gain.gain.linearRampToValueAtTime(0.25, ctx.currentTime + i * 0.12 + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.12 + 0.35);
+      osc.start(ctx.currentTime + i * 0.12);
+      osc.stop(ctx.currentTime + i * 0.12 + 0.35);
+    });
+  } catch(e) {}
+}
+
+function playFailSound() {
+  try {
+    const ctx = getAudioCtx();
+    const notes = [300, 250, 200];
+    notes.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = freq;
+      osc.type = 'sawtooth';
+      gain.gain.setValueAtTime(0.18, ctx.currentTime + i * 0.18);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.18 + 0.4);
+      osc.start(ctx.currentTime + i * 0.18);
+      osc.stop(ctx.currentTime + i * 0.18 + 0.4);
+    });
+  } catch(e) {}
+}
+
+/* ===================== String Hash for Private Key ===================== */
+function hashStringToInt(str) {
+  // Pure digits: use directly (intuitive for numeric inputs like "128" → 128)
+  if (/^\d+$/.test(str)) {
+    const n = parseInt(str, 10) % 9999;
+    return n === 0 ? 1 : n;
+  }
+  // Mixed/alphanumeric: djb2 hash
+  let hash = 5381;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) + hash) + str.charCodeAt(i);
+    hash = hash | 0; // 32-bit signed
+  }
+  hash = Math.abs(hash) % 9999;
+  return hash === 0 ? 1 : hash;
+}
+
+/* ===================== ECC Math ===================== */
+function toStd(x, y) { return { X: x / C, Y: y }; }
+function fromStd(X, Y) { return { x: X * C, y: Y }; }
+
+function ecDouble(P) {
+  if (P.isInfinity) return { isInfinity: true };
+  const lam = (3 * P.X * P.X + A_std) / (2 * P.Y);
+  const X3 = lam * lam - 2 * P.X;
+  const Y3 = lam * (P.X - X3) - P.Y;
+  return { X: X3, Y: Y3 };
+}
+
+function ecAdd(P, Q) {
+  if (P.isInfinity) return { ...Q };
+  if (Q.isInfinity) return { ...P };
+  if (Math.abs(P.X - Q.X) < 1e-10 && Math.abs(P.Y + Q.Y) < 1e-10) return { isInfinity: true };
+  const lam = (Q.Y - P.Y) / (Q.X - P.X);
+  const X3 = lam * lam - P.X - Q.X;
+  const Y3 = lam * (P.X - X3) - P.Y;
+  return { X: X3, Y: Y3 };
+}
+
+function getTangentLine(P) {
+  if (P.isInfinity) return null;
+  const lam = (3 * P.X * P.X + A_std) / (2 * P.Y);
+  const c = P.Y - lam * P.X;
+  return { lam, c };
+}
+
+function getChordLine(P, Q) {
+  if (P.isInfinity || Q.isInfinity) return null;
+  const lam = (Q.Y - P.Y) / (Q.X - P.X);
+  const c = P.Y - lam * P.X;
+  return { lam, c };
+}
+
+function getThirdIntersection(lam, c, X1, X2) {
+  const X3 = lam * lam - X1 - X2;
+  const Y3 = lam * X3 + c;
+  return { X: X3, Y: Y3 };
+}
+
+function precomputeSteps(startStd, n, baseStd) {
+  const bits = n.toString(2).split('');
+  const L = bits.length;
+  const steps = [];
+  let R = { ...startStd };
+  for (let i = 0; i < bits.length; i++) {
+    const weight = L - 1 - i; // bit weight: MSB=L-1, LSB=0
+    const lineD = getTangentLine(R);
+    const R2 = ecDouble(R);
+    let intD = null;
+    if (lineD) {
+      const X1 = R.isInfinity ? 0 : R.X;
+      intD = getThirdIntersection(lineD.lam, lineD.c, X1, X1);
+    }
+    steps.push({
+      type: 'double', bitIndex: weight, bit: bits[i], arrIdx: i,
+      from: { ...R }, to: { ...R2 },
+      line: lineD, intersection: intD,
+    });
+    R = { ...R2 };
+    if (bits[i] === '1') {
+      const lineA = getChordLine(R, baseStd);
+      const Radd = ecAdd(R, baseStd);
+      let intA = null;
+      if (lineA) {
+        const fromX = R.isInfinity ? 0 : R.X;
+        const baseX = baseStd.isInfinity ? 0 : baseStd.X;
+        intA = getThirdIntersection(lineA.lam, lineA.c, fromX, baseX);
+      }
+      steps.push({
+        type: 'add', bitIndex: weight, bit: bits[i], arrIdx: i,
+        from: { ...R }, to: { ...Radd }, base: { ...baseStd },
+        line: lineA, intersection: intA,
+      });
+      R = { ...Radd };
+    }
+  }
+  return { bits: bits.join(''), steps, result: R };
+}
+
+/* ===================== ECC Drawing ===================== */
+function drawPointDisp(pt, color, label, radius) {
+  const r = radius || 4;
+  const [sx, sy] = toScreen(pt.x, pt.y);
+  ctx2d.fillStyle = color;
+  ctx2d.beginPath();
+  ctx2d.arc(sx, sy, r, 0, Math.PI * 2);
+  ctx2d.fill();
+  if (label) {
+    ctx2d.fillStyle = color;
+    ctx2d.font = "bold 12px sans-serif";
+    ctx2d.textAlign = "left";
+    ctx2d.fillText(label, sx + 8, sy - 8);
+  }
+}
+
+function drawLineStd(line, color, width, dash) {
+  if (!line) return;
+  const m = line.lam / C;
+  const c = line.c;
+  const pts = [];
+  if (Math.abs(m) < 1e-8) {
+    pts.push(toScreen(xMin, c));
+    pts.push(toScreen(xMax, c));
+  } else {
+    const yAtXmin = m * xMin + c;
+    const yAtXmax = m * xMax + c;
+    const xAtYmin = (yMin2D - c) / m;
+    const xAtYmax = (yMax2D - c) / m;
+    const candidates = [[xMin, yAtXmin], [xMax, yAtXmax], [xAtYmin, yMin2D], [xAtYmax, yMax2D]];
+    for (const [cx, cy] of candidates) {
+      if (cx >= xMin - 1e-6 && cx <= xMax + 1e-6 && cy >= yMin2D - 1e-6 && cy <= yMax2D + 1e-6) {
+        pts.push(toScreen(cx, cy));
+      }
+    }
+  }
+  if (pts.length >= 2) {
+    ctx2d.strokeStyle = color;
+    ctx2d.lineWidth = width || 0.6;
+    ctx2d.setLineDash(dash || [4, 3]);
+    ctx2d.beginPath();
+    ctx2d.moveTo(pts[0][0], pts[0][1]);
+    ctx2d.lineTo(pts[1][0], pts[1][1]);
+    ctx2d.stroke();
+    ctx2d.setLineDash([]);
+  }
+}
+
+function drawReflectionLine(x, color, width) {
+  const [ix, iyTop] = toScreen(x, yMax2D);
+  const [ix2, iyBot] = toScreen(x, yMin2D);
+  ctx2d.strokeStyle = color || "#6b7280";
+  ctx2d.lineWidth = width || 0.5;
+  ctx2d.setLineDash([2, 2]);
+  ctx2d.beginPath();
+  ctx2d.moveTo(ix, iyTop);
+  ctx2d.lineTo(ix2, iyBot);
+  ctx2d.stroke();
+  ctx2d.setLineDash([]);
+}
+
+function drawECCOverlay() {
+  if (!ECC.base) return;
+
+  drawPointDisp(ECC.base, "#ef4444", "G", 4);
+  if (ECC.qige.pk) drawPointDisp(fromStd(ECC.qige.pk.X, ECC.qige.pk.Y), "#3b82f6", "A", 4);
+  if (ECC.spencer.pk) drawPointDisp(fromStd(ECC.spencer.pk.X, ECC.spencer.pk.Y), "#22c55e", "B", 4);
+  if (ECC.qige.ss) drawPointDisp(fromStd(ECC.qige.ss.X, ECC.qige.ss.Y), "#eab308", "S", 4);
+  else if (ECC.spencer.ss) drawPointDisp(fromStd(ECC.spencer.ss.X, ECC.spencer.ss.Y), "#eab308", "S", 4);
+
+  const histSteps = Math.min(ECC.currentStep, ECC.steps.length);
+  for (let i = 0; i < histSteps; i++) {
+    const step = ECC.steps[i];
+    if (!step.from.isInfinity && step.line) {
+      drawLineStd(step.line, "#9ca3af", 0.5, [3, 4]);
+    }
+    if (step.type === 'double' && !step.from.isInfinity) {
+      const tp = fromStd(step.from.X, step.from.Y);
+      drawPointDisp(tp, "#ff00ff", "", 2);
+    }
+    if (step.intersection && !step.intersection.isInfinity) {
+      const ip = fromStd(step.intersection.X, step.intersection.Y);
+      drawPointDisp(ip, "#808000", "", 2);
+      drawReflectionLine(ip.x, "#9ca3af", 0.5);
+    }
+    if (!step.to.isInfinity) {
+      const rp = fromStd(step.to.X, step.to.Y);
+      drawPointDisp(rp, "#a855f7", "", 2);
+    }
+  }
+
+  if (ECC.currentStep > 0 && ECC.currentStep <= ECC.steps.length) {
+    const cur = ECC.steps[ECC.currentStep - 1];
+    if (cur && !cur.from.isInfinity && cur.line) {
+      const lineColor = cur.type === 'double' ? "#f87171" : "#60a5fa";
+      drawLineStd(cur.line, lineColor, 1.2, [4, 3]);
+    }
+    // Prominent current point
+    if (cur && !cur.to.isInfinity) {
+      const tp = fromStd(cur.to.X, cur.to.Y);
+      const [sx, sy] = toScreen(tp.x, tp.y);
+      ctx2d.strokeStyle = "#ffffff";
+      ctx2d.lineWidth = 2;
+      ctx2d.beginPath();
+      ctx2d.arc(sx, sy, 7, 0, Math.PI * 2);
+      ctx2d.stroke();
+      drawPointDisp(tp, cur.type === 'double' ? "#f87171" : "#60a5fa", "", 5);
+    }
+    // Identity operation hint
+    if (cur && cur.from.isInfinity) {
+      ctx2d.fillStyle = "rgba(255,255,255,0.8)";
+      ctx2d.font = "bold 12px sans-serif";
+      ctx2d.textAlign = "left";
+      const label = cur.type === 'double' ? "∞ · 2 = ∞" : "∞ + G = G";
+      ctx2d.fillText(label, 12, 22);
+    }
+  }
+}
+
+/* ===================== ECC UI Logic ===================== */
+function updateStepHint() {
+  const text = stepHints[ECC.phase] || '';
+  eccStepHint.textContent = text;
+  if (ECC.active && text) {
+    eccStepHint.classList.add('visible');
+  } else {
+    eccStepHint.classList.remove('visible');
+  }
+}
+
+function setECCHint(msg) {
+  eccHint.textContent = msg;
+}
+
+function updateECCUI() {
+  const running = ECC.phase.endsWith('_run');
+  const isWait = ECC.phase.endsWith('_wait');
+
+  eccQige.disabled = running || ECC.phase === 'select_base' || (ECC.phase === 'idle' && !ECC.base);
+  eccSpencer.disabled = running || ECC.phase === 'select_base';
+
+  eccQige.classList.toggle('active', ECC.role === 'qige');
+  eccSpencer.classList.toggle('active', ECC.role === 'spencer');
+
+  if (isWait) {
+    eccPriv.readOnly = false;
+    eccPriv.disabled = false;
+    eccRun.disabled = true;
+    eccPlay.disabled = true;
+    const val = eccPriv.value;
+    if (val && val.length > 0 && val.length <= 6) eccRun.disabled = false;
+  } else if (running) {
+    eccPriv.readOnly = true;
+    eccPriv.disabled = true;
+    eccRun.disabled = true;
+    eccPlay.disabled = false;
+  } else {
+    eccPriv.readOnly = true;
+    eccPriv.disabled = true;
+    eccRun.disabled = true;
+    eccPlay.disabled = true;
+    eccPriv.value = ''; // clear when switching roles
+  }
+
+  eccProgress.disabled = ECC.steps.length === 0;
+
+  updateStepHint();
+
+  if (ECC.bits) {
+    const arr = ECC.bits.split('');
+    let arrIdx = -1;
+    let bitIdx = -1;
+    if (ECC.currentStep > 0 && ECC.currentStep <= ECC.steps.length) {
+      arrIdx = ECC.steps[ECC.currentStep - 1].arrIdx;
+      bitIdx = ECC.steps[ECC.currentStep - 1].bitIndex;
+    }
+    eccBits.innerHTML = arr.map((b, i) => {
+      const cls = (i === arrIdx) ? 'active-bit' : '';
+      return `<span class="${cls}">${b}</span>`;
+    }).join('');
+  } else {
+    eccBits.textContent = '';
+  }
+
+  eccProgress.max = ECC.totalSteps;
+  eccProgress.value = ECC.currentStep;
+  eccStepLabel.textContent = `${ECC.currentStep} / ${ECC.totalSteps}`;
+
+  if (ECC.phase === 'qige_done' && ECC.qige.pk) {
+    const p = fromStd(ECC.qige.pk.X, ECC.qige.pk.Y);
+    eccResultText.innerHTML = `Qige Public Key A: <span>(${p.x.toFixed(1)}, ${p.y.toFixed(1)})</span>`;
+    eccResultRow.style.display = '';
+  } else if (ECC.phase === 'spencer_done' && ECC.spencer.pk) {
+    const p = fromStd(ECC.spencer.pk.X, ECC.spencer.pk.Y);
+    eccResultText.innerHTML = `Spencer Public Key B: <span>(${p.x.toFixed(1)}, ${p.y.toFixed(1)})</span>`;
+    eccResultRow.style.display = '';
+  } else if (ECC.phase === 'shared_qige_done' && ECC.qige.ss) {
+    const p = fromStd(ECC.qige.ss.X, ECC.qige.ss.Y);
+    eccResultText.innerHTML = `Qige Shared Secret S: <span>(${p.x.toFixed(1)}, ${p.y.toFixed(1)})</span> — Waiting for Spencer...`;
+    eccResultRow.style.display = '';
+  } else if (ECC.phase === 'shared_spencer_done' && ECC.spencer.ss) {
+    const p = fromStd(ECC.spencer.ss.X, ECC.spencer.ss.Y);
+    eccResultText.innerHTML = `Spencer Shared Secret S: <span>(${p.x.toFixed(1)}, ${p.y.toFixed(1)})</span> — Waiting for Qige...`;
+    eccResultRow.style.display = '';
+  } else if (ECC.phase === 'all_done' && ECC.qige.ss && ECC.spencer.ss) {
+    const p = fromStd(ECC.qige.ss.X, ECC.qige.ss.Y);
+    eccResultText.innerHTML = `Shared Secret S: <span>(${p.x.toFixed(1)}, ${p.y.toFixed(1)})</span>`;
+    eccResultRow.style.display = '';
+  } else {
+    eccResultRow.style.display = 'none';
+  }
+
+  // Auto-expand 2D panel ONLY when fully complete (all_done)
+  const panel2d = document.getElementById("panel-2d");
+  if (panel2d) {
+    if (ECC.phase === 'all_done') {
+      panel2d.classList.add('expanded');
+    } else {
+      panel2d.classList.remove('expanded');
+    }
+  }
+
+  // Comparison table: ONLY show when both shared secrets are computed (all_done)
+  if (ECC.phase === 'all_done') {
+    const qa = ECC.qige.pk ? fromStd(ECC.qige.pk.X, ECC.qige.pk.Y) : null;
+    const qb = ECC.spencer.pk ? fromStd(ECC.spencer.pk.X, ECC.spencer.pk.Y) : null;
+    const qs = ECC.qige.ss ? fromStd(ECC.qige.ss.X, ECC.qige.ss.Y) : null;
+    const ss = ECC.spencer.ss ? fromStd(ECC.spencer.ss.X, ECC.spencer.ss.Y) : null;
+    const match = qs && ss && Math.abs(qs.x - ss.x) < 0.05 && Math.abs(qs.y - ss.y) < 0.05;
+    eccCompare.innerHTML = `
+      <div class="ecc-compare-col">
+        <div class="ecc-compare-title">Qige</div>
+        <div>sk: ${ECC.qige.sk || '-'}</div>
+        <div>pk: ${qa ? `(${qa.x.toFixed(1)}, ${qa.y.toFixed(1)})` : '-'}</div>
+        <div>ss: ${qs ? `(${qs.x.toFixed(1)}, ${qs.y.toFixed(1)})` : '-'}</div>
+      </div>
+      <div class="ecc-compare-col">
+        <div class="ecc-compare-title">Spencer</div>
+        <div>sk: ${ECC.spencer.sk || '-'}</div>
+        <div>pk: ${qb ? `(${qb.x.toFixed(1)}, ${qb.y.toFixed(1)})` : '-'}</div>
+        <div>ss: ${ss ? `(${ss.x.toFixed(1)}, ${ss.y.toFixed(1)})` : '-'}</div>
+      </div>
+      <div class="ecc-compare-col" style="color:${match ? '#22c55e' : '#ef4444'};font-weight:700;">
+        <div>Shared Secret Match!</div>
+        <div>${match ? '✓ Identical' : '✗ Mismatch'}</div>
+      </div>
+    `;
+    eccCompareRow.style.display = '';
+  } else {
+    eccCompareRow.style.display = 'none';
+  }
+}
+
+function startECCRole(role, target) {
+  ECC.role = role;
+  ECC.target = target;
+  ECC.steps = [];
+  ECC.currentStep = 0;
+  ECC.totalSteps = 0;
+  ECC.bits = '';
+  ECC.isAutoPlaying = false;
+  ECC.chickenIdx = 0;
+  ECC.duckIdx = 0;
+  if (ECC.autoTimer) { clearInterval(ECC.autoTimer); ECC.autoTimer = null; }
+  eccPlay.textContent = "▶ Auto";
+  eccPriv.value = '';
+  setECCHint(`${role === 'qige' ? 'Qige' : 'Spencer'}: Enter up to 6 characters and press Run (or keyboard Enter).`);
+}
+
+function runECC() {
+  const raw = eccPriv.value;
+  if (!raw || raw.length === 0 || raw.length > 6) {
+    setECCHint("Please enter 1–6 characters.");
+    return;
+  }
+  const n = hashStringToInt(raw);
+  let startPt, basePt;
+  if (ECC.target === 'pub') {
+    startPt = { isInfinity: true };
+    basePt = { ...ECC.baseStd };
+    if (ECC.role === 'qige') ECC.qige.sk = n;
+    else ECC.spencer.sk = n;
+  } else {
+    if (ECC.role === 'qige') {
+      if (!ECC.spencer.pk) {
+        if (ECC.spencer.sk) {
+          const pre = precomputeSteps({ isInfinity: true }, ECC.spencer.sk, ECC.baseStd);
+          ECC.spencer.pk = { ...pre.result };
+        } else {
+          setECCHint("Spencer's public key not available yet."); return;
+        }
+      }
+      startPt = { isInfinity: true };
+      basePt = { ...ECC.spencer.pk };
+      ECC.qige.sk = n;
+    } else {
+      if (!ECC.qige.pk) {
+        if (ECC.qige.sk) {
+          const pre = precomputeSteps({ isInfinity: true }, ECC.qige.sk, ECC.baseStd);
+          ECC.qige.pk = { ...pre.result };
+        } else {
+          setECCHint("Qige's public key not available yet."); return;
+        }
+      }
+      startPt = { isInfinity: true };
+      basePt = { ...ECC.qige.pk };
+      ECC.spencer.sk = n;
+    }
+  }
+  const pre = precomputeSteps(startPt, n, basePt);
+  ECC.steps = pre.steps;
+  ECC.bits = pre.bits;
+  ECC.totalSteps = pre.steps.length;
+  ECC.currentStep = 0;
+  ECC.phase = ECC.phase.replace('_wait', '_run');
+  eccProgress.max = ECC.totalSteps;
+  setECCHint("Use progress bar to step through or press Auto to play.");
+  updateECCUI();
+  draw2D();
+  setTimeout(() => { if (ECC.phase.endsWith('_run')) startAutoPlay(); }, 500);
+}
+
+function finishECCRun() {
+  const last = ECC.steps.length > 0 ? ECC.steps[ECC.steps.length - 1].to : { isInfinity: true };
+  if (ECC.role === 'qige') {
+    if (ECC.target === 'pub') {
+      ECC.qige.pk = { ...last };
+      ECC.phase = 'qige_done';
+      ECC.role = 'spencer';
+      setECCHint("Qige public key A generated. Press Spencer to continue.");
+    } else {
+      ECC.qige.ss = { ...last };
+      if (ECC.spencer.ss) {
+        ECC.phase = 'all_done';
+        const qs = fromStd(ECC.qige.ss.X, ECC.qige.ss.Y);
+        const ss = fromStd(ECC.spencer.ss.X, ECC.spencer.ss.Y);
+        const match = Math.abs(qs.x - ss.x) < 0.05 && Math.abs(qs.y - ss.y) < 0.05;
+        if (match) {
+          setECCHint("Complete! Both shared secrets match. Press any button to reset.");
+          playSuccessSound();
+        } else {
+          setECCHint("Mismatch! Shared secrets do not match. Press any button to reset.");
+          playFailSound();
+        }
+      } else {
+        ECC.phase = 'shared_qige_done';
+        ECC.role = 'spencer';
+        setECCHint("Qige shared secret computed. Press Spencer to compute shared secret.");
+      }
+    }
+  } else {
+    if (ECC.target === 'pub') {
+      ECC.spencer.pk = { ...last };
+      ECC.phase = 'spencer_done';
+      ECC.role = 'qige';
+      setECCHint("Spencer public key B generated. Press Qige to continue.");
+    } else {
+      ECC.spencer.ss = { ...last };
+      if (ECC.qige.ss) {
+        ECC.phase = 'all_done';
+        const qs = fromStd(ECC.qige.ss.X, ECC.qige.ss.Y);
+        const ss = fromStd(ECC.spencer.ss.X, ECC.spencer.ss.Y);
+        const match = Math.abs(qs.x - ss.x) < 0.05 && Math.abs(qs.y - ss.y) < 0.05;
+        if (match) {
+          setECCHint("Complete! Both shared secrets match. Press any button to reset.");
+          playSuccessSound();
+        } else {
+          setECCHint("Mismatch! Shared secrets do not match. Press any button to reset.");
+          playFailSound();
+        }
+      } else {
+        ECC.phase = 'shared_spencer_done';
+        ECC.role = 'qige';
+        setECCHint("Spencer shared secret computed. Press Qige to compute shared secret.");
+      }
+    }
+  }
+  updateECCUI();
+  draw2D();
+}
+
+function setStep(s) {
+  s = Math.max(0, Math.min(ECC.totalSteps, s));
+  ECC.currentStep = s;
+  if (s >= ECC.totalSteps && ECC.phase.endsWith('_run')) {
+    finishECCRun();
+  } else {
+    if (s > 0 && s <= ECC.steps.length) {
+      const step = ECC.steps[s - 1];
+      const typeLabel = step.type === 'double' ? 'Double' : 'Add';
+      setECCHint(`Step ${s}/${ECC.totalSteps}: ${typeLabel} (bit ${step.bitIndex}, value ${step.bit})`);
+      if (step.type === 'double') {
+        if (step.bit === '1') {
+          const freq = SCALE[ECC.chickenIdx % SCALE.length];
+          playChicken(freq);
+          ECC.chickenIdx++;
+        } else {
+          const freq = SCALE[ECC.duckIdx % SCALE.length];
+          playDuck(freq);
+          ECC.duckIdx++;
+        }
+      }
+    } else if (s === 0) {
+      setECCHint("Ready to start. Press Auto or drag progress bar.");
+    }
+    updateECCUI();
+    draw2D();
+  }
+}
+
+function startAutoPlay() {
+  if (ECC.isAutoPlaying) return;
+  ECC.isAutoPlaying = true;
+  eccPlay.textContent = "⏸ Pause";
+  ECC.autoTimer = setInterval(() => {
+    if (!ECC.isAutoPlaying) return;
+    if (ECC.currentStep >= ECC.totalSteps) { stopAutoPlay(); return; }
+    setStep(ECC.currentStep + 1);
+  }, 900);
+}
+
+function stopAutoPlay() {
+  ECC.isAutoPlaying = false;
+  eccPlay.textContent = "▶ Auto";
+  if (ECC.autoTimer) { clearInterval(ECC.autoTimer); ECC.autoTimer = null; }
+}
+
+function resetECC() {
+  ECC.phase = 'base_selected';
+  ECC.role = null;
+  ECC.qige = { sk: null, pk: null, ss: null };
+  ECC.spencer = { sk: null, pk: null, ss: null };
+  ECC.steps = [];
+  ECC.currentStep = 0;
+  ECC.totalSteps = 0;
+  ECC.bits = '';
+  stopAutoPlay();
+  eccPriv.value = '';
+  eccPriv.readOnly = false;
+  eccPriv.disabled = false;
+  const panel2d = document.getElementById("panel-2d");
+  if (panel2d) panel2d.classList.remove('expanded');
+  ECC.qige = { sk: null, pk: null, ss: null };
+  ECC.spencer = { sk: null, pk: null, ss: null };
+  ECC.steps = [];
+  ECC.currentStep = 0;
+  ECC.totalSteps = 0;
+  ECC.bits = '';
+  stopAutoPlay();
+  eccPriv.value = '';
+  eccPriv.readOnly = false;
+  eccPriv.disabled = false;
+  setECCHint("Press Qige or Spencer to begin. Click on the curve to select Base point.");
+  updateECCUI();
+  draw2D();
+}
+
+/* ===================== Canvas click handler (ECC base select) ===================== */
+function handleCanvasClick(sx, sy) {
+  if (!ECC.active || ECC.phase !== 'select_base') return;
+  const [mx, my] = toMath(sx, sy);
+  const fy = 0.2 * mx * mx * mx - 4.5 * mx + 11;
+  if (fy < -1) { setECCHint("No real point at this x. Click on the blue curve."); return; }
+  const yCurve = Math.sqrt(Math.max(0, fy));
+  const yChosen = Math.abs(my - yCurve) < Math.abs(my + yCurve) ? yCurve : -yCurve;
+  const xr = Math.round(mx * 10) / 10;
+  const yr = Math.round(yChosen * 10) / 10;
+  const fy2 = 0.2 * xr * xr * xr - 4.5 * xr + 11;
+  if (fy2 < 0) { setECCHint("Invalid point. Click closer to the curve."); return; }
+  const yFinal = Math.sqrt(fy2);
+  const yExact = (yr >= 0) ? yFinal : -yFinal;
+  ECC.base = { x: xr, y: Math.round(yExact * 10) / 10 };
+  ECC.baseStd = toStd(ECC.base.x, ECC.base.y);
+  ECC.phase = 'base_selected';
+  setECCHint(`Base G = (${ECC.base.x.toFixed(1)}, ${ECC.base.y.toFixed(1)}). Press Qige or Spencer to begin.`);
+  updateECCUI();
+  draw2D();
+}
+
+/* ===================== ECC Event Handlers ===================== */
+document.getElementById("btn-ecc").addEventListener("click", () => {
+  if (ECC.active) {
+    ECC.active = false;
+    document.getElementById("btn-ecc").classList.remove("active");
+    document.getElementById("btn-ecc").textContent = "ECC";
+    btnPlay.disabled = false;
+    eccControls.classList.add("hidden");
+    eccStepHint.classList.remove('visible');
+    document.getElementById("panel-3d").classList.remove("collapsed");
+    document.getElementById("panel-2d").classList.remove("collapsed");
+    document.getElementById("panel-2d").classList.remove("expanded");
+    slider.disabled = false;
+    thetaSlider.disabled = false;
+    document.querySelectorAll('input[name="param"]').forEach(r => r.disabled = false);
+    document.querySelectorAll(".radio-label").forEach(l => l.style.pointerEvents = "");
+    resetECC();
+  } else {
+    ECC.active = true;
+    a = 0.2; b = -4.5; zVal = -11.0; theta = 0;
+    viewScale = 1; viewPanX = 0; viewPanY = 0;
+    document.getElementById("btn-ecc").classList.add("active");
+    document.getElementById("btn-ecc").textContent = "Exit ECC";
+    btnPlay.disabled = true;
+    eccControls.classList.remove("hidden");
+    document.getElementById("panel-3d").classList.add("collapsed");
+    document.getElementById("panel-2d").classList.add("collapsed");
+    document.getElementById("panel-2d").classList.remove("expanded");
+    // Force reflow to ensure panel-body becomes visible immediately
+    document.getElementById("panel-2d").offsetHeight;
+    slider.disabled = true;
+    thetaSlider.disabled = true;
+    document.querySelectorAll('input[name="param"]').forEach(r => r.disabled = true);
+    document.querySelectorAll(".radio-label").forEach(l => l.style.pointerEvents = "none");
+    updateSliderConfig();
+    updateSurface(); updateSection3D();
+    // Resize immediately and again after transition
+    requestAnimationFrame(() => { resize2D(); resize3D(); draw2D(); });
+    setTimeout(() => { resize2D(); resize3D(); draw2D(); }, 100);
+    setTimeout(() => { resize2D(); resize3D(); draw2D(); }, 400);
+    setTimeout(() => { resize2D(); resize3D(); draw2D(); }, 800);
+    ECC.phase = 'select_base';
+    setECCHint("Click anywhere on the blue curve to select the Base point G.");
+    updateECCUI();
+    draw2D();
+  }
+});
+
+eccQige.addEventListener("click", () => {
+  if (!ECC.base) { setECCHint("Please select a Base point first."); return; }
+  if (ECC.phase === 'all_done') { resetECC(); return; }
+  if (ECC.phase === 'base_selected' || ECC.phase === 'select_base') {
+    ECC.phase = 'qige_wait';
+    startECCRole('qige', 'pub');
+  } else if (ECC.phase === 'spencer_done') {
+    if (!ECC.qige.pk) {
+      ECC.phase = 'qige_wait';
+      startECCRole('qige', 'pub');
+    } else {
+      ECC.phase = 'shared_qige_wait';
+      startECCRole('qige', 'shared');
+    }
+  } else if (ECC.phase === 'shared_spencer_done') {
+    if (!ECC.qige.ss) {
+      ECC.phase = 'shared_qige_wait';
+      startECCRole('qige', 'shared');
+    } else {
+      setECCHint("Qige shared secret already computed. Both secrets are ready.");
+      updateECCUI();
+      return;
+    }
+  } else if (ECC.phase === 'shared_qige_done') {
+    if (ECC.spencer.ss) {
+      ECC.phase = 'all_done';
+      updateECCUI();
+      return;
+    } else {
+      setECCHint("Qige shared secret already computed. Waiting for Spencer.");
+      updateECCUI();
+      return;
+    }
+  }
+  updateECCUI();
+  setTimeout(() => { if (!eccPriv.disabled) eccPriv.focus(); }, 150);
+});
+
+eccSpencer.addEventListener("click", () => {
+  if (!ECC.base) { setECCHint("Please select a Base point first."); return; }
+  if (ECC.phase === 'all_done') { resetECC(); return; }
+  if (ECC.phase === 'base_selected' || ECC.phase === 'select_base') {
+    ECC.phase = 'spencer_wait';
+    startECCRole('spencer', 'pub');
+  } else if (ECC.phase === 'qige_done') {
+    if (!ECC.spencer.pk) {
+      ECC.phase = 'spencer_wait';
+      startECCRole('spencer', 'pub');
+    } else {
+      ECC.phase = 'shared_spencer_wait';
+      startECCRole('spencer', 'shared');
+    }
+  } else if (ECC.phase === 'shared_qige_done') {
+    if (!ECC.spencer.ss) {
+      ECC.phase = 'shared_spencer_wait';
+      startECCRole('spencer', 'shared');
+    } else {
+      setECCHint("Spencer shared secret already computed. Both secrets are ready.");
+      updateECCUI();
+      return;
+    }
+  } else if (ECC.phase === 'shared_spencer_done') {
+    if (ECC.qige.ss) {
+      ECC.phase = 'all_done';
+      updateECCUI();
+      return;
+    } else {
+      setECCHint("Spencer shared secret already computed. Waiting for Qige.");
+      updateECCUI();
+      return;
+    }
+  }
+  updateECCUI();
+  setTimeout(() => { if (!eccPriv.disabled) eccPriv.focus(); }, 150);
+});
+
+eccPriv.addEventListener("input", () => {
+  if (ECC.phase.endsWith('_wait')) {
+    const val = eccPriv.value;
+    eccRun.disabled = (!val || val.length === 0 || val.length > 6);
+  }
+});
+
+eccPriv.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !eccRun.disabled && ECC.phase.endsWith('_wait')) {
+    runECC();
+  }
+});
+
+eccRun.addEventListener("click", () => {
+  if (ECC.phase.endsWith('_wait')) {
+    runECC();
+  }
+});
+
+eccPlay.addEventListener("click", () => {
+  if (ECC.isAutoPlaying) {
+    stopAutoPlay();
+  } else {
+    if (ECC.currentStep >= ECC.totalSteps) {
+      setStep(0);
+      setTimeout(startAutoPlay, 100);
+    } else {
+      startAutoPlay();
+    }
+  }
+});
+
+eccProgress.addEventListener("input", () => {
+  stopAutoPlay();
+  setStep(parseInt(eccProgress.value, 10));
+});
+
+canvas2d.addEventListener("click", (e) => {
+  const rect = canvas2d.getBoundingClientRect();
+  handleCanvasClick(e.clientX - rect.left, e.clientY - rect.top);
+});
+
+/* ===================== 3D Scene ===================== */
+const container3d = document.getElementById("three-container");
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0b0f19);
+const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+camera.position.set(7, 5, 7);
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(window.devicePixelRatio || 1);
+container3d.appendChild(renderer.domElement);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true; controls.dampingFactor = 0.08;
+
+scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+dirLight.position.set(5, 8, 5); scene.add(dirLight);
+const dirLight2 = new THREE.DirectionalLight(0x60a5fa, 0.3);
+dirLight2.position.set(-5, 2, -5); scene.add(dirLight2);
+
+const axesHelper = new THREE.AxesHelper(1.33);
+scene.add(axesHelper);
+
+const xyPlaneGeo = new THREE.PlaneGeometry(20, 20);
+const xyPlaneMat = new THREE.MeshBasicMaterial({ color: 0x1f2937, side: THREE.DoubleSide, transparent: true, opacity: 0.25 });
+const xyPlane = new THREE.Mesh(xyPlaneGeo, xyPlaneMat);
+xyPlane.rotation.x = -Math.PI / 2; xyPlane.position.y = 0;
+scene.add(xyPlane);
+
+const gridSize = 20, gridDivs = 20;
+const gridGeo = new THREE.BufferGeometry();
+const gridPts = [];
+for (let i = -gridDivs/2; i <= gridDivs/2; i++) {
+  const v = i / gridDivs * gridSize;
+  gridPts.push(new THREE.Vector3(-gridSize/2, 0, v));
+  gridPts.push(new THREE.Vector3(gridSize/2, 0, v));
+  gridPts.push(new THREE.Vector3(v, 0, -gridSize/2));
+  gridPts.push(new THREE.Vector3(v, 0, gridSize/2));
+}
+gridGeo.setFromPoints(gridPts);
+const gridMat = new THREE.LineBasicMaterial({ color: 0x374151, transparent: true, opacity: 0.25 });
+const customGrid = new THREE.LineSegments(gridGeo, gridMat);
+scene.add(customGrid);
+
+const segX = 150, segY = 150;
+const surfGeo = new THREE.PlaneGeometry(30, 30, segX, segY);
+const surfOrig = [];
+const pos0 = surfGeo.attributes.position;
+for (let i = 0; i < pos0.count; i++) surfOrig.push({ x: pos0.getX(i), y: pos0.getY(i) });
+
+const surfMat = new THREE.MeshPhongMaterial({ color: 0x1e3a5f, side: THREE.DoubleSide, transparent: true, opacity: 0.65, shininess: 60, flatShading: false });
+const surfMesh = new THREE.Mesh(surfGeo, surfMat);
+scene.add(surfMesh);
+
+const wireGeo = surfGeo.clone();
+const wireOrig = [];
+const wpos0 = wireGeo.attributes.position;
+for (let i = 0; i < wpos0.count; i++) wireOrig.push({ x: wpos0.getX(i), y: wpos0.getY(i) });
+const wireMat = new THREE.MeshBasicMaterial({ color: 0x60a5fa, wireframe: true, transparent: true, opacity: 0.15 });
+const wireMesh = new THREE.Mesh(wireGeo, wireMat);
+scene.add(wireMesh);
+
+const planeGeo = new THREE.PlaneGeometry(20, 20);
+const planeMat = new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.DoubleSide, transparent: true, opacity: 0.55 });
+const cutPlane = new THREE.Mesh(planeGeo, planeMat);
+scene.add(cutPlane);
+
+const sectionMat = new THREE.LineBasicMaterial({ color: 0xfbbf24, linewidth: 3 });
+let sectionLines = [];
+
+function updateSurface() {
+  const pos = surfGeo.attributes.position;
+  for (let i = 0; i < pos.count; i++) {
+    const tx = surfOrig[i].x, ty = surfOrig[i].y;
+    const math_z = a*tx*tx*tx + b*tx - ty*ty;
+    pos.setXYZ(i, tx, math_z, ty);
+  }
+  pos.needsUpdate = true; surfGeo.computeVertexNormals();
+  const wpos = wireMesh.geometry.attributes.position;
+  for (let i = 0; i < wpos.count; i++) {
+    const tx = wireOrig[i].x, ty = wireOrig[i].y;
+    const math_z = a*tx*tx*tx + b*tx - ty*ty;
+    wpos.setXYZ(i, tx, math_z, ty);
+  }
+  wpos.needsUpdate = true; wireMesh.geometry.computeVertexNormals();
+}
+
+function updateSection3D() {
+  const th = theta * Math.PI / 180;
+  const cosT = Math.cos(th);
+  const sinT = Math.sin(th);
+  cutPlane.rotation.set(Math.PI / 2, 0, th);
+  cutPlane.position.set(-zVal * sinT, zVal * cosT, 0);
+  sectionLines.forEach(l => scene.remove(l));
+  sectionLines = [];
+  const intervals = getIntervals(a, b, zVal, theta);
+  if (intervals.length === 1 && intervals[0].vertical) {
+    const xFixed = intervals[0].left;
+    const pts = [];
+    const yMax = 15, segSteps = 200;
+    for (let i = 0; i <= segSteps; i++) {
+      const y = -yMax + (2 * yMax * i) / segSteps;
+      const z = a*xFixed*xFixed*xFixed + b*xFixed - y*y;
+      pts.push(new THREE.Vector3(xFixed, z, y));
+    }
+    const geo = new THREE.BufferGeometry().setFromPoints(pts);
+    const line = new THREE.Line(geo, sectionMat);
+    scene.add(line); sectionLines.push(line);
+    return;
+  }
+  intervals.forEach(({ left, right }) => {
+    const segSteps = Math.max(2, Math.ceil((right - left) / (xMax - xMin) * 600));
+    const ddx = (right - left) / segSteps;
+    const ptsUpper = [], ptsLower = [];
+    for (let i = 0; i <= segSteps; i++) {
+      const x = left + i * ddx;
+      const fx = a*x*x*x + b*x - x*Math.tan(th) - zVal/cosT;
+      const y = Math.sqrt(Math.max(0, fx));
+      const z = a*x*x*x + b*x - y*y;
+      ptsUpper.push(new THREE.Vector3(x, z, y));
+      ptsLower.push(new THREE.Vector3(x, z, -y));
+    }
+    const leftIsRoot = Math.abs(left - xMin) > 0.001;
+    const rightIsRoot = Math.abs(right - xMax) > 0.001;
+    const isClosed = leftIsRoot && rightIsRoot;
+    if (isClosed) {
+      const pts = [...ptsUpper, ...ptsLower.reverse()];
+      if (pts.length > 2) {
+        const geo = new THREE.BufferGeometry().setFromPoints(pts);
+        const line = new THREE.Line(geo, sectionMat);
+        scene.add(line); sectionLines.push(line);
+      }
+    } else {
+      if (ptsUpper.length > 1) {
+        const geo = new THREE.BufferGeometry().setFromPoints(ptsUpper);
+        const line = new THREE.Line(geo, sectionMat);
+        scene.add(line); sectionLines.push(line);
+      }
+      if (ptsLower.length > 1) {
+        const geo = new THREE.BufferGeometry().setFromPoints(ptsLower);
+        const line = new THREE.Line(geo, sectionMat);
+        scene.add(line); sectionLines.push(line);
+      }
+    }
+  });
+}
+
+function resize3D() {
+  const rect = container3d.getBoundingClientRect();
+  camera.aspect = rect.width / rect.height;
+  camera.updateProjectionMatrix();
+  renderer.setSize(rect.width, rect.height, false);
+}
+
+function animate3D() {
+  requestAnimationFrame(animate3D);
+  controls.update();
+  renderer.render(scene, camera);
+}
+
+function setupPanel(headerId, panelId) {
+  const header = document.getElementById(headerId);
+  const panel = document.getElementById(panelId);
+  header.addEventListener("click", () => {
+    panel.classList.toggle("collapsed");
+    setTimeout(() => { resize2D(); resize3D(); }, 350);
+  });
+}
+setupPanel("header-3d", "panel-3d");
+setupPanel("header-2d", "panel-2d");
+
+function updateFormula() {
+  const sa = a.toFixed(2);
+  const sb = b >= 0 ? "+ " + b.toFixed(2) : "- " + Math.abs(b).toFixed(2);
+  const sz = zVal >= 0 ? "+ " + zVal.toFixed(2) : "- " + Math.abs(zVal).toFixed(2);
+  formulaHint.textContent = `— y² = ${sa}x³ ${sb}x ${sz}`;
+  const hint3d = document.getElementById("hint-3d");
+  if (hint3d) {
+    const sa3 = a.toFixed(2);
+    const sb3 = b >= 0 ? "+ " + b.toFixed(2) : "- " + Math.abs(b).toFixed(2);
+    hint3d.textContent = `— z = ${sa3}x³ ${sb3}x - y²`;
+  }
+}
+
+function updateSliderConfig() {
+  if (activeParam === "a") {
+    slider.min = -10; slider.max = 20; slider.step = 0.01; slider.value = a;
+    paramVal.textContent = a.toFixed(2);
+  } else if (activeParam === "b") {
+    slider.min = -10; slider.max = 10; slider.step = 0.1; slider.value = b;
+    paramVal.textContent = b.toFixed(2);
+  } else {
+    slider.min = -20; slider.max = 20; slider.step = 0.001; slider.value = zVal;
+    paramVal.textContent = zVal.toFixed(2);
+  }
+  updateFormula();
+}
+
+function updateZ(val) {
+  zVal = Math.max(-20, Math.min(20, parseFloat(val) || 0));
+  draw2D(); updateSection3D(); updateFormula();
+  if (activeParam === "z") updateSliderConfig();
+}
+
+function updateA() {
+  a = Math.max(-10, Math.min(20, a));
+  draw2D(); updateSurface(); updateSection3D();
+  if (activeParam === "a") updateSliderConfig(); else updateFormula();
+}
+
+function updateB() {
+  b = Math.max(-10, Math.min(10, b));
+  draw2D(); updateSurface(); updateSection3D();
+  if (activeParam === "b") updateSliderConfig(); else updateFormula();
+}
+
+slider.addEventListener("input", () => {
+  const val = parseFloat(slider.value);
+  if (activeParam === "a") { a = val; updateA(); }
+  else if (activeParam === "b") { b = val; updateB(); }
+  else { updateZ(val); }
+  updateSliderConfig();
+});
+
+function setActiveParam(val) {
+  activeParam = val;
+  document.querySelectorAll(".radio-label").forEach(l => l.classList.remove("active"));
+  document.querySelectorAll('input[name="param"]').forEach(r => {
+    r.checked = (r.value === val);
+    if (r.value === val) r.parentElement.classList.add("active");
+  });
+  updateSliderConfig();
+}
+
+document.querySelectorAll('input[name="param"]').forEach(radio => {
+  radio.addEventListener("change", () => setActiveParam(radio.value));
+});
+document.querySelectorAll(".radio-label").forEach(label => {
+  label.addEventListener("click", (e) => {
+    if (e.target.tagName === "INPUT") return;
+    setActiveParam(label.dataset.value);
+  });
+});
+
+btnPlay.addEventListener("click", () => {
+  if (isPlaying) {
+    isPlaying = false; btnPlay.textContent = "▶ Play"; btnPlay.style.background = "#2563eb";
+    cancelAnimationFrame(animId);
+  } else {
+    isPlaying = true; btnPlay.textContent = "⏸ Pause"; btnPlay.style.background = "#ea580c";
+    lastTime = 0;
+    if (zVal <= -20 && playDir === 1) { playDir = -1; btnDir.textContent = "↑ Up"; }
+    if (zVal >= 20 && playDir === -1) { playDir = 1; btnDir.textContent = "↓ Down"; }
+    animId = requestAnimationFrame(playLoop);
+  }
+});
+
+function playLoop(timestamp) {
+  if (!isPlaying) return;
+  if (!lastTime) lastTime = timestamp;
+  const dt = (timestamp - lastTime) / 1000;
+  lastTime = timestamp;
+  const speed = 2.5;
+  let newZ = zVal - playDir * speed * dt;
+  if (playDir === 1 && newZ <= -20) { newZ = -20; isPlaying = false; btnPlay.textContent = "▶ Play"; btnPlay.style.background = "#2563eb"; }
+  if (playDir === -1 && newZ >= 20) { newZ = 20; isPlaying = false; btnPlay.textContent = "▶ Play"; btnPlay.style.background = "#2563eb"; }
+  updateZ(newZ);
+  if (isPlaying) animId = requestAnimationFrame(playLoop);
+}
+
+btnDir.addEventListener("click", () => {
+  playDir = playDir === 1 ? -1 : 1;
+  btnDir.textContent = playDir === 1 ? "↓ Down" : "↑ Up";
+});
+
+thetaSlider.addEventListener("input", () => {
+  theta = parseFloat(thetaSlider.value);
+  thetaVal.textContent = theta.toFixed(1) + "°";
+  draw2D(); updateSection3D(); updateFormula();
+});
+
+setupClickIncrement(paramVal,
+  () => { if (activeParam === "a") return a; if (activeParam === "b") return b; return zVal; },
+  (v) => {
+    if (activeParam === "a") { a = v; updateA(); }
+    else if (activeParam === "b") { b = v; updateB(); }
+    else { updateZ(v); }
+    updateSliderConfig();
+  },
+  0.01,
+  () => activeParam === "a" ? -10 : (activeParam === "b" ? -10 : -20),
+  () => activeParam === "a" ? 20 : (activeParam === "b" ? 10 : 20)
+);
+
+setupClickIncrement(thetaVal,
+  () => theta,
+  (v) => {
+    theta = Math.max(0, Math.min(180, v));
+    thetaSlider.value = theta;
+    thetaVal.textContent = theta.toFixed(1) + "°";
+    draw2D(); updateSection3D(); updateFormula();
+  },
+  0.1,
+  () => 0, () => 180
+);
+
+// Initial render with retries to ensure flex layout is complete
+function initRender(attempts) {
+  resize3D();
+  updateSurface(); updateSection3D();
+  animate3D(); updateSliderConfig(); updateFormula();
+  thetaVal.textContent = theta.toFixed(1) + "°";
+  resize2D();
+  draw2D();
+  if (attempts > 0) {
+    setTimeout(() => initRender(attempts - 1), 250);
+  }
+}
+setTimeout(() => initRender(4), 150);
+
+window.addEventListener("resize", () => { resize2D(); resize3D(); });
+window.addEventListener("load", () => { resize2D(); resize3D(); draw2D(); });
+</script>
+</body>
+</html>

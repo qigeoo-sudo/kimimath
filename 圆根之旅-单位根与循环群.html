@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>圆根之旅 · x = yⁿ 的单位根与循环群</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#050810; --panel:#0c1220; --panel2:#111a2b; --border:#1a2540;
+  --cyan:#22d3ee; --mint:#34d399; --gold:#fbbf24; --red:#f87171; --violet:#a78bfa; --rose:#fb7185;
+  --text:#d7e0ee; --muted:#5f7194; --faint:#33415e;
+  --mono:'JetBrains Mono','PingFang SC','Microsoft YaHei',monospace;
+  --sans:'Inter','PingFang SC','Microsoft YaHei',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;}
+body{
+  background:var(--bg); color:var(--text); font-family:var(--sans);
+  font-size:14px; line-height:1.55; overflow-x:hidden;
+  background-image:radial-gradient(1200px 600px at 70% -10%, rgba(251,191,36,.05), transparent 60%),
+                   radial-gradient(900px 500px at 10% 110%, rgba(34,211,238,.04), transparent 60%);
+}
+body::after{
+  content:""; position:fixed; inset:0; pointer-events:none; z-index:50;
+  background:repeating-linear-gradient(0deg, rgba(255,255,255,.012) 0 1px, transparent 1px 3px);
+}
+::selection{background:rgba(251,191,36,.25);}
+
+header{
+  display:flex; align-items:center; justify-content:space-between; gap:16px;
+  padding:14px 20px; border-bottom:1px solid var(--border);
+  background:rgba(12,18,32,.7); backdrop-filter:blur(8px);
+  position:sticky; top:0; z-index:20;
+}
+.h-left{display:flex; align-items:center; gap:14px; min-width:0;}
+.radar{width:12px;height:12px;border-radius:50%;background:var(--gold);position:relative;flex:none;
+  box-shadow:0 0 10px var(--gold);}
+.radar::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:1px solid var(--gold);
+  animation:ping 1.6s ease-out infinite;}
+@keyframes ping{0%{transform:scale(.4);opacity:.9}100%{transform:scale(1.5);opacity:0}}
+h1{font-family:var(--mono);font-size:17px;font-weight:700;letter-spacing:.04em;white-space:nowrap;}
+h1 .eq{color:var(--gold);}
+.subtitle{font-family:var(--mono);font-size:10px;letter-spacing:.22em;color:var(--muted);text-transform:uppercase;margin-top:2px;}
+.h-right{display:flex;align-items:center;gap:10px;flex:none;}
+.badge{font-family:var(--mono);font-size:10px;letter-spacing:.18em;color:var(--mint);
+  border:1px solid rgba(52,211,153,.4);padding:5px 10px;border-radius:3px;display:flex;align-items:center;gap:7px;}
+.badge i{width:6px;height:6px;border-radius:50%;background:var(--mint);animation:blink 1.4s ease-in-out infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+.eq-chip{font-family:var(--mono);font-size:12px;color:var(--gold);border:1px solid var(--border);
+  background:var(--panel2);padding:5px 12px;border-radius:3px;}
+.page-link{font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--cyan);text-decoration:none;
+  border:1px solid var(--border);background:var(--panel2);padding:5px 10px;border-radius:3px;transition:all .15s ease;}
+.page-link:hover{border-color:rgba(34,211,238,.5);box-shadow:0 0 10px rgba(34,211,238,.15);}
+
+.layout{
+  display:grid; grid-template-columns:344px minmax(0,1fr) 380px; gap:12px;
+  padding:12px; max-width:1720px; margin:0 auto; align-items:start;
+}
+.left{grid-column:1;grid-row:1;}
+#panelY{grid-column:2;grid-row:1;}
+.right{grid-column:3;grid-row:1/3;align-self:stretch;}
+.right>.panel:last-child{margin-top:auto;}
+#panelGroup{grid-column:1/3;grid-row:2;align-self:end;}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:4px;overflow:hidden;}
+.p-head{
+  display:flex;align-items:center;gap:8px;padding:9px 14px;border-bottom:1px solid var(--border);
+  font-family:var(--mono);font-size:10px;letter-spacing:.2em;color:var(--muted);text-transform:uppercase;
+  background:var(--panel2);
+}
+.led{width:6px;height:6px;border-radius:50%;flex:none;}
+.led.c{background:var(--cyan);box-shadow:0 0 6px var(--cyan);}
+.led.a{background:var(--gold);box-shadow:0 0 6px var(--gold);}
+.led.m{background:var(--mint);box-shadow:0 0 6px var(--mint);}
+.led.r{background:var(--red);box-shadow:0 0 6px var(--red);}
+.p-head .spacer{flex:1;}
+
+.left{display:flex;flex-direction:column;gap:12px;}
+.section{padding:14px;border-bottom:1px solid var(--border);}
+.section:last-child{border-bottom:none;}
+.sec-label{font-family:var(--mono);font-size:9px;letter-spacing:.24em;color:var(--muted);text-transform:uppercase;margin-bottom:10px;}
+
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px;}
+.tab{
+  font-family:var(--mono);font-size:10.5px;padding:9px 4px;text-align:center;cursor:pointer;
+  background:var(--panel2);border:1px solid var(--border);color:var(--muted);border-radius:3px;
+  transition:all .15s ease;line-height:1.4;
+}
+.tab:hover{color:var(--text);border-color:var(--faint);}
+.tab.active{color:var(--gold);border-color:rgba(251,191,36,.55);background:rgba(251,191,36,.08);
+  box-shadow:0 0 12px rgba(251,191,36,.12) inset;}
+.tab small{display:block;font-size:9px;letter-spacing:.04em;margin-top:2px;opacity:.75;}
+.tab small.stage-tag{color:var(--gold);opacity:1;font-weight:700;letter-spacing:.1em;}
+.tab.wide{grid-column:1/-1;}
+.bp-line{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:.03em;
+  border:1px dashed var(--border);border-radius:3px;padding:6px 8px;background:var(--panel2);
+  margin-top:-4px;margin-bottom:12px;line-height:1.6;}
+.bp-line b{color:var(--red);font-weight:500;}
+
+.g-formula{font-family:var(--mono);font-size:11px;color:var(--gold);text-align:center;
+  padding:8px 6px;border:1px solid var(--border);border-radius:3px;background:var(--panel2);margin-bottom:10px;line-height:1.7;}
+.g-formula small{display:block;font-size:9.5px;color:var(--muted);letter-spacing:.06em;}
+.g-table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:10.5px;margin-bottom:12px;}
+.g-table th{font-size:9px;letter-spacing:.16em;color:var(--muted);font-weight:500;text-align:left;
+  padding:5px 6px;border-bottom:1px solid var(--border);text-transform:uppercase;}
+.g-table td{padding:5px 6px;border-bottom:1px solid rgba(26,37,64,.7);color:var(--text);line-height:1.5;}
+.g-table tr:last-child td{border-bottom:none;}
+.g-table td:nth-child(2){color:var(--gold);}
+.g-note{font-size:11.5px;line-height:1.7;color:var(--text);}
+.g-note p{margin-bottom:8px;}
+.g-note b{color:var(--gold);font-weight:600;}
+.g-note .g-sum{color:var(--muted);border-top:1px dashed var(--border);padding-top:8px;}
+.g-chain{border-top:1px dashed var(--border);padding-top:8px;margin-top:2px;margin-bottom:8px;}
+.g-chain-title{font-family:var(--mono);font-size:11px;color:var(--gold);letter-spacing:.06em;margin-bottom:8px;}
+
+.transport{display:flex;gap:6px;margin-bottom:12px;}
+.btn{
+  font-family:var(--mono);font-size:11px;letter-spacing:.08em;padding:8px 12px;cursor:pointer;
+  background:var(--panel2);border:1px solid var(--border);color:var(--text);border-radius:3px;
+  transition:all .15s ease;display:flex;align-items:center;gap:6px;
+}
+.btn:hover{border-color:var(--gold);color:var(--gold);}
+.btn.primary{flex:1;justify-content:center;color:var(--gold);border-color:rgba(251,191,36,.45);}
+.btn.primary:hover{background:rgba(251,191,36,.1);box-shadow:0 0 14px rgba(251,191,36,.15);}
+
+.slider-row{margin-bottom:12px;}
+.slider-row:last-child{margin-bottom:0;}
+.slider-meta{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:5px;letter-spacing:.06em;}
+.slider-meta b{color:var(--gold);font-weight:500;}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:24px;background:transparent;cursor:pointer;}
+input[type=range]::-webkit-slider-runnable-track{height:3px;background:var(--border);border-radius:2px;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;
+  background:var(--gold);margin-top:-5.5px;box-shadow:0 0 8px rgba(251,191,36,.7);border:2px solid #30270f;}
+input[type=range]::-moz-range-track{height:3px;background:var(--border);border-radius:2px;}
+input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:var(--gold);border:2px solid #30270f;box-shadow:0 0 8px rgba(251,191,36,.7);}
+
+.check-row{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11px;color:var(--muted);cursor:pointer;user-select:none;}
+.check-row input{accent-color:var(--gold);}
+.toggle-btn{font-family:var(--mono);font-size:9px;letter-spacing:.14em;color:var(--gold);
+  border:1px solid var(--border);padding:2px 8px;border-radius:3px;transition:all .15s ease;flex:none;}
+.p-toggle-head{cursor:pointer;user-select:none;}
+.p-toggle-head:hover .toggle-btn{border-color:rgba(251,191,36,.5);color:var(--gold);}
+.panel.collapsed .p-toggle-head{border-bottom:none;}
+.center.collapsed{min-height:0;}
+.center.collapsed canvas{display:none;}
+
+.readout{font-family:var(--mono);font-size:12px;}
+.ro-line{display:flex;justify-content:space-between;align-items:baseline;padding:5px 0;border-bottom:1px dashed rgba(26,37,64,.8);}
+.ro-line:last-child{border-bottom:none;}
+.ro-k{color:var(--muted);font-size:10px;letter-spacing:.14em;}
+.ro-v{color:var(--text);text-align:right;}
+.cyc-line{font-family:var(--mono);font-size:11px;line-height:1.9;color:var(--text);}
+.cyc-line b{color:var(--gold);font-weight:600;}
+.cyc-line .dim{color:var(--muted);}
+.cyc-line .ok{color:var(--mint);}
+
+.narrative{
+  font-size:12.5px;line-height:1.75;color:var(--text);
+  border-left:3px solid var(--gold);padding:10px 12px;background:rgba(251,191,36,.05);
+  min-height:96px;border-radius:0 3px 3px 0;transition:border-color .3s;
+}
+.narrative.warn{border-color:var(--red);background:rgba(248,113,113,.06);}
+.narrative.done{border-color:var(--mint);background:rgba(52,211,153,.07);}
+.narrative .phase-tag{display:block;font-family:var(--mono);font-size:9px;letter-spacing:.22em;color:var(--muted);margin-bottom:6px;text-transform:uppercase;}
+
+.verdict{display:none;}
+.right .panel.verdict{display:none;}
+.right .panel.verdict.show{display:flex;}
+.verdict-box{
+  border:1px solid rgba(251,191,36,.45);background:rgba(251,191,36,.06);border-radius:3px;padding:12px;
+}
+.verdict-box .v-title{font-family:var(--mono);font-size:9px;letter-spacing:.24em;color:var(--gold);margin-bottom:8px;text-transform:uppercase;}
+.verdict-box .v-map{font-family:var(--mono);font-size:13px;letter-spacing:.04em;color:var(--text);margin-bottom:8px;line-height:1.8;word-break:break-all;}
+.verdict-box .v-note{font-size:11px;color:var(--muted);line-height:1.65;}
+
+.center{display:flex;flex-direction:column;}
+.center canvas{width:100%;display:block;cursor:crosshair;}
+.right{display:flex;flex-direction:column;gap:12px;}
+.right .panel{display:flex;flex-direction:column;}
+.right canvas{width:100%;display:block;}
+#cvX{height:300px;}
+
+footer{
+  padding:10px 20px 18px;text-align:center;font-family:var(--mono);font-size:10px;
+  letter-spacing:.14em;color:var(--muted);
+}
+footer kbd{border:1px solid var(--border);border-radius:3px;padding:1px 6px;background:var(--panel2);color:var(--text);font-family:var(--mono);font-size:9px;}
+
+@media (min-width:1181px){
+  #groupBody{display:grid;grid-template-columns:minmax(340px,430px) minmax(0,1fr);gap:6px 28px;align-items:start;}
+}
+@media (max-width:1180px){
+  .layout{grid-template-columns:1fr;}
+  .left,#panelY,.right,#panelGroup{grid-column:auto;grid-row:auto;}
+  .right{align-self:start;}
+  .right>.panel:last-child{margin-top:0;}
+  .center{min-height:480px;}
+  #cvX{height:260px;}
+  h1{font-size:14px;white-space:normal;}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="h-left">
+    <div class="radar"></div>
+    <div>
+      <h1>圆根之旅 <span class="eq">x = yⁿ</span> 的单位根与循环群</h1>
+      <div class="subtitle">Roots of Unity · Monodromy Zₙ · Gauss 1796</div>
+    </div>
+  </div>
+  <div class="h-right">
+    <a class="page-link" href="quintic.html">← 五次方程 · 五根之旅</a>
+    <div class="eq-chip">yⁿ − x = 0</div>
+    <div class="badge"><i></i>INTERACTIVE</div>
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- ============ LEFT : console + narrative ============ -->
+  <aside class="left">
+   <div class="panel">
+    <div class="p-head"><span class="led a"></span>控制台 · Controls</div>
+
+    <div class="section">
+      <div class="sec-label">模式 · Mode</div>
+      <div class="tabs">
+        <div class="tab active" id="tabLoop">① 绕支点 k 圈<small>x 绕原点 · n 根轮转</small><small class="stage-tag">主实验</small></div>
+        <div class="tab" id="tabShrink">② 收缩到支点<small>x: 1 → 0 · n 根聚于一点</small></div>
+        <div class="tab wide" id="tabIdentity">③ 原地打转<small>小圈不含支点 · 恒等 e</small></div>
+      </div>
+
+      <div class="transport">
+        <button class="btn primary" id="btnPlay">▶ 播放</button>
+        <button class="btn" id="btnReset">↺ 重置</button>
+        <button class="btn" id="btnSpeed">1×</button>
+      </div>
+
+      <div class="slider-row">
+        <div class="slider-meta"><span id="progLabel">路径进度</span><b id="progVal">0%</b></div>
+        <input type="range" id="slider" min="0" max="999" value="0">
+      </div>
+
+      <div class="slider-row">
+        <div class="slider-meta"><span>次数 n（3 ~ 17）</span><b id="nVal">5</b></div>
+        <input type="range" id="nSlider" min="3" max="17" value="5">
+      </div>
+
+      <div class="slider-row" id="kRow">
+        <div class="slider-meta"><span>绕圈圈数 k（绕满 n 圈 ≡ 恒等）</span><b id="kVal">1</b></div>
+        <input type="range" id="kSlider" min="1" max="5" value="1">
+      </div>
+
+      <div class="bp-line" id="bpLine"></div>
+    </div>
+   </div>
+
+   <div class="panel" id="panelNarr">
+     <div class="p-head p-toggle-head" data-target="narrBody">
+       <span class="led a"></span>讲解 · Narrative
+       <span class="spacer"></span><span class="toggle-btn">隐藏 ▲</span>
+     </div>
+     <div class="section" id="narrBody">
+       <div class="narrative" id="narr">
+         <span class="phase-tag" id="phaseTag">PHASE 1 · 出发</span>
+         <span id="narrText"></span>
+       </div>
+     </div>
+   </div>
+  </aside>
+
+  <!-- ============ CENTER : y-plane ============ -->
+  <main class="panel center" id="panelY">
+    <div class="p-head p-toggle-head" data-target="cvY">
+      <span class="led m"></span>Y-平面 · n 个根在单位圆上
+      <span class="spacer"></span><span class="toggle-btn">隐藏 ▲</span>
+    </div>
+    <canvas id="cvY"></canvas>
+  </main>
+
+  <!-- ============ RIGHT : x-plane + 分圆档案 + readout ============ -->
+  <aside class="right">
+    <div class="panel" id="panelX">
+      <div class="p-head p-toggle-head" data-target="cvX">
+        <span class="led c"></span>X-平面 · 参数 x 的路径
+        <span class="spacer"></span><span class="toggle-btn">隐藏 ▲</span>
+      </div>
+      <canvas id="cvX"></canvas>
+    </div>
+
+    <div class="panel" id="panelCyc">
+      <div class="p-head p-toggle-head" data-target="cycBody">
+        <span class="led a"></span>分圆档案 · Cyclotomic Data
+        <span class="spacer"></span><span class="toggle-btn">隐藏 ▲</span>
+      </div>
+      <div class="section" id="cycBody">
+        <div class="cyc-line" id="cycLine"></div>
+      </div>
+    </div>
+
+    <div class="panel" id="panelRead">
+      <div class="p-head p-toggle-head" data-target="readBody">
+        <span class="led m"></span>读数 · Readout
+        <span class="spacer"></span><span class="toggle-btn">隐藏 ▲</span>
+      </div>
+      <div class="section" id="readBody">
+        <div class="readout">
+          <div class="ro-line"><span class="ro-k">x</span><span class="ro-v" id="roX">1.0000</span></div>
+          <div class="ro-line"><span class="ro-k">累计辐角 θ</span><span class="ro-v" id="roTh">0.0000</span></div>
+          <div class="ro-line"><span class="ro-k">|x|^(1/n)（根到原点距离）</span><span class="ro-v" id="roR">1.0000</span></div>
+          <div class="ro-line"><span class="ro-k">当前旋转格数 m</span><span class="ro-v" id="roM">0</span></div>
+        </div>
+        <div class="disc-note" id="roNote"></div>
+      </div>
+    </div>
+
+    <div class="panel verdict" id="verdict">
+      <div class="section">
+        <div class="verdict-box">
+          <div class="v-title">回到起点 · 置换结果</div>
+          <div class="v-map" id="vMap"></div>
+          <div class="v-note" id="vNote"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="section">
+        <label class="check-row"><input type="checkbox" id="chkTrail" checked> 显示根的轨迹尾迹</label>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ============ BOTTOM : 群论对照 ============ -->
+  <div class="panel" id="panelGroup">
+    <div class="p-head p-toggle-head" data-target="groupBody">
+      <span class="led a"></span>为什么这一族永远可解 · 从 ⁿ√x 到正十七边形
+      <span class="spacer"></span><span class="toggle-btn">隐藏 ▲</span>
+    </div>
+    <div class="section" id="groupBody">
+      <div class="g-left">
+        <div class="g-formula">y = ⁿ√x = |x|¹ᐟⁿ · e^(i(θ + 2πj)/n)，j = 0,…,n−1
+          <small>开 n 次方 = 模长开 n 次、辐角除以 n、均匀分成 n 个分支</small>
+        </div>
+        <div class="g-formula">cos(2π/17) = ( −1 + √17 + √(34−2√17) + √( … ) ) / 16
+          <small>高斯给出的表达式：只有加减乘除与平方根嵌套——Z₂ 塔的化石</small>
+        </div>
+        <table class="g-table">
+          <tr><th>方程</th><th>群</th><th>链</th><th>根式</th></tr>
+          <tr><td>y³ = x</td><td>Z₃</td><td>Z₃ ⊃ {e}</td><td>∛x（一级开立方）</td></tr>
+          <tr><td>y⁵ = x</td><td>Z₅</td><td>Z₅ ⊃ {e}</td><td>⁵√x（一级开五次方）</td></tr>
+          <tr><td>y¹⁷ = 1</td><td>Z₁₆</td><td>Z₁₆ ⊃ Z₈ ⊃ Z₄ ⊃ Z₂ ⊃ {e}</td><td>四次开平方嵌套</td></tr>
+          <tr><td>yⁿ = 1（任意 n）</td><td>(Z/n)×，交换群</td><td>总可分解为循环塔</td><td>拉格朗日预解式</td></tr>
+          <tr><td>y⁵ − 5y³ + 4y = x</td><td>S₅</td><td>断在 A₅（单群）</td><td>不存在</td></tr>
+        </table>
+      </div>
+      <div class="g-note">
+        <p><b>一个支点，一条链</b>：x = yⁿ 的世界只有一个支点 x = 0——n 个根共同的相撞点。绕它一圈，n 个根在圆周上整体轮转一格；绕 k 圈轮转 k 格；绕满 n 圈回到恒等。能生成的置换只有 n 个，恰好构成<b>循环群 Z_n</b>。可解链只有一级：Z_n ⊃ {e}——所以根式也只要一层：ⁿ√x 本身就是答案。这就是"开方"这个运算在群论里的样子。</p>
+        <div class="g-chain">
+          <div class="g-chain-title">高斯 1796 · 正十七边形为什么尺规可作</div>
+          <p>正十七边形顶点就是 x¹⁷ = 1 的根。系数取在有理数域上时，伽罗瓦群是 (Z/17)× ≅ <b>Z₁₆</b>，而 16 = 2⁴：链 Z₁₆ ⊃ Z₈ ⊃ Z₄ ⊃ Z₂ ⊃ {e} 的每一级商群都是 Z₂，对应<b>连续四次开平方</b>。开平方尺规可作（作中点、作垂线、以直径画圆）——于是 19 岁的高斯宣布：正十七边形可以尺规作图，两千年来的第一块新正多边形。判据完全群论化：正 p 边形尺规可作 ⟺ p − 1 是 2 的幂（费马素数：3, 5, 17, 257, 65537）。</p>
+        </div>
+        <div class="g-chain">
+          <div class="g-chain-title">拉格朗日预解式 · 分圆方程通用可解</div>
+          <p>对任意 n，xⁿ = 1 的伽罗瓦群 (Z/n)× 都是<b>交换群</b>，而交换群必可解——所以单位根必可用根式表达，一般公式叫拉格朗日预解式：把根乘上适当的单位根幂次再求和，每个和式的某个幂次落在已知域里。伽罗瓦判据在这里给出肯定答案，与五次一般方程的否定答案遥相呼应。</p>
+        </div>
+        <p class="g-sum">全系列回顾：三次 S₃ ⊃ A₃ ⊃ {e}（卡尔达诺）；四次 S₄ ⊃ A₄ ⊃ V₄ ⊃ {e}（费拉里）；一般五次断在 A₅（阿贝尔—伽罗瓦判据）；本页 xⁿ = 1 的群永远是交换群（永远可解）。同一个判据，两边都给出了答案——这就是伽罗瓦理论的完整模样。</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  拖动滑块或按 <kbd>空格</kbd> 播放 · <kbd>←</kbd><kbd>→</kbd> 逐帧步进 · 调 n 看不同分圆 · 把 k 从 1 加到 n，看旋转格数跑遍 Z_n 的全部元素
+</footer>
+
+<script>
+"use strict";
+/* ================================================================
+   数学核心：x = yⁿ —— 解析追踪，无需数值求根
+   x 沿路径走，累计辐角 θ 连续变化；
+   第 j 个根 = |x|^(1/n) · e^(i(θ + 2πj)/n)
+   ================================================================ */
+const $ = id=>document.getElementById(id);
+const SUP="⁰¹²³⁴⁵⁶⁷⁸⁹";
+const sup=j=>(""+j).split("").map(d=>SUP[+d]).join("");
+const zlab=j=> j===0 ? "1" : "ζ"+sup(j);
+
+let n = 5;                 // 次数
+let kLoop = 1;             // 绕圈圈数
+let mode = "loop";
+let frames = [];
+let idxF = 0, playing = false, speed = 1, showTrails = true;
+
+/* ---------------- 路径与帧 ---------------- */
+function buildFrames(){
+  let N, xs;
+  if(mode==="loop"){
+    N = 620*kLoop+1;
+    xs=[];
+    for(let i=0;i<N;i++){
+      const th=2*Math.PI*kLoop*i/(N-1);
+      xs.push({x:{re:Math.cos(th), im:Math.sin(th)}, th, phase:"circle"});
+    }
+  } else if(mode==="shrink"){
+    N = 700;
+    xs=[];
+    for(let i=0;i<N;i++){
+      const t=i/(N-1);
+      const r=Math.pow(0.02, t);          // 指数收缩，尾段更慢
+      xs.push({x:{re:r, im:0}, th:0, phase: t<0.85?"shrink":"near"});
+    }
+  } else { // identity：绕 x=1 的小圈，不含原点
+    N = 700;
+    xs=[];
+    for(let i=0;i<N;i++){
+      const a=2*Math.PI*i/(N-1);
+      const x={re:1+0.5*Math.cos(a), im:0.5*Math.sin(a)};
+      xs.push({x, th:Math.atan2(x.im,x.re), phase:"circle"});
+    }
+  }
+  frames=xs.map(s=>{
+    const rad=Math.pow(Math.hypot(s.x.re,s.x.im), 1/n);
+    const roots=[];
+    for(let j=0;j<n;j++){
+      const a=(s.th+2*Math.PI*j)/n;
+      roots.push({re:rad*Math.cos(a), im:rad*Math.sin(a)});
+    }
+    return {...s, roots, rad};
+  });
+  slider.max=frames.length-1;
+}
+
+/* 帧间根的连续性：解析公式保证顺序一致，无需匹配 */
+</script>
+
+<script>
+"use strict";
+/* ================================================================
+   画布渲染：Y-平面（单位圆与 n 根） / X-平面（路径与支点 0）
+   ================================================================ */
+const COL = {gold:"#fbbf24", red:"#f87171", grid:"#141e33", axis:"#2b3c5f", text:"#5f7194", bright:"#d7e0ee"};
+const DPR = Math.min(window.devicePixelRatio||1, 2);
+const rootCol=j=>`hsl(${Math.round(j*360/n)}, 72%, 62%)`;
+
+function makeView(id, xr, yr){
+  const cv = $(id), ctx = cv.getContext("2d");
+  const v = {cv, ctx, xr, yr, w:0, h:0, s:1, cx:0, cy:0};
+  v.resize = ()=>{
+    const cw = cv.clientWidth, ch = cv.clientHeight;
+    if(!cw||!ch) return;
+    cv.width = cw*DPR; cv.height = ch*DPR;
+    v.w=cw; v.h=ch;
+    v.s = Math.min(cw/(xr[1]-xr[0]), ch/(yr[1]-yr[0]));
+    v.cx = cw/2 - (xr[0]+xr[1])/2*v.s;
+    v.cy = ch/2 + (yr[0]+yr[1])/2*v.s;
+  };
+  v.px = x=> v.cx + x*v.s;
+  v.py = y=> v.cy - y*v.s;
+  return v;
+}
+const vY = makeView("cvY", [-1.7,1.7], [-1.5,1.5]);
+const vX = makeView("cvX", [-2.1,2.1], [-2.1,2.1]);   // 横轴 Im x，纵轴 Re x
+
+function drawGrid(v, step=1){
+  const {ctx}=v;
+  ctx.lineWidth=1;
+  for(let gx=Math.ceil(v.xr[0]); gx<=v.xr[1]; gx+=step){
+    ctx.strokeStyle = gx===0 ? COL.axis : COL.grid;
+    ctx.beginPath(); ctx.moveTo(v.px(gx),0); ctx.lineTo(v.px(gx),v.h); ctx.stroke();
+  }
+  for(let gy=Math.ceil(v.yr[0]); gy<=v.yr[1]; gy+=step){
+    ctx.strokeStyle = gy===0 ? COL.axis : COL.grid;
+    ctx.beginPath(); ctx.moveTo(0,v.py(gy)); ctx.lineTo(v.w,v.py(gy)); ctx.stroke();
+  }
+}
+function glowDot(v, x, y, color, r=6, glow=14){
+  const {ctx}=v;
+  ctx.save();
+  ctx.shadowColor=color; ctx.shadowBlur=glow;
+  ctx.fillStyle=color;
+  ctx.beginPath(); ctx.arc(v.px(x),v.py(y),r,0,7); ctx.fill();
+  ctx.restore();
+  ctx.fillStyle="rgba(255,255,255,.85)";
+  ctx.beginPath(); ctx.arc(v.px(x),v.py(y),r*0.38,0,7); ctx.fill();
+}
+const MINUS="−";
+function fnum(v,d=4){ if(Math.abs(v)<0.5*Math.pow(10,-d)) v=0; return v.toFixed(d).replace("-",MINUS); }
+function fcplx(z,d=4){
+  const im=Math.abs(z.im);
+  if(im<5e-5) return fnum(z.re,d);
+  const sign=z.im<0?" − ":" + ";
+  return fnum(z.re,d)+sign+im.toFixed(d)+"i";
+}
+
+/* ---------- Y-平面 ---------- */
+function drawY(idx, time){
+  const v=vY, {ctx}=v;
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  ctx.fillStyle="#070c16"; ctx.fillRect(0,0,v.w,v.h);
+  drawGrid(v, 1);
+  ctx.fillStyle=COL.text; ctx.font=`10px 'JetBrains Mono',monospace`; ctx.textAlign="left";
+  ctx.fillText("Re y →", v.w-58, v.py(0)-8);
+  ctx.fillText("Im y ↑", v.px(0)+8, 14);
+
+  // 单位圆
+  ctx.save();
+  ctx.strokeStyle="rgba(251,191,36,.35)"; ctx.setLineDash([5,5]); ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.arc(v.px(0),v.py(0),v.s,0,7); ctx.stroke();
+  ctx.restore();
+  ctx.fillStyle="rgba(251,191,36,.6)"; ctx.font=`10px 'JetBrains Mono',monospace`;
+  ctx.fillText("单位圆 |y| = 1", v.px(0)+10, v.py(1)-6);
+
+  // 原点支点标记
+  ctx.strokeStyle=COL.red; ctx.lineWidth=2;
+  ctx.beginPath();
+  ctx.moveTo(v.px(0)-7,v.py(0)-7); ctx.lineTo(v.px(0)+7,v.py(0)+7);
+  ctx.moveTo(v.px(0)+7,v.py(0)-7); ctx.lineTo(v.px(0)-7,v.py(0)+7);
+  ctx.stroke();
+
+  const fr=frames, cur=fr[idx];
+
+  // 尾迹（弧线）
+  if(showTrails && idx>0){
+    for(let j=0;j<n;j++){
+      const col=rootCol(j);
+      ctx.lineWidth=2; ctx.lineCap="round";
+      let px0=v.px(fr[0].roots[j].re), py0=v.py(fr[0].roots[j].im);
+      for(let i=1;i<=idx;i++){
+        const p=fr[i].roots[j];
+        const px1=v.px(p.re), py1=v.py(p.im);
+        if(Math.hypot(px1-px0,py1-py0)<60){
+          ctx.strokeStyle=col; ctx.globalAlpha=0.06+0.5*(i/idx);
+          ctx.beginPath(); ctx.moveTo(px0,py0); ctx.lineTo(px1,py1); ctx.stroke();
+        }
+        px0=px1; py0=py1;
+      }
+      ctx.globalAlpha=1;
+    }
+  }
+
+  // 当前根与标签
+  const showLab = n<=12;
+  for(let j=0;j<n;j++){
+    glowDot(v, cur.roots[j].re, cur.roots[j].im, rootCol(j), 6);
+    if(showLab){
+      const a=Math.atan2(cur.roots[j].im, cur.roots[j].re);
+      ctx.fillStyle=rootCol(j); ctx.font=`bold 11px 'JetBrains Mono',monospace`;
+      ctx.textAlign="center";
+      ctx.fillText(zlab(j), v.px(cur.roots[j].re)+20*Math.cos(a), v.py(cur.roots[j].im)-20*Math.sin(a)+4);
+    }
+  }
+  ctx.textAlign="left";
+}
+
+/* ---------- X-平面 ---------- */
+function drawX(idx, time){
+  const v=vX, {ctx}=v;
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  ctx.fillStyle="#070c16"; ctx.fillRect(0,0,v.w,v.h);
+  drawGrid(v, 1);
+  ctx.fillStyle=COL.text; ctx.font=`10px 'JetBrains Mono',monospace`; ctx.textAlign="left";
+  ctx.fillText("Im x →", v.w-58, v.py(0)-8);
+  ctx.textAlign="right"; ctx.fillText("Re x ↑", v.px(0)-8, 14); ctx.textAlign="left";
+
+  // 实轴强调
+  ctx.strokeStyle="rgba(251,191,36,.28)"; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(v.px(0),0); ctx.lineTo(v.px(0),v.h); ctx.stroke();
+
+  // 支点 x = 0（唯一的支点）
+  ctx.strokeStyle=COL.red; ctx.lineWidth=2;
+  ctx.beginPath();
+  ctx.moveTo(v.px(0)-7,v.py(0)-7); ctx.lineTo(v.px(0)+7,v.py(0)+7);
+  ctx.moveTo(v.px(0)+7,v.py(0)-7); ctx.lineTo(v.px(0)-7,v.py(0)+7);
+  ctx.stroke();
+  ctx.save();
+  ctx.strokeStyle=`rgba(248,113,113,${0.5-0.35*Math.abs(Math.sin(time*2))})`;
+  ctx.lineWidth=1;
+  ctx.beginPath(); ctx.arc(v.px(0),v.py(0),11+4*Math.abs(Math.sin(time*2)),0,7); ctx.stroke();
+  ctx.restore();
+  ctx.fillStyle=COL.red; ctx.font=`10px 'JetBrains Mono',monospace`;
+  ctx.fillText(`支点 x = 0（${n} 个根共同的相撞点）`, v.px(0)+12, v.py(0)+18);
+
+  // 基点 x = 1
+  ctx.fillStyle="rgba(215,224,238,.6)";
+  ctx.beginPath(); ctx.arc(v.px(0),v.py(1),3,0,7); ctx.fill();
+  ctx.fillStyle=COL.text;
+  ctx.fillText("基点 x = 1", v.px(0)+10, v.py(1)-8);
+
+  // 路径（淡） + 已走（亮）
+  const N=frames.length;
+  ctx.lineWidth=1.5;
+  ctx.strokeStyle="rgba(95,113,148,.5)";
+  ctx.beginPath();
+  for(let i=0;i<N;i++){const p=frames[i].x; i?ctx.lineTo(v.px(p.im),v.py(p.re)):ctx.moveTo(v.px(p.im),v.py(p.re));}
+  ctx.stroke();
+  if(idx>0){
+    ctx.strokeStyle=COL.gold; ctx.lineWidth=2;
+    ctx.save(); ctx.shadowColor=COL.gold; ctx.shadowBlur=6;
+    ctx.beginPath();
+    for(let i=0;i<=idx;i++){const p=frames[i].x; i?ctx.lineTo(v.px(p.im),v.py(p.re)):ctx.moveTo(v.px(p.im),v.py(p.re));}
+    ctx.stroke(); ctx.restore();
+  }
+
+  const x=frames[idx].x;
+  glowDot(v,x.im,x.re,"#ffffff",5.5,12);
+  ctx.fillStyle="#fff"; ctx.font=`bold 11px 'JetBrains Mono',monospace`;
+  ctx.fillText("x", v.px(x.im)+10, v.py(x.re)-8);
+}
+</script>
+
+<script>
+"use strict";
+/* ================================================================
+   讲解 / 读数 / 判决 / 分圆档案 / 交互 / 主循环
+   ================================================================ */
+const slider=$("slider"), btnPlay=$("btnPlay"), btnReset=$("btnReset"), btnSpeed=$("btnSpeed");
+const tabIds={loop:"tabLoop", shrink:"tabShrink", identity:"tabIdentity"};
+const nSlider=$("nSlider"), nVal=$("nVal"), kSlider=$("kSlider"), kVal=$("kVal"), kRow=$("kRow");
+const bpLine=$("bpLine"), cycLine=$("cycLine");
+const chkTrail=$("chkTrail");
+const roX=$("roX"), roTh=$("roTh"), roR=$("roR"), roM=$("roM"), roNote=$("roNote");
+const narr=$("narr"), narrText=$("narrText"), phaseTag=$("phaseTag");
+const progLabel=$("progLabel"), progVal=$("progVal");
+const verdict=$("verdict"), vMap=$("vMap"), vNote=$("vNote");
+const panelY=$("panelY"), cvY=$("cvY");
+
+function gcd(a,b){ while(b){ [a,b]=[b,a%b]; } return a; }
+function phi(m){ let r=m; for(let p=2;p*p<=m;p++){ if(m%p===0){ r-=r/p; while(m%p===0)m/=p; } } if(m>1) r-=r/m; return r; }
+function isPrime(m){ if(m<2)return false; for(let p=2;p*p<=m;p++) if(m%p===0) return false; return true; }
+/* Z_m 的一条循环塔：每次除掉最小素因子 */
+function chainStr(m){
+  const zs=[]; let cur=m;
+  zs.push("Z"+tosub(cur));
+  while(cur>1){
+    let p=2; while(cur%p!==0) p++;
+    cur/=p;
+    if(cur>1) zs.push("Z"+tosub(cur));
+  }
+  zs.push("{e}");
+  return zs.join(" ⊃ ");
+}
+const SUBD="₀₁₂₃₄₅₆₇₈₉";
+function tosub(m){ return (""+m).split("").map(d=>SUBD[+d]).join(""); }
+
+function updateBpLine(){
+  bpLine.innerHTML=`支点：<b>x = 0</b>（${n} 个根共同相撞的 n 重支点）　→　绕它 k 圈 = 轮转 k 格　→　monodromy = <b>Z${tosub(n)}</b>（循环群，可解）`;
+}
+function updateCyc(){
+  const pn=phi(n);
+  let galois;
+  if(isPrime(n)) galois=`(Z/${n})× ≅ Z${tosub(n-1)}`;
+  else galois=`(Z/${n})×，阶 ${pn} 的交换群`;
+  let html=`n = <b>${n}</b>　·　φ(n) = ${pn}　·　单位根：${zlab(0)}, ${zlab(1)}, …, ${zlab(n-1)}<br>`+
+    `绕 x = 0 的 monodromy：<b>Z${tosub(n)}</b> <span class="ok">循环 ✓ 可解</span>　→　根式 <b>${sup(n)}√x</b> 一层就够<br>`+
+    `Q 上的伽罗瓦群：<b>${galois}</b>（交换群 → 必可解）<br>`;
+  if(isPrime(n)) html+=`链：<b>${chainStr(n-1)}</b><br>`;
+  if(n===17) html+=`<span class="ok">16 = 2⁴ → 四级全是 Z₂ → 只需四次开平方 → 正十七边形尺规可作（高斯，1796，19 岁）！</span><br>`;
+  if(n===3||n===5) html+=`<span class="ok">n−1 = ${n-1} = ${n===3?"2":"2²"} → 全是 Z₂ → 正${n===3?"三":"五"}边形尺规可作（古希腊已会）</span><br>`;
+  if(isPrime(n) && ((n-1)&(n-2))!==0 && n>5 && n!==17) html+=`<span class="dim">n−1 = ${n-1} 含奇因子 → 正 ${n} 边形尺规不可作（但根式仍可解）</span><br>`;
+  html+=`<span class="dim">对比：一般五次 y⁵ − 5y³ + 4y = x 的 monodromy 是 S₅（120 元，不可解）——同一个判据，两个方向。</span>`;
+  cycLine.innerHTML=html;
+}
+
+/* ---------------- 讲解 ---------------- */
+function narrativeFor(idx){
+  const fr=frames[idx], N=frames.length, last=idx>=N-1;
+  if(mode==="loop"){
+    const s=idx/(N-1), laps=s*kLoop, m=((Math.round(laps)%n)+n)%n;
+    if(last) return {tag:`终点 · 绕满 ${kLoop} 圈回到 x = 1`, cls:"done",
+      text:`路径闭合：n 个根仍在单位圆上原处集合，但整体轮转了 ${kLoop} 格（mod ${n} 计 ${m} 格）。最终置换见右下判决——它就是 Z${tosub(n)} 的元素 ${m}。`};
+    return {tag:`绕支点 x = 0 · 第 ${Math.min(kLoop,Math.floor(laps)+1)}/${kLoop} 圈`, cls:"warn",
+      text:`辐角 θ = ${(2*Math.PI*laps).toFixed(2)} rad，每个根的辐角是它的 1/${n}：单位圆上的 n 个点正整体转过 ${(laps*360/n%360).toFixed(0)}°。注意没有任何根相撞——它们只是匀速轮换位置。`};
+  }
+  if(mode==="shrink"){
+    const r=Math.hypot(fr.x.re,fr.x.im);
+    if(last) return {tag:"终点 · 几乎到达支点", cls:"done",
+      text:`x ≈ 0：n 个根全部挤到原点附近（距离 |x|^(1/${n}) ≈ ${fr.rad.toFixed(3)}）。支点的真面目：不是一对根相撞，而是全部 ${n} 个根撞成一个 n 重根。`};
+    if(r>0.3) return {tag:"沿实轴收缩 · x: 1 → 0", cls:"",
+      text:"x 沿实轴滑向原点：n 个根保持在各自辐角方向上，等比例向圆心收缩——圆越来越小，但正 n 边形的形状不变。"};
+    return {tag:"逼近支点", cls:"warn",
+      text:`x 已经很小：根到原点的距离只剩 ${fr.rad.toFixed(3)}。注意收缩速度是 |x|^(1/${n})——开方让根的半径比 x 大得多，这就是支点的"奇异"之处。`};
+  }
+  if(mode==="identity"){
+    if(last) return {tag:"终点 · 回到 x = 1", cls:"done",
+      text:"小圈转完：n 个根各自画了一个闭合小环，精确回到自己——圈里没有支点，什么置换也没有发生。这就是恒等映射 e。"};
+    const s=idx/(N-1);
+    return {tag:"绕 x = 1 的小圈 · 不含支点", cls:"",
+      text:`小圈进度 ${Math.round(s*100)}%：圈把基点 x = 1 围在里面，但支点 x = 0 在圈外。根的辐角只是小幅摆动，累计辐角终将归零。`};
+  }
+}
+
+/* ---------------- 读数 ---------------- */
+function updateReadout(idx){
+  const fr=frames[idx];
+  roX.textContent=fcplx(fr.x);
+  roTh.textContent=fnum(fr.th,3)+" rad（"+fnum(fr.th/(2*Math.PI),3)+" 圈）";
+  roR.textContent=fnum(fr.rad,4);
+  const m=((Math.round(fr.th/(2*Math.PI))%n)+n)%n;
+  roM.textContent=m+" / "+n+"　（"+zlab(0)+" → "+zlab(m)+"）";
+  roNote.innerHTML= mode==="loop"
+    ? `每绕一圈，所有根辐角 +360°/${n} = ${(360/n).toFixed(1)}° —— <b class='pos'>开 ${n} 次方就是辐角除以 ${n}</b>`
+    : mode==="shrink"
+    ? `支点处全部 ${n} 个根撞成 n 重根 —— <b class='neg'>唯一的支点</b>`
+    : `圈内无支点 → 累计辐角归零 → <b class='pos'>恒等 e</b>`;
+  const nr=narrativeFor(idx);
+  phaseTag.textContent=nr.tag; narrText.textContent=nr.text;
+  narr.className="narrative "+nr.cls;
+  progVal.textContent = Math.round(idx/(frames.length-1)*100)+"%";
+}
+
+/* ---------------- 判决 ---------------- */
+function updateVerdict(idx){
+  if(mode!=="loop" && mode!=="identity"){ verdict.classList.remove("show"); return; }
+  if(idx<frames.length-1){ verdict.classList.remove("show"); return; }
+  let m, note;
+  if(mode==="identity"){ m=0; }
+  else { m=((kLoop%n)+n)%n; }
+  if(m===0){
+    vMap.innerHTML=zlab(0)+" ↦ "+zlab(0)+"，"+zlab(1)+" ↦ "+zlab(1)+"，…（全部归位）";
+    note = mode==="identity"
+      ? "恒等 e：小圈里没有支点，每个根兜了个小圈回到自己——什么置换也没有发生。"
+      : `恒等 e：绕满 ${kLoop} 圈恰好是 ${n} 的倍数圈，每个根回到自己。Z${tosub(n)} 的元素 0——绕 n 圈 ≡ 恒等，这正是"循环"二字的含义。`;
+  } else {
+    const g=gcd(n,m), L=n/g;
+    const cycs=[];
+    for(let j=0;j<g;j++){
+      const c=[];
+      for(let t=0;t<L;t++) c.push(zlab((j+t*m)%n));
+      cycs.push("（"+c.join(" → ")+"）");
+    }
+    vMap.innerHTML=cycs.join("　");
+    note = `轮转 ${m} 格：${n} 个根分成 ${g} 条长度为 ${L} 的循环。这是 Z${tosub(n)} 的元素 ${m}——循环群的一格。Z${tosub(n)} 可解，所以 ⁿ√x 就是根式解；对比一下：一般五次的 S₅ 有 120 个元素，怎么绕都绕不出循环。`;
+  }
+  vNote.textContent=note;
+  verdict.classList.add("show");
+}
+
+/* ---------------- 主循环 ---------------- */
+let lastTs=0;
+function tick(ts){
+  requestAnimationFrame(tick);
+  const dt=Math.min((ts-lastTs)/1000,0.1); lastTs=ts;
+  const N=frames.length;
+  if(playing){
+    const dur= mode==="loop" ? 6*kLoop : 10;
+    idxF+=dt*(N-1)/dur*speed;
+    if(idxF>=N-1){ idxF=N-1; setPlaying(false); }
+    slider.value=Math.round(idxF);
+  }
+  const idx=Math.max(0,Math.min(N-1,Math.round(idxF)));
+  drawY(idx, ts/1000);
+  drawX(idx, ts/1000);
+  updateReadout(idx);
+  updateVerdict(idx);
+}
+
+/* ---------------- 交互 ---------------- */
+function setPlaying(p){
+  playing=p;
+  btnPlay.textContent=p?"⏸ 暂停":"▶ 播放";
+}
+btnPlay.addEventListener("click",()=>{
+  if(!playing && idxF>=frames.length-1) idxF=0;
+  setPlaying(!playing);
+});
+btnReset.addEventListener("click",()=>{ setPlaying(false); idxF=0; slider.value=0; });
+const SPEEDS=[0.5,1,2,4];
+btnSpeed.addEventListener("click",()=>{
+  const i=(SPEEDS.indexOf(speed)+1)%SPEEDS.length;
+  speed=SPEEDS[i]; btnSpeed.textContent=speed+"×";
+});
+slider.addEventListener("input",()=>{ setPlaying(false); idxF=+slider.value; });
+chkTrail.addEventListener("change",()=>{ showTrails=chkTrail.checked; });
+
+document.querySelectorAll(".p-toggle-head").forEach(head=>{
+  head.addEventListener("click",()=>{
+    const body=$(head.dataset.target);
+    const btn=head.querySelector(".toggle-btn");
+    const panel=head.closest(".panel");
+    const hidden=!panel.classList.contains("collapsed");
+    panel.classList.toggle("collapsed",hidden);
+    body.style.display=hidden?"none":"";
+    btn.textContent=hidden?"显示 ▼":"隐藏 ▲";
+    resizeAll();
+  });
+});
+
+function rebuild(){
+  setPlaying(false); idxF=0; slider.value=0;
+  buildFrames();
+  updateReadout(0);
+  resizeAll();
+}
+nSlider.addEventListener("input",()=>{
+  n=+nSlider.value; nVal.textContent=n;
+  kSlider.max=n; if(kLoop>n){ kLoop=n; kSlider.value=n; }
+  kVal.textContent=kLoop;
+  updateBpLine(); updateCyc();
+  rebuild();
+});
+kSlider.addEventListener("input",()=>{
+  kLoop=+kSlider.value; kVal.textContent=kLoop;
+  if(mode==="loop") rebuild();
+});
+
+function setMode(m){
+  mode=m;
+  for(const k in tabIds) $(tabIds[k]).classList.toggle("active",k===m);
+  kRow.style.display=(m==="loop")?"":"none";
+  rebuild();
+}
+for(const k in tabIds) $(tabIds[k]).addEventListener("click",()=>setMode(k));
+window.addEventListener("keydown",e=>{
+  if(e.code==="Space"){ e.preventDefault(); btnPlay.click(); }
+  if(e.code==="ArrowRight"){ setPlaying(false); idxF=Math.min(frames.length-1,idxF+1); slider.value=Math.round(idxF); }
+  if(e.code==="ArrowLeft"){ setPlaying(false); idxF=Math.max(0,idxF-1); slider.value=Math.round(idxF); }
+});
+
+/* ---------------- 尺寸自适应 ---------------- */
+function resizeAll(){
+  const leftEl=document.querySelector(".left");
+  if(window.innerWidth>1180){
+    const leftBottom=leftEl.getBoundingClientRect().bottom;
+    const headBottom=panelY.querySelector(".p-head").getBoundingClientRect().bottom;
+    if(leftBottom>0) cvY.style.height=Math.max(260,Math.round(leftBottom-headBottom-1))+"px";
+  } else {
+    cvY.style.height="480px";
+  }
+  vY.resize(); vX.resize();
+}
+window.addEventListener("resize",resizeAll);
+
+/* ---------------- 启动 ---------------- */
+updateBpLine();
+updateCyc();
+buildFrames();
+updateReadout(0);
+resizeAll();
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>

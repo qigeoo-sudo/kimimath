@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>三根之旅 · x = y³ − 3y 的支点与交换</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#050810; --panel:#0c1220; --panel2:#111a2b; --border:#1a2540;
+  --cyan:#22d3ee; --mint:#34d399; --amber:#fbbf24; --red:#f87171;
+  --text:#d7e0ee; --muted:#5f7194; --faint:#33415e;
+  --mono:'JetBrains Mono','PingFang SC','Microsoft YaHei',monospace;
+  --sans:'Inter','PingFang SC','Microsoft YaHei',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;}
+body{
+  background:var(--bg); color:var(--text); font-family:var(--sans);
+  font-size:14px; line-height:1.55; overflow-x:hidden;
+  background-image:radial-gradient(1200px 600px at 70% -10%, rgba(34,211,238,.05), transparent 60%),
+                   radial-gradient(900px 500px at 10% 110%, rgba(52,211,153,.04), transparent 60%);
+}
+body::after{
+  content:""; position:fixed; inset:0; pointer-events:none; z-index:50;
+  background:repeating-linear-gradient(0deg, rgba(255,255,255,.012) 0 1px, transparent 1px 3px);
+}
+::selection{background:rgba(34,211,238,.25);}
+
+/* ---------- header ---------- */
+header{
+  display:flex; align-items:center; justify-content:space-between; gap:16px;
+  padding:14px 20px; border-bottom:1px solid var(--border);
+  background:rgba(12,18,32,.7); backdrop-filter:blur(8px);
+  position:sticky; top:0; z-index:20;
+}
+.h-left{display:flex; align-items:center; gap:14px; min-width:0;}
+.radar{width:12px;height:12px;border-radius:50%;background:var(--cyan);position:relative;flex:none;
+  box-shadow:0 0 10px var(--cyan);}
+.radar::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:1px solid var(--cyan);
+  animation:ping 1.6s ease-out infinite;}
+@keyframes ping{0%{transform:scale(.4);opacity:.9}100%{transform:scale(1.5);opacity:0}}
+h1{font-family:var(--mono);font-size:17px;font-weight:700;letter-spacing:.04em;white-space:nowrap;}
+h1 .eq{color:var(--cyan);}
+.subtitle{font-family:var(--mono);font-size:10px;letter-spacing:.22em;color:var(--muted);text-transform:uppercase;margin-top:2px;}
+.h-right{display:flex;align-items:center;gap:10px;flex:none;}
+.badge{font-family:var(--mono);font-size:10px;letter-spacing:.18em;color:var(--mint);
+  border:1px solid rgba(52,211,153,.4);padding:5px 10px;border-radius:3px;display:flex;align-items:center;gap:7px;}
+.badge i{width:6px;height:6px;border-radius:50%;background:var(--mint);animation:blink 1.4s ease-in-out infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+.eq-chip{font-family:var(--mono);font-size:12px;color:var(--amber);border:1px solid var(--border);
+  background:var(--panel2);padding:5px 12px;border-radius:3px;}
+
+/* ---------- layout ---------- */
+.layout{
+  display:grid; grid-template-columns:344px minmax(0,1fr) 380px; gap:12px;
+  padding:12px; max-width:1720px; margin:0 auto; align-items:start;
+}
+/* 桌面端网格定位：右栏纵跨两行，群论面板横贯左+中栏、底边与右栏底边对齐 */
+.left{grid-column:1;grid-row:1;}
+#panelY{grid-column:2;grid-row:1;}
+.right{grid-column:3;grid-row:1/3;align-self:stretch;}
+.right>.panel:last-child{margin-top:auto;}
+#panelGroup{grid-column:1/3;grid-row:2;align-self:end;}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:4px;overflow:hidden;}
+.p-head{
+  display:flex;align-items:center;gap:8px;padding:9px 14px;border-bottom:1px solid var(--border);
+  font-family:var(--mono);font-size:10px;letter-spacing:.2em;color:var(--muted);text-transform:uppercase;
+  background:var(--panel2);
+}
+.led{width:6px;height:6px;border-radius:50%;flex:none;}
+.led.c{background:var(--cyan);box-shadow:0 0 6px var(--cyan);}
+.led.a{background:var(--amber);box-shadow:0 0 6px var(--amber);}
+.led.m{background:var(--mint);box-shadow:0 0 6px var(--mint);}
+.led.r{background:var(--red);box-shadow:0 0 6px var(--red);}
+.p-head .spacer{flex:1;}
+.legend{display:flex;gap:12px;font-size:10px;letter-spacing:.08em;}
+.legend span{display:flex;align-items:center;gap:5px;color:var(--text);}
+.legend i{width:8px;height:8px;border-radius:50%;}
+
+/* ---------- left column ---------- */
+.left{display:flex;flex-direction:column;gap:12px;}
+.section{padding:14px;border-bottom:1px solid var(--border);}
+.section:last-child{border-bottom:none;}
+.sec-label{font-family:var(--mono);font-size:9px;letter-spacing:.24em;color:var(--muted);text-transform:uppercase;margin-bottom:10px;}
+
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px;}
+.tab{
+  font-family:var(--mono);font-size:10.5px;padding:9px 4px;text-align:center;cursor:pointer;
+  background:var(--panel2);border:1px solid var(--border);color:var(--muted);border-radius:3px;
+  transition:all .15s ease;line-height:1.4;
+}
+.tab:hover{color:var(--text);border-color:var(--faint);}
+.tab.active{color:var(--cyan);border-color:rgba(34,211,238,.55);background:rgba(34,211,238,.08);
+  box-shadow:0 0 12px rgba(34,211,238,.12) inset;}
+.tab small{display:block;font-size:9px;letter-spacing:.1em;margin-top:2px;opacity:.75;}
+.tab small.stage-tag{color:var(--amber);opacity:1;font-weight:700;}
+.tab.wide{grid-column:1/-1;}
+.seq-box{display:flex;flex-wrap:wrap;align-items:center;gap:5px;min-height:30px;
+  border:1px dashed var(--border);border-radius:3px;padding:6px 8px;background:var(--panel2);}
+.seq-empty{font-family:var(--mono);font-size:10px;color:var(--muted);}
+.seq-chip{font-family:var(--mono);font-size:10px;font-weight:700;padding:3px 8px;border-radius:3px;letter-spacing:.06em;}
+.seq-chip.s1{color:var(--cyan);border:1px solid rgba(34,211,238,.5);background:rgba(34,211,238,.08);}
+.seq-chip.s2{color:var(--amber);border:1px solid rgba(251,191,36,.5);background:rgba(251,191,36,.08);}
+.seq-arrow{font-family:var(--mono);font-size:10px;color:var(--muted);}
+/* 群论对照表 */
+.g-formula{font-family:var(--mono);font-size:11px;color:var(--amber);text-align:center;
+  padding:8px 6px;border:1px solid var(--border);border-radius:3px;background:var(--panel2);margin-bottom:10px;}
+.g-table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:10.5px;margin-bottom:10px;}
+.g-table th{font-size:9px;letter-spacing:.16em;color:var(--muted);font-weight:500;text-align:left;
+  padding:5px 6px;border-bottom:1px solid var(--border);text-transform:uppercase;}
+.g-table td{padding:5px 6px;border-bottom:1px solid rgba(26,37,64,.7);color:var(--text);}
+.g-table tr:last-child td{border-bottom:none;}
+.g-table td:nth-child(3){color:var(--cyan);}
+.g-note{font-size:11.5px;line-height:1.7;color:var(--text);}
+.g-note p{margin-bottom:8px;}
+.g-note b{color:var(--cyan);font-weight:600;}
+.g-note .g-sum{color:var(--muted);border-top:1px dashed var(--border);padding-top:8px;}
+.g-chain{border-top:1px dashed var(--border);padding-top:8px;margin-top:2px;}
+.g-chain-title{font-family:var(--mono);font-size:11px;color:var(--amber);letter-spacing:.06em;margin-bottom:8px;}
+
+.transport{display:flex;gap:6px;margin-bottom:12px;}
+.btn{
+  font-family:var(--mono);font-size:11px;letter-spacing:.08em;padding:8px 12px;cursor:pointer;
+  background:var(--panel2);border:1px solid var(--border);color:var(--text);border-radius:3px;
+  transition:all .15s ease;display:flex;align-items:center;gap:6px;
+}
+.btn:hover{border-color:var(--cyan);color:var(--cyan);}
+.btn.primary{flex:1;justify-content:center;color:var(--cyan);border-color:rgba(34,211,238,.45);}
+.btn.primary:hover{background:rgba(34,211,238,.1);box-shadow:0 0 14px rgba(34,211,238,.15);}
+.btn:disabled{opacity:.35;cursor:default;pointer-events:none;}
+
+.slider-row{margin-bottom:12px;}
+.slider-row:last-child{margin-bottom:0;}
+.slider-meta{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:5px;letter-spacing:.06em;}
+.slider-meta b{color:var(--cyan);font-weight:500;}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:24px;background:transparent;cursor:pointer;}
+input[type=range]::-webkit-slider-runnable-track{height:3px;background:var(--border);border-radius:2px;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;
+  background:var(--cyan);margin-top:-5.5px;box-shadow:0 0 8px rgba(34,211,238,.7);border:2px solid #06202a;}
+input[type=range]::-moz-range-track{height:3px;background:var(--border);border-radius:2px;}
+input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:var(--cyan);border:2px solid #06202a;box-shadow:0 0 8px rgba(34,211,238,.7);}
+input[type=range]:disabled{opacity:.3;cursor:default;}
+
+.check-row{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11px;color:var(--muted);cursor:pointer;user-select:none;}
+.check-row input{accent-color:var(--cyan);}
+.toggle-btn{font-family:var(--mono);font-size:9px;letter-spacing:.14em;color:var(--cyan);
+  border:1px solid var(--border);padding:2px 8px;border-radius:3px;transition:all .15s ease;flex:none;}
+.p-toggle-head{cursor:pointer;user-select:none;}
+.p-toggle-head:hover .toggle-btn{border-color:rgba(34,211,238,.5);color:var(--cyan);}
+.panel.collapsed .p-toggle-head{border-bottom:none;}
+.center.collapsed{min-height:0;}
+.center.collapsed canvas{display:none;}
+
+.readout{font-family:var(--mono);font-size:12px;}
+.ro-line{display:flex;justify-content:space-between;align-items:baseline;padding:5px 0;border-bottom:1px dashed rgba(26,37,64,.8);}
+.ro-line:last-child{border-bottom:none;}
+.ro-k{color:var(--muted);font-size:10px;letter-spacing:.14em;}
+.ro-v{color:var(--text);text-align:right;}
+.ro-v.small{font-size:10.5px;color:var(--muted);}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px;vertical-align:1px;}
+.disc-note{font-size:10px;color:var(--muted);margin-top:8px;line-height:1.6;letter-spacing:.02em;}
+.disc-note b{font-weight:500;}
+.disc-note b.pos{color:var(--mint);} .disc-note b.zero{color:var(--amber);} .disc-note b.neg{color:var(--red);}
+
+.narrative{
+  font-size:12.5px;line-height:1.75;color:var(--text);
+  border-left:3px solid var(--cyan);padding:10px 12px;background:rgba(34,211,238,.05);
+  min-height:96px;border-radius:0 3px 3px 0;transition:border-color .3s;
+}
+.narrative.warn{border-color:var(--amber);background:rgba(251,191,36,.06);}
+.narrative.done{border-color:var(--mint);background:rgba(52,211,153,.07);}
+.narrative .phase-tag{display:block;font-family:var(--mono);font-size:9px;letter-spacing:.22em;color:var(--muted);margin-bottom:6px;text-transform:uppercase;}
+
+.verdict{display:none;}
+.right .panel.verdict{display:none;}
+.right .panel.verdict.show{display:flex;}
+.verdict-box{
+  border:1px solid rgba(251,191,36,.45);background:rgba(251,191,36,.06);border-radius:3px;padding:12px;
+}
+.verdict-box .v-title{font-family:var(--mono);font-size:9px;letter-spacing:.24em;color:var(--amber);margin-bottom:8px;text-transform:uppercase;}
+.verdict-box .v-map{font-family:var(--mono);font-size:15px;letter-spacing:.06em;color:var(--text);margin-bottom:8px;}
+.verdict-box .v-map .A{color:var(--cyan);} .verdict-box .v-map .B{color:var(--amber);} .verdict-box .v-map .C{color:var(--mint);}
+.verdict-box .v-note{font-size:11px;color:var(--muted);line-height:1.65;}
+
+/* ---------- canvases ---------- */
+.center{display:flex;flex-direction:column;}
+.center canvas{width:100%;display:block;cursor:crosshair;}
+.right{display:flex;flex-direction:column;gap:12px;}
+.right .panel{display:flex;flex-direction:column;}
+.right canvas{width:100%;display:block;}
+#cvX{height:262px;}
+#cvG{height:300px;}
+
+footer{
+  padding:10px 20px 18px;text-align:center;font-family:var(--mono);font-size:10px;
+  letter-spacing:.14em;color:var(--muted);
+}
+footer kbd{border:1px solid var(--border);border-radius:3px;padding:1px 6px;background:var(--panel2);color:var(--text);font-family:var(--mono);font-size:9px;}
+
+@media (min-width:1181px){
+  /* 群论面板加宽后：左列公式+对照表，右列文字解读 */
+  #groupBody{display:grid;grid-template-columns:minmax(320px,400px) minmax(0,1fr);gap:6px 28px;align-items:start;}
+}
+@media (max-width:1180px){
+  .layout{grid-template-columns:1fr;}
+  .left,#panelY,.right,#panelGroup{grid-column:auto;grid-row:auto;}
+  .right{align-self:start;}
+  .right>.panel:last-child{margin-top:0;}
+  .center{min-height:480px;}
+  #cvX,#cvG{height:260px;}
+  h1{font-size:14px;white-space:normal;}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="h-left">
+    <div class="radar"></div>
+    <div>
+      <h1>三根之旅 <span class="eq">x = y³ − 3y</span> 的支点与交换</h1>
+      <div class="subtitle">Branch Point · Monodromy · Riemann Surface</div>
+    </div>
+  </div>
+  <div class="h-right">
+    <div class="eq-chip">y³ − 3y − x = 0</div>
+    <div class="badge"><i></i>INTERACTIVE</div>
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- ============ LEFT : console + narrative + readout ============ -->
+  <aside class="left">
+   <div class="panel">
+    <div class="p-head"><span class="led c"></span>控制台 · Controls</div>
+
+    <div class="section">
+      <div class="sec-label">模式 · Mode</div>
+      <div class="tabs">
+        <div class="tab active" id="tabReal">① 实轴推进<small>穿过支点 x = 2</small></div>
+        <div class="tab" id="tabRealNeg">② 实轴推进<small>穿过支点 x = −2</small></div>
+        <div class="tab" id="tabLoop">③ 绕支点一周<small>绕 x = 2 · A、B 交换</small><small class="stage-tag">作用 1</small></div>
+        <div class="tab" id="tabLoopNeg">④ 绕支点一周<small>绕 x = −2 · B、C 交换</small><small class="stage-tag">作用 2</small></div>
+        <div class="tab wide" id="tabIdentity">⑤ 原地打转<small>小圈不含支点 · 恒等 e</small></div>
+      </div>
+
+      <div class="transport">
+        <button class="btn primary" id="btnPlay">▶ 播放</button>
+        <button class="btn" id="btnReset">↺ 重置</button>
+        <button class="btn" id="btnSpeed">1×</button>
+      </div>
+
+      <div class="slider-row">
+        <div class="slider-meta"><span id="progLabel">参数 x</span><b id="progVal">0.000</b></div>
+        <input type="range" id="slider" min="0" max="999" value="0">
+      </div>
+
+      <div class="slider-row" id="radiusRow" style="display:none">
+        <div class="slider-meta"><span>绕圈半径 r</span><b id="radiusVal">0.60</b></div>
+        <input type="range" id="radius" min="20" max="120" value="60">
+      </div>
+
+      <div class="slider-row" id="seqRow" style="display:none">
+        <div class="slider-meta"><span>播放序列 · 点击 ③④ 追加</span><b id="seqClear" style="cursor:pointer">清空</b></div>
+        <div class="seq-box" id="seqBox"><span class="seq-empty">（空 —— 播放时只演当前选中的作用）</span></div>
+      </div>
+    </div>
+   </div>
+
+   <div class="panel" id="panelNarr">
+     <div class="p-head p-toggle-head" data-target="narrBody">
+       <span class="led c"></span>讲解 · Narrative
+       <span class="spacer"></span><span class="toggle-btn">隐藏 ▲</span>
+     </div>
+     <div class="section" id="narrBody">
+       <div class="narrative" id="narr">
+         <span class="phase-tag" id="phaseTag">PHASE 1 · 出发</span>
+         <span id="narrText"></span>
+       </div>
+     </div>
+   </div>
+
+  </aside>
+
+  <!-- ============ CENTER : y-plane ============ -->
+  <main class="panel center" id="panelY">
+    <div class="p-head p-toggle-head" data-target="cvY">
+      <span class="led m"></span>Y-平面 · 三个根的位置与轨迹
+      <span class="spacer"></span>
+      <div class="legend">
+        <span><i style="background:var(--cyan)"></i>A</span>
+        <span><i style="background:var(--amber)"></i>B</span>
+        <span><i style="background:var(--mint)"></i>C</span>
+      </div>
+      <span class="toggle-btn">隐藏 ▲</span>
+    </div>
+    <canvas id="cvY"></canvas>
+  </main>
+
+  <!-- ============ RIGHT : x-plane + real graph + info panels ============ -->
+  <aside class="right">
+    <div class="panel" id="panelX">
+      <div class="p-head p-toggle-head" data-target="cvX">
+        <span class="led a"></span>X-平面 · 参数 x 的路径
+        <span class="spacer"></span><span class="toggle-btn">隐藏 ▲</span>
+      </div>
+      <canvas id="cvX"></canvas>
+    </div>
+    <div class="panel" id="panelG">
+      <div class="p-head p-toggle-head" data-target="cvG">
+        <span class="led r"></span>实数图像 · x = y³ − 3y（横轴 y）
+        <span class="spacer"></span><span class="toggle-btn">隐藏 ▲</span>
+      </div>
+      <canvas id="cvG"></canvas>
+    </div>
+
+    <div class="panel" id="panelRead">
+      <div class="p-head p-toggle-head" data-target="readBody">
+        <span class="led m"></span>读数 · Readout
+        <span class="spacer"></span><span class="toggle-btn">隐藏 ▲</span>
+      </div>
+      <div class="section" id="readBody">
+        <div class="readout">
+          <div class="ro-line"><span class="ro-k">x</span><span class="ro-v" id="roX">0.0000</span></div>
+          <div class="ro-line"><span class="ro-k"><span class="dot" style="background:var(--cyan)"></span>A</span><span class="ro-v" id="roA">−1.7321</span></div>
+          <div class="ro-line"><span class="ro-k"><span class="dot" style="background:var(--amber)"></span>B</span><span class="ro-v" id="roB">0.0000</span></div>
+          <div class="ro-line"><span class="ro-k"><span class="dot" style="background:var(--mint)"></span>C</span><span class="ro-v" id="roC">1.7321</span></div>
+          <div class="ro-line"><span class="ro-k">Δ = 27(4−x²)</span><span class="ro-v" id="roD">108.00</span></div>
+        </div>
+        <div class="disc-note" id="roNote">Δ &gt; 0 → <b class="pos">三个互不相同的实根</b></div>
+      </div>
+    </div>
+
+    <div class="panel verdict" id="verdict">
+      <div class="section">
+        <div class="verdict-box">
+          <div class="v-title">回到起点 · 置换结果</div>
+          <div class="v-map" id="vMap"></div>
+          <div class="v-note" id="vNote">三个根一个不少、一个不多——但连续追踪的枝条发生了交换。绕过支点一周，正是这个交换在"两张纸"之间搭了桥。</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="section">
+        <label class="check-row"><input type="checkbox" id="chkTrail" checked> 显示根的轨迹尾迹</label>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ============ BOTTOM : 群论对照（横跨左+中栏，桌面端） ============ -->
+  <div class="panel" id="panelGroup">
+    <div class="p-head p-toggle-head" data-target="groupBody">
+      <span class="led a"></span>求根公式与置换群 · S₃ / A₃
+      <span class="spacer"></span><span class="toggle-btn">隐藏 ▲</span>
+    </div>
+    <div class="section" id="groupBody">
+      <div class="g-left">
+        <div class="g-formula">y = ∛(x/2 + √Δc) + ∛(x/2 − √Δc)，Δc = x²/4 − 1</div>
+        <table class="g-table">
+          <tr><th>类型</th><th>我们的叫法</th><th>数学身份</th><th>阶</th></tr>
+          <tr><td>恒等</td><td>原地打转</td><td>e</td><td>1</td></tr>
+          <tr><td>对换 A,B</td><td>作用1（绕 x = 2）</td><td>(12)</td><td>2</td></tr>
+          <tr><td>对换 B,C</td><td>作用2（绕 x = −2）</td><td>(23)</td><td>2</td></tr>
+          <tr><td>对换 A,C</td><td>作用1+2+1</td><td>(13)</td><td>2</td></tr>
+          <tr><td>3-循环 A→C→B→A</td><td>作用1+2</td><td>(132)</td><td>3</td></tr>
+          <tr><td>3-循环 A→B→C→A</td><td>作用2+1</td><td>(123)</td><td>3</td></tr>
+        </table>
+      </div>
+      <div class="g-note">
+        <p><b>绕一个支点</b>（作用1 或 2）→ √Δc 悄悄变号，x/2 + √Δc 与 x/2 − √Δc 互换 → 两根对换 → <b>开平方</b>（判别式平方根的符号翻转）。</p>
+        <p><b>绕两个支点</b>（1∘2 或 2∘1）→ √Δc 变号两次、复原，但立方根辐角已转 ±120° → 三根循环 → <b>开立方</b>（立方根的辐角旋转）。</p>
+        <p><b>不绕</b>（原地打转）→ 所有根式不变 → 恒等 e。</p>
+        <p class="g-sum">S₃ = 恒等 + 3 个对换 + 2 个三循环；A₃ = {e, (123), (132)}。求根公式的结构 = 先开平方，再开立方。</p>
+        <div class="g-chain">
+          <div class="g-chain-title">可解群链　S₃ ⊃ A₃ ⊃ {e}</div>
+          <p><b>S₃/A₃ ≅ Z₂</b>：Z₂ 就是"奇偶二分"——A₃ 是偶置换（恒等、3-循环），三个对换是奇置换。两类正好对应 √Δc 的两个符号，即开平方那一步。</p>
+          <p><b>A₃/{e} ≅ Z₃</b>：恒等与两个三循环构成三档循环，正好对应立方根辐角的 0°、±120°，即开立方那一步。</p>
+          <p>每一级商群都是循环群，所以 S₃ 是<b>可解群</b>；卡尔达诺公式"先 √ 后 ∛"的嵌套，正是这条链的几何实现。四次方程的 S₄ 仍有这样的链（故四次可解）；五次方程的 A₅ 是单群，链到此中断——一般五次方程无根式解，伽罗瓦理论的入口就在这里。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  拖动滑块或按 <kbd>空格</kbd> 播放 · <kbd>←</kbd><kbd>→</kbd> 逐帧步进 · 点击 ③④ 把作用追加进序列，播放键按序列依次执行 —— 试试 1-1（恒等）、1-2 与 2-1（两个方向的三循环）
+</footer>
+
+<script>
+"use strict";
+/* ================================================================
+   数学核心：y³ − 3y = x 的三个根，随复参数 x 连续追踪
+   ================================================================ */
+const C = {
+  add:(a,b)=>({re:a.re+b.re, im:a.im+b.im}),
+  sub:(a,b)=>({re:a.re-b.re, im:a.im-b.im}),
+  mul:(a,b)=>({re:a.re*b.re-a.im*b.im, im:a.re*b.im+a.im*b.re}),
+  div:(a,b)=>{const d=b.re*b.re+b.im*b.im;return {re:(a.re*b.re+a.im*b.im)/d, im:(a.im*b.re-a.re*b.im)/d};},
+  scale:(a,s)=>({re:a.re*s, im:a.im*s}),
+  abs:a=>Math.hypot(a.re,a.im),
+  sqrt:a=>{const r=Math.hypot(a.re,a.im);const t=Math.atan2(a.im,a.re)/2;const s=Math.sqrt(r);
+    return {re:s*Math.cos(t), im:s*Math.sin(t)};},
+  cbrt:a=>{const r=Math.hypot(a.re,a.im);const t=Math.atan2(a.im,a.re)/3;const s=Math.cbrt(r);
+    return {re:s*Math.cos(t), im:s*Math.sin(t)};},
+};
+const R3 = Math.sqrt(3);
+const OMEGA  = {re:-0.5, im: Math.sqrt(3)/2};
+const OMEGA2 = {re:-0.5, im:-Math.sqrt(3)/2};
+
+/* Cardano 精确求解 y³ − 3y − x = 0（复数），返回 3 个根 */
+function cubicRoots(x){
+  // p = −3, q = −x；Δc = (q/2)² + (p/3)³ = x²/4 − 1
+  const x2 = C.mul(x,x);
+  const delta = C.sub(C.scale(x2,0.25), {re:1,im:0});
+  const s1 = C.add(C.scale(x,0.5), C.sqrt(delta));   // −q/2 + √Δc
+  const u  = C.cbrt(s1);
+  const uu = (Math.abs(u.re)<1e-14 && Math.abs(u.im)<1e-14) ? {re:0,im:0} : u;
+  const v  = (uu.re===0 && uu.im===0) ? {re:0,im:0} : C.div({re:1,im:0}, uu); // 保证 uv = 1
+  return [
+    C.add(u, v),
+    C.add(C.mul(OMEGA,u),  C.mul(OMEGA2,v)),
+    C.add(C.mul(OMEGA2,u), C.mul(OMEGA,v)),
+  ];
+}
+
+/* 把新算出的 3 个根按"离上一帧最近"重新贴上 A/B/C 标签（枚举 6 种排列） */
+const PERMS = [[0,1,2],[0,2,1],[1,0,2],[1,2,0],[2,0,1],[2,1,0]];
+function matchRoots(prev, roots){
+  let best=null, bestCost=Infinity;
+  for(const p of PERMS){
+    let cost=0;
+    for(let k=0;k<3;k++){
+      const d = Math.hypot(roots[p[k]].re-prev[k].re, roots[p[k]].im-prev[k].im);
+      cost += d*d;
+    }
+    if(cost<bestCost){bestCost=cost; best=p;}
+  }
+  return [roots[best[0]], roots[best[1]], roots[best[2]]];
+}
+
+/* ---------------- 路径定义 ---------------- */
+const X_MAX = 2.4;          // 实轴模式终点
+const N_REAL = 1000, N_LOOP = 1600, N_COMBO = 2400;
+
+function pathReal(t){ return {re:X_MAX*t, im:0}; }
+function pathRealNeg(t){ return {re:-X_MAX*t, im:0}; }
+function pathLoop(t, r){
+  if(t < 0.25){ const s=t/0.25; return {re:(2-r)*s, im:0}; }        // 靠近支点 +2
+  if(t < 0.75){ const s=(t-0.25)/0.5; const phi=Math.PI+2*Math.PI*s; // 绕支点一周
+    return {re:2+r*Math.cos(phi), im:r*Math.sin(phi)}; }
+  const s=(t-0.75)/0.25; return {re:(2-r)*(1-s), im:0};              // 原路返回
+}
+function pathLoopNeg(t, r){
+  if(t < 0.25){ const s=t/0.25; return {re:(-2+r)*s, im:0}; }        // 靠近支点 −2
+  if(t < 0.75){ const s=(t-0.25)/0.5; const phi=2*Math.PI*s;         // 绕支点一周
+    return {re:-2+r*Math.cos(phi), im:r*Math.sin(phi)}; }
+  const s=(t-0.75)/0.25; return {re:(-2+r)*(1-s), im:0};             // 原路返回
+}
+function pathIdentity(t){
+  const r = 0.8;                                       // 小圈，不含支点 ±2
+  if(t < 0.25){ const s=t/0.25; return {re:r*s, im:0}; }
+  if(t < 0.75){ const s=(t-0.25)/0.5; const phi=2*Math.PI*s;
+    return {re:r*Math.cos(phi), im:r*Math.sin(phi)}; }
+  const s=(t-0.75)/0.25; return {re:r*(1-s), im:0};
+}
+function loopPhase(t){
+  if(t<0.25) return "approach";
+  if(t<0.75) return "circle";
+  return "return";
+}
+
+/* 五种模式配置（组合序列由记录框动态生成；record=可记入序列） */
+const MODES = {
+  real:    {N:N_REAL,  dur:15, loop:false, record:false, path:(t,r)=>pathReal(t),      phase:t=>"real"},
+  realNeg: {N:N_REAL,  dur:15, loop:false, record:false, path:(t,r)=>pathRealNeg(t),   phase:t=>"realNeg"},
+  loop:    {N:N_LOOP,  dur:20, loop:true,  record:true,  path:(t,r)=>pathLoop(t,r),    phase:t=>loopPhase(t)},
+  loopNeg: {N:N_LOOP,  dur:20, loop:true,  record:true,  path:(t,r)=>pathLoopNeg(t,r), phase:t=>loopPhase(t)},
+  identity:{N:N_LOOP,  dur:18, loop:true,  record:false, path:(t,r)=>pathIdentity(t),  phase:t=>loopPhase(t)},
+};
+
+/* ---------------- 预计算整段轨迹 ---------------- */
+function buildFrames(mode, r){
+  const cfg = MODES[mode], N = cfg.N;
+  const frames = new Array(N);
+  let prev = [{re:-R3,im:0},{re:0,im:0},{re:R3,im:0}]; // x=0 时的 A,B,C
+  for(let i=0;i<N;i++){
+    const t = i/(N-1);
+    const x = cfg.path(t, r);
+    const roots = matchRoots(prev, cubicRoots(x));
+    frames[i] = {t, x, roots, phase: cfg.phase(t)};
+    prev = roots;
+  }
+  return frames;
+}
+
+/* ---------------- 全局状态 ---------------- */
+let mode = "real";
+let loopR = 0.6;
+let frames = buildFrames(mode, loopR);
+let idxF = 0;                 // 浮点帧号（平滑播放）
+let playing = false;
+let speed = 1;
+let showTrails = true;
+let sequence = [];            // 记录框中的阶段序列，如 ["1","2","2","1"]
+let compositeActive = false;  // 当前 frames 是否为序列合成轨迹
+let compositeSig = "";        // 已合成轨迹的签名（序列+半径）
+let compositeDur = 20;
+
+/* 把记录框中的阶段序列合成一条完整轨迹 */
+function buildComposite(seq){
+  const per = 1200, n = seq.length, N = per*n;
+  const fr = new Array(N);
+  let prev = [{re:-R3,im:0},{re:0,im:0},{re:R3,im:0}];
+  for(let k=0;k<n;k++){
+    const pf = seq[k]==="1" ? pathLoop : pathLoopNeg;
+    for(let i=0;i<per;i++){
+      const t = i/(per-1);
+      const x = pf(t, loopR);
+      const roots = matchRoots(prev, cubicRoots(x));
+      fr[k*per+i] = {t:(k*per+i)/(N-1), tSub:t, x, roots, phase:`${k+1}:${seq[k]}:${loopPhase(t)}`};
+      prev = roots;
+    }
+  }
+  frames = fr;
+  compositeActive = true;
+  compositeSig = seq.join("") + "@" + loopR;
+  compositeDur = 15*n;
+  slider.max = N-1;
+}
+
+/* ---------------- DOM ---------------- */
+const $ = id=>document.getElementById(id);
+const slider=$("slider"), btnPlay=$("btnPlay"), btnReset=$("btnReset"), btnSpeed=$("btnSpeed");
+const tabIds={real:"tabReal", realNeg:"tabRealNeg", loop:"tabLoop", loopNeg:"tabLoopNeg", identity:"tabIdentity"};
+const radiusRow=$("radiusRow"), radius=$("radius"), radiusVal=$("radiusVal");
+const seqRow=$("seqRow"), seqBox=$("seqBox"), seqClear=$("seqClear");
+const chkTrail=$("chkTrail");
+const roX=$("roX"), roA=$("roA"), roB=$("roB"), roC=$("roC"), roD=$("roD"), roNote=$("roNote");
+const narr=$("narr"), narrText=$("narrText"), phaseTag=$("phaseTag");
+const progLabel=$("progLabel"), progVal=$("progVal");
+const verdict=$("verdict"), vMap=$("vMap"), vNote=$("vNote");
+const panelY=$("panelY"), cvY=$("cvY");
+
+/* ---------------- 格式化 ---------------- */
+const MINUS = "−";
+function fnum(v, d=4){
+  let s = v.toFixed(d);
+  return s.replace("-", MINUS);
+}
+function fcplx(z, d=4){
+  const im = Math.abs(z.im);
+  if(im < 5e-5) return fnum(z.re,d);
+  const sign = z.im < 0 ? " − " : " + ";
+  return fnum(z.re,d) + sign + im.toFixed(d) + "i";
+}
+</script>
+
+<script>
+"use strict";
+/* ================================================================
+   画布渲染：Y-平面（主视图） / X-平面（路径） / 实数图像
+   ================================================================ */
+const COL = {A:"#22d3ee", B:"#fbbf24", C:"#34d399", red:"#f87171",
+  grid:"#141e33", axis:"#2b3c5f", text:"#5f7194", bright:"#d7e0ee"};
+const DPR = Math.min(window.devicePixelRatio||1, 2);
+
+function makeView(id, xr, yr){
+  const cv = $(id), ctx = cv.getContext("2d");
+  const v = {cv, ctx, xr, yr, w:0, h:0, s:1, cx:0, cy:0};
+  v.resize = ()=>{
+    const cw = cv.clientWidth, ch = cv.clientHeight;
+    if(!cw||!ch) return;
+    cv.width = cw*DPR; cv.height = ch*DPR;
+    v.w=cw; v.h=ch;
+    v.s = Math.min(cw/(xr[1]-xr[0]), ch/(yr[1]-yr[0]));
+    v.cx = cw/2 - (xr[0]+xr[1])/2*v.s;
+    v.cy = ch/2 + (yr[0]+yr[1])/2*v.s;
+  };
+  v.px = x=> v.cx + x*v.s;
+  v.py = y=> v.cy - y*v.s;
+  return v;
+}
+const vY = makeView("cvY", [-3.3,3.3], [-2.7,2.7]);
+const vX = makeView("cvX", [-2.8,2.8], [-3.3,3.3]); // 横轴 Im x，纵轴 Re x（与实数图像的纵轴 x 统一）
+const vG = makeView("cvG", [-3.2,3.2], [-3.6,3.6]); // 横轴 y，纵轴 f(y)
+
+function drawGrid(v, step=1){
+  const {ctx}=v;
+  ctx.lineWidth=1;
+  for(let gx=Math.ceil(v.xr[0]); gx<=v.xr[1]; gx+=step){
+    ctx.strokeStyle = gx===0 ? COL.axis : COL.grid;
+    ctx.beginPath(); ctx.moveTo(v.px(gx),0); ctx.lineTo(v.px(gx),v.h); ctx.stroke();
+  }
+  for(let gy=Math.ceil(v.yr[0]); gy<=v.yr[1]; gy+=step){
+    ctx.strokeStyle = gy===0 ? COL.axis : COL.grid;
+    ctx.beginPath(); ctx.moveTo(0,v.py(gy)); ctx.lineTo(v.w,v.py(gy)); ctx.stroke();
+  }
+}
+function axisLabels(v, marks, axis){
+  const {ctx}=v;
+  ctx.fillStyle=COL.text; ctx.font=`${9.5}px 'JetBrains Mono',monospace`; ctx.textAlign="center";
+  for(const m of marks){
+    if(axis==="x") ctx.fillText(m.label, v.px(m.v), v.py(0)+14);
+    else { ctx.textAlign="right"; ctx.fillText(m.label, v.px(0)-6, v.py(m.v)+3); ctx.textAlign="center"; }
+  }
+}
+function glowDot(v, x, y, color, r=6, glow=14){
+  const {ctx}=v;
+  ctx.save();
+  ctx.shadowColor=color; ctx.shadowBlur=glow;
+  ctx.fillStyle=color;
+  ctx.beginPath(); ctx.arc(v.px(x),v.py(y),r,0,7); ctx.fill();
+  ctx.restore();
+  ctx.fillStyle="rgba(255,255,255,.85)";
+  ctx.beginPath(); ctx.arc(v.px(x),v.py(y),r*0.38,0,7); ctx.fill();
+}
+function crossMark(v, x, y, color, size=7){
+  const {ctx}=v;
+  ctx.strokeStyle=color; ctx.lineWidth=2;
+  ctx.beginPath();
+  ctx.moveTo(v.px(x)-size,v.py(y)-size); ctx.lineTo(v.px(x)+size,v.py(y)+size);
+  ctx.moveTo(v.px(x)+size,v.py(y)-size); ctx.lineTo(v.px(x)-size,v.py(y)+size);
+  ctx.stroke();
+}
+
+/* ---------- Y-平面 ---------- */
+function drawY(idx, time){
+  const v=vY, {ctx}=v;
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  ctx.fillStyle="#070c16"; ctx.fillRect(0,0,v.w,v.h);
+  drawGrid(v);
+  axisLabels(v,[{v:-3,label:"−3"},{v:-1,label:"−1"},{v:1,label:"1"},{v:2,label:"2"},{v:3,label:"3"}],"x");
+  axisLabels(v,[{v:-2,label:"−2i"},{v:-1,label:"−i"},{v:1,label:"i"},{v:2,label:"2i"}],"y");
+  ctx.fillStyle=COL.text; ctx.font=`10px 'JetBrains Mono',monospace`; ctx.textAlign="left";
+  ctx.fillText("Re y →", v.w-58, v.py(0)-8);
+  ctx.fillText("Im y ↑", v.px(0)+8, 14);
+
+  // 两个相遇点：y = −1（支点 2）与 y = 1（支点 −2）
+  for(const my of [-1,1]){
+    ctx.save();
+    ctx.strokeStyle="rgba(215,224,238,.4)"; ctx.setLineDash([3,4]); ctx.lineWidth=1;
+    ctx.beginPath(); ctx.arc(v.px(my),v.py(0),10+2*Math.sin(time*2.4+my),0,7); ctx.stroke();
+    ctx.restore();
+  }
+  ctx.fillStyle="rgba(215,224,238,.55)"; ctx.font=`10px 'JetBrains Mono',monospace`;
+  ctx.textAlign="center";
+  ctx.fillText("相遇点 y = −1", v.px(-1), v.py(0)+100);
+  ctx.fillText("相遇点 y = 1", v.px(1), v.py(0)-100);
+  ctx.textAlign="left";
+
+  const fr = frames;
+  const cur = fr[idx];
+
+  // 尾迹
+  if(showTrails && idx>0){
+    for(let k=0;k<3;k++){
+      const col=[COL.A,COL.B,COL.C][k];
+      ctx.lineWidth=2; ctx.lineCap="round"; ctx.lineJoin="round";
+      let px0=v.px(fr[0].roots[k].re), py0=v.py(fr[0].roots[k].im);
+      for(let i=1;i<=idx;i++){
+        const p=fr[i].roots[k];
+        const px1=v.px(p.re), py1=v.py(p.im);
+        const jump=Math.hypot(px1-px0,py1-py0);
+        if(jump<60){
+          ctx.strokeStyle=col; ctx.globalAlpha=0.06+0.5*(i/idx);
+          ctx.beginPath(); ctx.moveTo(px0,py0); ctx.lineTo(px1,py1); ctx.stroke();
+        }
+        px0=px1; py0=py1;
+      }
+      ctx.globalAlpha=1;
+    }
+  }
+
+  // 共轭复根连线（自动识别任意一对：AB 或 BC）
+  const [a,b,c]=cur.roots;
+  const pts=[a,b,c], cols=[COL.A,COL.B,COL.C], names=["A","B","C"];
+  ctx.save(); ctx.strokeStyle="rgba(215,224,238,.25)"; ctx.setLineDash([2,4]); ctx.lineWidth=1;
+  for(let i=0;i<3;i++) for(let j=i+1;j<3;j++){
+    const p=pts[i], q=pts[j];
+    if(Math.abs(p.im)>1e-3 && Math.abs(p.re-q.re)<1e-3 && Math.abs(p.im+q.im)<1e-3){
+      ctx.beginPath(); ctx.moveTo(v.px(p.re),v.py(p.im)); ctx.lineTo(v.px(q.re),v.py(q.im)); ctx.stroke();
+    }
+  }
+  ctx.restore();
+
+  // 当前根
+  const offs=[[12,-12],[12,14],[-16,-12]];
+  for(let k=0;k<3;k++){
+    glowDot(v, pts[k].re, pts[k].im, cols[k], 6.5);
+    ctx.fillStyle=cols[k]; ctx.font=`bold 12px 'JetBrains Mono',monospace`; ctx.textAlign="left";
+    ctx.fillText(names[k], v.px(pts[k].re)+offs[k][0], v.py(pts[k].im)+offs[k][1]);
+  }
+}
+
+/* ---------- X-平面（纵轴 Re x，横轴 Im x） ---------- */
+function drawX(idx, time){
+  const v=vX, {ctx}=v;
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  ctx.fillStyle="#070c16"; ctx.fillRect(0,0,v.w,v.h);
+  drawGrid(v);
+  axisLabels(v,[{v:-2,label:"−2i"},{v:-1,label:"−i"},{v:1,label:"i"},{v:2,label:"2i"}],"x");
+  axisLabels(v,[{v:-2,label:"−2"},{v:2,label:"2"}],"y");
+  ctx.fillStyle=COL.text; ctx.font=`10px 'JetBrains Mono',monospace`; ctx.textAlign="left";
+  ctx.fillText("Im x →", v.w-58, v.py(0)-8);
+  ctx.textAlign="right"; ctx.fillText("Re x ↑", v.px(0)-8, 14); ctx.textAlign="left";
+
+  // 实轴强调（Im x = 0 的竖线）
+  ctx.strokeStyle="rgba(251,191,36,.28)"; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(v.px(0),0); ctx.lineTo(v.px(0),v.h); ctx.stroke();
+
+  // 支点 ±2（脉冲）
+  for(const bx of [-2,2]){
+    crossMark(v,0,bx,COL.red,6);
+    ctx.save();
+    ctx.strokeStyle=`rgba(248,113,113,${0.5-0.35*Math.abs(Math.sin(time*2+bx))})`;
+    ctx.lineWidth=1;
+    ctx.beginPath(); ctx.arc(v.px(0),v.py(bx),9+4*Math.abs(Math.sin(time*2+bx)),0,7); ctx.stroke();
+    ctx.restore();
+  }
+  ctx.fillStyle=COL.red; ctx.font=`10px 'JetBrains Mono',monospace`;
+  ctx.fillText("支点 x = 2", v.px(0)+12, v.py(2)-8);
+  ctx.fillText("支点 x = −2", v.px(0)+12, v.py(-2)+18);
+
+  // 完整路径（淡） + 已走部分（亮）
+  const N=frames.length;
+  ctx.lineWidth=1.5;
+  ctx.strokeStyle="rgba(95,113,148,.5)";
+  ctx.beginPath();
+  for(let i=0;i<N;i++){const p=frames[i].x; i?ctx.lineTo(v.px(p.im),v.py(p.re)):ctx.moveTo(v.px(p.im),v.py(p.re));}
+  ctx.stroke();
+  if(idx>0){
+    ctx.strokeStyle=COL.cyan; ctx.lineWidth=2;
+    ctx.save(); ctx.shadowColor=COL.cyan; ctx.shadowBlur=6;
+    ctx.beginPath();
+    for(let i=0;i<=idx;i++){const p=frames[i].x; i?ctx.lineTo(v.px(p.im),v.py(p.re)):ctx.moveTo(v.px(p.im),v.py(p.re));}
+    ctx.stroke(); ctx.restore();
+  }
+
+  // 当前 x
+  const x=frames[idx].x;
+  glowDot(v,x.im,x.re,"#ffffff",5.5,12);
+  ctx.fillStyle="#fff"; ctx.font=`bold 11px 'JetBrains Mono',monospace`;
+  ctx.fillText("x", v.px(x.im)+10, v.py(x.re)-8);
+}
+
+/* ---------- 实数图像 ---------- */
+function drawG(idx){
+  const v=vG, {ctx}=v;
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  ctx.fillStyle="#070c16"; ctx.fillRect(0,0,v.w,v.h);
+  drawGrid(v);
+  axisLabels(v,[{v:-2,label:"−2"},{v:-1,label:"−1"},{v:1,label:"1"},{v:2,label:"2"}],"x");
+  axisLabels(v,[{v:-2,label:"−2"},{v:2,label:"2"}],"y");
+  ctx.fillStyle=COL.text; ctx.font=`10px 'JetBrains Mono',monospace`; ctx.textAlign="left";
+  ctx.fillText("y →", v.w-30, v.py(0)-8);
+  ctx.fillText("x = f(y) ↑", v.px(0)+8, 14);
+  ctx.fillStyle="rgba(95,113,148,.8)";
+  ctx.fillText("横轴为 y，纵轴为 x", 12, 14);
+
+  // 曲线 f(y)=y³−3y
+  ctx.strokeStyle="#7dd3fc"; ctx.lineWidth=2; ctx.beginPath();
+  let started=false;
+  for(let y=-3.2; y<=3.2; y+=0.01){
+    const f=y*y*y-3*y;
+    if(f<v.yr[0]||f>v.yr[1]){started=false;continue;}
+    const X=v.px(y), Y=v.py(f);
+    started?ctx.lineTo(X,Y):ctx.moveTo(X,Y); started=true;
+  }
+  ctx.stroke();
+
+  // 极大值点 (−1, 2) 与极小值点 (1, −2) —— 两个支点的来源
+  glowDot(v,-1,2,COL.red,4.5,10);
+  glowDot(v,1,-2,COL.red,4.5,10);
+  ctx.fillStyle=COL.red; ctx.font=`10px 'JetBrains Mono',monospace`;
+  ctx.fillText("极大值 (−1, 2)", v.px(-1)+10, v.py(2)-8);
+  ctx.fillText("极小值 (1, −2)", v.px(1)+10, v.py(-2)+16);
+
+  const cur=frames[idx], x=cur.x;
+  const xre=Math.max(v.yr[0],Math.min(v.yr[1],x.re));
+  const complex = Math.abs(x.im)>1e-3;
+
+  // 水平线 height = Re(x)
+  ctx.save();
+  ctx.strokeStyle= complex ? "rgba(251,191,36,.35)" : COL.amber;
+  ctx.setLineDash(complex?[4,5]:[]); ctx.lineWidth=1.6;
+  ctx.beginPath(); ctx.moveTo(0,v.py(xre)); ctx.lineTo(v.w,v.py(xre)); ctx.stroke();
+  ctx.restore();
+  ctx.fillStyle=COL.amber; ctx.font=`10px 'JetBrains Mono',monospace`; ctx.textAlign="right";
+  ctx.fillText(complex?`Re(x) = ${fnum(x.re,2)}（x 为复数）`:`x = ${fnum(x.re,2)}`, v.w-8, v.py(xre)-6);
+  ctx.textAlign="left";
+
+  // 实根交点
+  const names=["A","B","C"], cols=[COL.A,COL.B,COL.C];
+  let nReal=0;
+  cur.roots.forEach((r,k)=>{
+    if(Math.abs(r.im)<1e-3 && r.re>=v.xr[0] && r.re<=v.xr[1]){
+      glowDot(v,r.re,xre,cols[k],5.5,10);
+      ctx.fillStyle=cols[k]; ctx.font=`bold 11px 'JetBrains Mono',monospace`;
+      ctx.fillText(names[k], v.px(r.re)+9, v.py(xre)-7);
+      nReal++;
+    }
+  });
+  if(!complex && nReal<3){
+    ctx.fillStyle="rgba(248,113,113,.85)"; ctx.font=`10px 'JetBrains Mono',monospace`;
+    ctx.fillText(`实数交点只剩 ${nReal} 个 —— 另外两个根在复平面里`, 12, v.h-12);
+  }
+}
+</script>
+
+<script>
+"use strict";
+/* ================================================================
+   讲解文案 / 读数 / 交互 / 主循环
+   ================================================================ */
+function narrativeFor(idx){
+  const fr=frames[idx], N=frames.length, last=idx>=N-1;
+  // 序列合成播放（记录框中的阶段序列）
+  if(compositeActive){
+    const parts = fr.phase.split(":");
+    const k = parts[0], stage = parts[1], sub = parts[2];
+    const total = sequence.length;
+    const bp = stage==="1" ? "2" : "−2";
+    if(last)            return {tag:"全部阶段完成 · 回到 x = 0", cls:"done",
+      text:"序列执行完毕：三个根仍是 −√3、0、√3，一个不少——但枝条经历了多次交换。最终置换见下方判决：恒等、对换、还是三循环？"};
+    if(sub==="approach") return {tag:`第 ${k}/${total} 段 · 作用${stage} · 靠近支点 x = ${bp}`, cls:"",
+      text:"沿实轴靠近支点，在距离 r 处停下。三个根仍是实数，即将相遇的两支已经挨得很近。"};
+    if(sub==="circle"){
+      const s=(fr.tSub-0.25)/0.5, th=2*Math.PI*s;
+      return {tag:`第 ${k}/${total} 段 · 作用${stage} · 绕支点 x = ${bp}`, cls:"warn",
+        text:`绕 x = ${bp} 转圈：辐角已增加 ${th.toFixed(2)} rad（${Math.round(s*100)}%）。相遇的两支正在悄悄交换位置。`};
+    }
+    return {tag:`第 ${k}/${total} 段 · 作用${stage} · 原路返回`, cls:"",
+      text: (+k<total) ? "沿原路返回 x = 0，稍作停留，即将进入下一段。" : "沿原路返回 x = 0，最终置换即将尘埃落定。"};
+  }
+  if(mode==="real"){
+    const x=fr.x.re;
+    if(last)          return {tag:"PHASE 4 · 穿过之后", cls:"warn",
+      text:"x 已经越过 2：实数图像上只剩一个交点。但转到 Y-平面看——A、B 并没有消失，它们离开实轴，成为一对关于实轴对称的共轭复根。"};
+    if(x<1.55)        return {tag:"PHASE 1 · 沿实轴向右", cls:"",
+      text:"x 从 0 增大：A 从 −√3 ≈ −1.732 出发向右爬升，B 从 0 出发向左爬升，二者相互靠近；C 则稳步走向 2。"};
+    if(x<1.96)        return {tag:"PHASE 2 · 逼近支点", cls:"",
+      text:"水平线越来越接近曲线的极大值 2。A 与 B 加速靠近 y = −1 —— 在实数世界里，它们即将“无路可走”。"};
+    if(x<=2.02)       return {tag:"PHASE 3 · 相遇", cls:"warn",
+      text:"x = 2：A 与 B 在 y = −1 相遇！方程变成 (y − 2)(y + 1)² = 0，出现二重根。判别式 Δ = 0。"};
+    return {tag:"PHASE 4 · 穿过之后", cls:"warn",
+      text:"x > 2：水平线越过了极大值，两个实根“消失”——其实只是离开实轴，成为一对共轭复根。看 Y-平面：A、B 一上一下。"};
+  }
+  if(mode==="realNeg"){
+    const x=fr.x.re;
+    if(last)          return {tag:"PHASE 4 · 穿过之后", cls:"warn",
+      text:"x 已经越过 −2：实数图像上只剩一个交点。但转到 Y-平面看——B、C 并没有消失，它们离开实轴，成为一对关于实轴对称的共轭复根。"};
+    if(x>-1.55)       return {tag:"PHASE 1 · 沿实轴向左", cls:"",
+      text:"x 从 0 减小：B 从 0 出发向右下行，C 从 √3 ≈ 1.732 出发向左下行，二者相互靠近；A 则稳步走向 −2。"};
+    if(x>-1.96)       return {tag:"PHASE 2 · 逼近支点", cls:"",
+      text:"水平线越来越接近曲线的极小值 −2。B 与 C 加速靠近 y = 1 —— 在实数世界里，它们即将“无路可走”。"};
+    if(x>=-2.02)      return {tag:"PHASE 3 · 相遇", cls:"warn",
+      text:"x = −2：B 与 C 在 y = 1 相遇！方程变成 (y + 2)(y − 1)² = 0，出现二重根。判别式 Δ = 0。"};
+    return {tag:"PHASE 4 · 穿过之后", cls:"warn",
+      text:"x < −2：水平线越过了极小值，两个实根“消失”——其实只是离开实轴，成为一对共轭复根。看 Y-平面：B、C 一上一下。"};
+  }
+  if(mode==="loop"){
+    if(last)          return {tag:"终点 · 回到 x = 0", cls:"done",
+      text:"回到出发点：三个根仍然是 −√3、0、√3，一个不少。但注意标签——从 A 出发的枝条回到了 B 的位置，从 B 出发的回到了 A！"};
+    if(fr.phase==="approach") return {tag:"第一阶段 · 靠近支点", cls:"",
+      text:"从 x = 0 沿实轴靠近支点 x = 2，在距离 r 处停下。三个根仍是实数，A、B 已经挨得很近。"};
+    if(fr.phase==="circle"){
+      const s=(fr.t-0.25)/0.5, th=2*Math.PI*s;
+      return {tag:"第二阶段 · 绕支点一周", cls:"warn",
+        text:`绕 x = 2 转圈：x − 2 的辐角已增加 ${th.toFixed(2)} rad（${Math.round(s*100)}%）。局部坐标 u = √(x−2) 只转一半 —— A、B 两支正在悄悄交换位置。`};
+    }
+    return {tag:"第三阶段 · 原路返回", cls:"",
+      text:"沿原路返回 x = 0。路径完全重合，但 A、B 已经与出发时互换——交换在绕圈时就已经完成了。"};
+  }
+  if(mode==="loopNeg"){
+    if(last)          return {tag:"终点 · 回到 x = 0", cls:"done",
+      text:"回到出发点：三个根仍然是 −√3、0、√3，一个不少。但注意标签——从 B 出发的枝条回到了 C 的位置，从 C 出发的回到了 B！"};
+    if(fr.phase==="approach") return {tag:"第一阶段 · 靠近支点", cls:"",
+      text:"从 x = 0 沿实轴靠近支点 x = −2，在距离 r 处停下。三个根仍是实数，B、C 已经挨得很近。"};
+    if(fr.phase==="circle"){
+      const s=(fr.t-0.25)/0.5, th=2*Math.PI*s;
+      return {tag:"第二阶段 · 绕支点一周", cls:"warn",
+        text:`绕 x = −2 转圈：x + 2 的辐角已增加 ${th.toFixed(2)} rad（${Math.round(s*100)}%）。局部坐标 u = √(x+2) 只转一半 —— B、C 两支正在悄悄交换位置。`};
+    }
+    return {tag:"第三阶段 · 原路返回", cls:"",
+      text:"沿原路返回 x = 0。路径完全重合，但 B、C 已经与出发时互换——交换在绕圈时就已经完成了。"};
+  }
+  if(mode==="identity"){
+    if(last)          return {tag:"终点 · 回到 x = 0", cls:"done",
+      text:"小圈转完：A、B、C 各自画了一个小小的闭环，精确回到自己——没有支点被围住，什么置换也没有发生。这就是恒等映射 e。"};
+    if(fr.phase==="approach") return {tag:"第一段 · 出发", cls:"",
+      text:"x 从 0 走到 0.8：三根微微移动，但都乖乖待在实轴上。"};
+    if(fr.phase==="circle"){
+      const s=(fr.t-0.25)/0.5;
+      return {tag:"第二段 · 原地打转", cls:"",
+        text:`绕 x = 0 转圈（${Math.round(s*100)}%）：这个小圈不含任何支点 —— ±2 都在圈外。三根各自画出闭合小环，互不相撞。`};
+    }
+    return {tag:"第三段 · 返回", cls:"",
+      text:"沿原路返回 x = 0。三根也将精确归位。"};
+  }
+}
+
+function updateReadout(idx){
+  const fr=frames[idx];
+  roX.textContent = fcplx(fr.x);
+  roA.textContent = fcplx(fr.roots[0]);
+  roB.textContent = fcplx(fr.roots[1]);
+  roC.textContent = fcplx(fr.roots[2]);
+  // Δ = 27(4 − x²)
+  const d = C.scale(C.sub({re:4,im:0}, C.mul(fr.x,fr.x)), 27);
+  roD.textContent = fcplx(d,2);
+  if(Math.abs(d.im)>1e-6){
+    roNote.innerHTML = "x 为复数，Δ 亦为复数 —— 三个根互不相同";
+  } else if(d.re>1e-6){
+    roNote.innerHTML = "Δ &gt; 0 → <b class='pos'>三个互不相同的实根</b>";
+  } else if(d.re<-1e-6){
+    roNote.innerHTML = "Δ &lt; 0 → <b class='neg'>一个实根 + 一对共轭复根</b>";
+  } else {
+    roNote.innerHTML = "Δ = 0 → <b class='zero'>出现重根（支点）</b>";
+  }
+  const n=narrativeFor(idx);
+  phaseTag.textContent=n.tag; narrText.textContent=n.text;
+  narr.className="narrative "+n.cls;
+  progVal.textContent = MODES[mode].loop ? `${Math.round(fr.t*100)}%` : fnum(fr.x.re,3);
+}
+
+function updateVerdict(idx){
+  if(!MODES[mode].loop || idx<frames.length-1){ verdict.classList.remove("show"); return; }
+  // 计算最终标签相对于初始根的置换
+  const init=[{re:-R3,im:0},{re:0,im:0},{re:R3,im:0}], names=["A","B","C"];
+  const fin=frames[frames.length-1].roots;
+  const map=fin.map(f=>{
+    let bi=0,bd=1e9;
+    init.forEach((p,i)=>{const d=Math.hypot(f.re-p.re,f.im-p.im); if(d<bd){bd=d;bi=i;}});
+    return names[bi];
+  });
+  vMap.innerHTML = `<span class="A">A</span> ↦ <span class="${map[0]}">${map[0]}</span>　　`+
+                   `<span class="B">B</span> ↦ <span class="${map[1]}">${map[1]}</span>　　`+
+                   `<span class="C">C</span> ↦ <span class="${map[2]}">${map[2]}</span>`;
+  // 按置换类型分类讲解（恒等 / 对换 / 三循环 → A₃）
+  const key = map.join("");
+  let note;
+  if(mode==="identity" && !compositeActive){
+    note = "恒等映射 e：小圈里没有支点，三根各自兜了个小圈回到自己——什么置换也没有发生。e 与两个三循环一起构成交错群 A₃。";
+  } else if(key==="ABC"){
+    note = "恒等映射 e：三个根各归各位。e 与两个方向的三循环一起，构成交错群 A₃ —— 试试序列 1-1、1-2-2-1 都能回到恒等。";
+  } else if(key==="CAB"){
+    note = "三循环 A→C→B→A（作用1+作用2）。它与恒等映射 e、反方向的三循环一起，构成交错群 A₃。";
+  } else if(key==="BCA"){
+    note = "三循环 A→B→C→A（作用2+作用1）。它与恒等映射 e、反方向的三循环一起，构成交错群 A₃。";
+  } else {
+    const fixed = names.filter((n,i)=>map[i]===n);
+    note = `对换：${fixed[0]} 不动，另两根交换。对换不在 A₃ 中——S₃ 里共有三个这样的对换，分别来自绕单个支点的路径。`;
+  }
+  vNote.textContent = note;
+  verdict.classList.add("show");
+}
+
+/* ---------------- 渲染主循环 ---------------- */
+let lastTs=0;
+function tick(ts){
+  requestAnimationFrame(tick);
+  const dt=Math.min((ts-lastTs)/1000,0.1); lastTs=ts;
+  const N=frames.length;
+  if(playing){
+    const dur = compositeActive ? compositeDur : MODES[mode].dur;
+    idxF += dt*(N-1)/dur*speed;
+    if(idxF>=N-1){ idxF=N-1; setPlaying(false); }
+    slider.value=Math.round(idxF);
+  }
+  const idx=Math.max(0,Math.min(N-1,Math.round(idxF)));
+  drawY(idx, ts/1000);
+  drawX(idx, ts/1000);
+  drawG(idx);
+  updateReadout(idx);
+  updateVerdict(idx);
+}
+
+/* ---------------- 交互 ---------------- */
+function setPlaying(p){
+  playing=p;
+  btnPlay.textContent = p ? "⏸ 暂停" : "▶ 播放";
+}
+btnPlay.addEventListener("click",()=>{
+  if(!playing){
+    // 选中 ③/④ 且记录框有序列 → 按序列合成播放
+    if(MODES[mode].record && sequence.length>0){
+      const sig = sequence.join("")+"@"+loopR;
+      if(!compositeActive || compositeSig!==sig){
+        buildComposite(sequence);
+        idxF=0;
+      }
+    }
+    if(idxF>=frames.length-1) idxF=0; // 播完再按 = 重播
+  }
+  setPlaying(!playing);
+});
+btnReset.addEventListener("click",()=>{ setPlaying(false); idxF=0; slider.value=0; });
+const SPEEDS=[0.5,1,2,4];
+btnSpeed.addEventListener("click",()=>{
+  const i=(SPEEDS.indexOf(speed)+1)%SPEEDS.length;
+  speed=SPEEDS[i]; btnSpeed.textContent=speed+"×";
+});
+slider.addEventListener("input",()=>{ setPlaying(false); idxF=+slider.value; });
+chkTrail.addEventListener("change",()=>{ showTrails=chkTrail.checked; });
+
+/* 通用面板折叠：三个图像面板 + 讲解 + 读数 */
+document.querySelectorAll(".p-toggle-head").forEach(head=>{
+  head.addEventListener("click",()=>{
+    const body=$(head.dataset.target);
+    const btn=head.querySelector(".toggle-btn");
+    const panel=head.closest(".panel");
+    const hidden=!panel.classList.contains("collapsed");
+    panel.classList.toggle("collapsed",hidden);
+    body.style.display = hidden ? "none" : "";
+    btn.textContent = hidden ? "显示 ▼" : "隐藏 ▲";
+    resizeAll();
+  });
+});
+radius.addEventListener("input",()=>{
+  loopR=(+radius.value)/100; radiusVal.textContent=loopR.toFixed(2);
+  if(compositeActive && sequence.length>0){ buildComposite(sequence); idxF=0; }
+  else if(MODES[mode].loop){ frames=buildFrames(mode,loopR); slider.max=frames.length-1; idxF=0; }
+});
+
+/* 记录框：追加 / 清空 / 显示 */
+function updateSeqUI(){
+  if(sequence.length===0){
+    seqBox.innerHTML='<span class="seq-empty">（空 —— 播放时只演当前选中的作用）</span>';
+  } else {
+    seqBox.innerHTML = sequence.map(s=>`<span class="seq-chip s${s}">作用${s}</span>`)
+                               .join('<span class="seq-arrow">→</span>');
+  }
+}
+seqClear.addEventListener("click",()=>{
+  sequence=[]; updateSeqUI();
+  compositeActive=false; compositeSig="";
+  frames=buildFrames(mode,loopR); slider.max=frames.length-1; idxF=0; slider.value=0;
+});
+
+function setMode(m, record=true){
+  // 点击 ③④ 时把作用追加进记录框
+  if(record && MODES[m].record){
+    if(sequence.length<12){ sequence.push(m==="loop"?"1":"2"); updateSeqUI(); }
+  }
+  mode=m; setPlaying(false); idxF=0;
+  compositeActive=false; compositeSig="";
+  for(const k in tabIds) $(tabIds[k]).classList.toggle("active",k===m);
+  radiusRow.style.display = MODES[m].record ? "" : "none";
+  seqRow.style.display = MODES[m].record ? "" : "none";
+  progLabel.textContent = MODES[m].loop ? "路径进度" : "参数 x";
+  frames=buildFrames(m,loopR);
+  slider.max=frames.length-1; slider.value=0;
+  updateReadout(0);   // 先更新讲解文字再量高度
+  resizeAll();
+}
+for(const k in tabIds) $(tabIds[k]).addEventListener("click",()=>setMode(k));
+window.addEventListener("keydown",e=>{
+  if(e.code==="Space"){ e.preventDefault(); btnPlay.click(); }
+  if(e.code==="ArrowRight"){ setPlaying(false); idxF=Math.min(frames.length-1,idxF+1); slider.value=Math.round(idxF); }
+  if(e.code==="ArrowLeft"){ setPlaying(false); idxF=Math.max(0,idxF-1); slider.value=Math.round(idxF); }
+});
+
+/* ---------------- 尺寸自适应 ---------------- */
+function resizeAll(){
+  // Y-平面底边与左栏（控制台+讲解）底边精确对齐
+  const leftEl=document.querySelector(".left");
+  if(window.innerWidth>1180){
+    const leftBottom=leftEl.getBoundingClientRect().bottom;
+    const headBottom=panelY.querySelector(".p-head").getBoundingClientRect().bottom;
+    if(leftBottom>0) cvY.style.height=Math.max(260,Math.round(leftBottom-headBottom-1))+"px"; // −1: 面板下边框
+  } else {
+    cvY.style.height="480px";
+  }
+  vY.resize(); vX.resize(); vG.resize();
+}
+window.addEventListener("resize",resizeAll);
+updateReadout(0);   // 先填充讲解文字，再量高度，确保 Y-平面底边与讲解卡片底边精确对齐
+resizeAll();
+slider.max=frames.length-1;
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>
