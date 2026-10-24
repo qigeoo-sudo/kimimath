@@ -18,16 +18,33 @@
         body { overflow: hidden; background: #0a0a0a; font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; }
         #canvas-container { width: 100vw; height: 100vh; position: relative; }
         .title-bar { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); background: rgba(10, 10, 20, 0.85); border: 1px solid rgba(100, 100, 150, 0.3); border-radius: 10px; padding: 6px 18px; color: #e0e0e0; backdrop-filter: blur(8px); z-index: 100; text-align: center; pointer-events: none; font-size: 16px; font-weight: bold; letter-spacing: 0.5px; white-space: nowrap; }
+        .title-sub { font-size: 13px; font-weight: normal; color: #9db4d0; letter-spacing: 0.3px; margin-top: 2px; }
         .controls-panel { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); background: rgba(10, 10, 20, 0.92); border: 1px solid rgba(100, 100, 150, 0.4); border-radius: 12px; padding: 8px 14px; display: flex; flex-direction: column; align-items: center; gap: 8px; z-index: 1000; backdrop-filter: blur(10px); box-shadow: 0 4px 20px rgba(0,0,0,0.6); width: auto; max-width: 98vw; overflow-x: auto; }
         .controls-row { display: flex; gap: 12px; align-items: center; flex-wrap: nowrap; justify-content: center; }
         button { background: transparent; border: none; color: white; padding: 4px 8px; cursor: pointer; font-size: 18px; font-weight: 600; transition: all 0.2s; min-width: 30px; text-align: center; line-height: 1.2; }
         button:hover { transform: scale(1.1); }
-        .btn-p { color: #666; font-size: 16px; padding: 2px 8px; min-width: 28px; user-select: none; touch-action: manipulation; transition: all 0.2s; }
+        .btn-p { color: #666; font-size: 12px; padding: 2px 8px; min-width: 28px; user-select: none; touch-action: manipulation; transition: all 0.2s; }
         .btn-p.active { color: #ffd700; text-shadow: 0 0 10px rgba(255,215,0,0.6); }
         #btn-play { color: #00bfff; }
         #btn-reset { color: white; }
         .btn-micro { color: #aaa; font-size: 16px; padding: 2px 6px; min-width: 24px; user-select: none; touch-action: manipulation; }
-        #btn-refresh { color: #888888; font-size: 16px; padding: 2px 8px; min-width: 28px; user-select: none; touch-action: manipulation; transition: all 0.2s; }
+        #btn-play:disabled { color: #444444; cursor: not-allowed; opacity: 0.5; }
+        .btn-gplay { color: #4dd0c4; font-size: 14px; padding: 2px 5px; min-width: 26px; }
+        .btn-gplay.on { color: #a7fff3; text-shadow: 0 0 8px rgba(77,208,196,0.7); }
+        .btn-gplay:disabled { color: #444444; cursor: not-allowed; opacity: 0.5; text-shadow: none; }
+        button:disabled:hover { transform: none; }
+        .gplay-group { display: inline-flex; gap: 2px; align-items: center; border-left: 1px solid rgba(255,255,255,0.14); padding-left: 8px; margin-left: -4px; }
+        .ctl-sep { width: 1px; height: 18px; background: rgba(255,255,255,0.12); flex: none; }
+        #gamma-slider { width: 180px; }
+        #alpha-slider { width: 70px; }
+        #p-slider { width: 90px; }
+        #speed-slider { width: 70px; }
+        .op-p { color: #ffd700; font-weight: 600; }
+        .op-h { color: #ff69b4; font-weight: 600; }
+        .op-play { color: #00bfff; font-weight: 600; }
+        .op-g { color: #4dd0c4; font-weight: 600; }
+        .op-s { color: #88aaff; font-weight: 600; }
+        #btn-refresh { color: #888888; font-size: 12px; padding: 2px 8px; min-width: 28px; user-select: none; touch-action: manipulation; transition: all 0.2s; }
         #btn-refresh.active { color: #ff69b4; text-shadow: 0 0 8px rgba(255,105,180,0.4); }
         #btn-refresh:disabled { color: #444444; cursor: not-allowed; opacity: 0.5; }
         #btn-reset { color: #888888; font-size: 16px; padding: 2px 8px; min-width: 28px; user-select: none; touch-action: manipulation; transition: all 0.2s; }
@@ -57,6 +74,21 @@
         .info-toggle { position: absolute; top: 10px; right: 10px; z-index: 200; background: rgba(10, 10, 20, 0.85); border: 1px solid rgba(100, 100, 150, 0.4); border-radius: 10px; padding: 6px 10px; font-size: 18px; cursor: pointer; color: #e0e0e0; backdrop-filter: blur(8px); transition: all 0.2s; user-select: none; }
         .info-toggle:hover { background: rgba(30, 30, 60, 0.9); border-color: rgba(100, 100, 200, 0.6); transform: scale(1.05); }
         .info-toggle:active { transform: scale(0.95); }
+        .theorem-panel { top: 48px; left: 10px; transform: none; width: 302px; min-width: 0; max-width: 302px; max-height: calc(100vh - 170px); overflow-y: auto; font-size: 13px; line-height: 1.75; }
+        .theorem-panel::-webkit-scrollbar { width: 6px; }
+        .theorem-panel::-webkit-scrollbar-thumb { background: rgba(120,120,160,0.4); border-radius: 3px; }
+        .th-title { color: #ffd700; margin-top: 6px; }
+        .th-title:first-child { margin-top: 0; }
+        .th-row { color: #d0d0e0; }
+        .acc-sec { border-bottom: 1px solid rgba(255,255,255,0.08); padding: 2px 0; }
+        .acc-sec:last-child { border-bottom: none; }
+        .acc-head { cursor: pointer; color: #ffd700; font-weight: 600; display: flex; justify-content: space-between; align-items: center; gap: 8px; user-select: none; padding: 3px 0; }
+        .acc-head:hover { color: #ffe44d; }
+        .acc-arrow { font-size: 10px; color: #999; transition: transform 0.2s; flex: none; }
+        .acc-sec.open .acc-arrow { transform: rotate(180deg); }
+        .acc-body { display: none; padding: 2px 0 6px; }
+        .acc-sec.open .acc-body { display: block; }
+        .acc-fig { width: 100%; height: auto; display: block; margin: 6px 0; background: rgba(255,255,255,0.03); border-radius: 8px; }
         #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #88aaff; font-size: 24px; z-index: 2000; }
     </style>
     <script type="importmap">
@@ -67,42 +99,236 @@
     <div id="loading">加载中...</div>
     <div id="canvas-container"></div>
     <button id="info-toggle" class="info-toggle" title="显示/隐藏数值面板">📊</button>
-    <div class="title-bar">Dandelin Spheres &amp; Conics</div>
+    <button id="btn-theorem" class="info-toggle" style="left:10px;right:auto" title="Theorems and proofs">ⓘ</button>
+    <div class="title-bar">Dandelin Spheres &amp; Conics<div class="title-sub">and apply for visual proof from Pappus Theorem to Pascal Theorem</div></div>
     <div class="info-panel" id="info-panel">
         <div class="info-row red-group">PF₁ = <span class="info-val" id="val-pf1">--</span> &nbsp; PT₁ = <span class="info-val" id="val-pt1">--</span></div>
         <div class="info-row blue-group">PF₂ = <span class="info-val" id="val-pf2">--</span> &nbsp; PT₂ = <span class="info-val" id="val-pt2">--</span></div>
         <div class="info-row" id="info-sum" style="margin-top:4px; padding-top:6px; border-top:1px solid rgba(255,255,255,0.1);">PF₁ + PF₂ = <span class="info-val" id="val-diff">--</span> <span class="info-const">定值</span></div>
         <div class="info-row" id="info-tt">T₁T₂ = <span class="info-val" id="val-tt">--</span> <span class="info-const">定值</span></div>
     </div>
+    <div class="info-panel theorem-panel" id="theorem-panel">
+        <div class="acc-sec open">
+            <div class="acc-head">Eccentricity: e = cosγ / cosα<span class="acc-arrow">▾</span></div>
+            <div class="acc-body">
+                <svg class="acc-fig" viewBox="0 0 264 250">
+                    <line x1="132" y1="6" x2="132" y2="226" stroke="#777" stroke-width="1"/>
+                    <line x1="132" y1="18" x2="35" y2="226" stroke="#888" stroke-width="1.5"/>
+                    <line x1="132" y1="18" x2="229" y2="226" stroke="#888" stroke-width="1.5"/>
+                    <circle cx="132" cy="98.6" r="34" stroke="#ff6666" fill="rgba(255,102,102,0.12)" stroke-width="1.5"/>
+                    <line x1="38.8" y1="84.2" x2="215" y2="84.2" stroke="#777" stroke-width="1"/>
+                    <line x1="15" y1="70" x2="262" y2="213" stroke="#ccc" stroke-width="1.5"/>
+                    <line x1="132" y1="98.6" x2="114.9" y2="128.15" stroke="#ff6666" stroke-width="1" stroke-dasharray="3,3"/>
+                    <line x1="208.6" y1="182.2" x2="114.9" y2="128.15" stroke="#ffd700" stroke-width="3" opacity="0.85"/>
+                    <line x1="208.6" y1="182.2" x2="162.9" y2="84.2" stroke="#7ee787" stroke-width="3" opacity="0.85"/>
+                    <line x1="208.6" y1="182.2" x2="208.6" y2="84.2" stroke="#999" stroke-width="1" stroke-dasharray="4,3"/>
+                    <path d="M200.6,84.2 L200.6,92.2 L208.6,92.2" stroke="#999" fill="none"/>
+                    <path d="M120.1,131.15 L123.1,125.9 L117.9,122.9" stroke="#ff6666" fill="none"/>
+                    <path d="M132,42 A24,24 0 0 0 142.1,39.8" stroke="#999" fill="none"/>
+                    <path d="M132,112 A26,26 0 0 0 109.5,125" stroke="#999" fill="none"/>
+                    <line x1="160.5" y1="157.4" x2="163" y2="153" stroke="#ffd700" stroke-width="1.5"/>
+                    <line x1="183.5" y1="134.3" x2="188" y2="132.1" stroke="#7ee787" stroke-width="1.5"/>
+                    <circle cx="114.9" cy="128.15" r="3" fill="#ff6666"/>
+                    <circle cx="162.9" cy="84.2" r="3" fill="#ffaa66"/>
+                    <circle cx="38.8" cy="84.2" r="3" fill="#4dd0c4"/>
+                    <circle cx="208.6" cy="182.2" r="3.5" fill="#7ee787"/>
+                    <circle cx="208.6" cy="84.2" r="2.5" fill="#999"/>
+                    <circle cx="132" cy="98.6" r="2" fill="#ff6666"/>
+                    <text x="105" y="143" fill="#ddd" font-size="11">F</text>
+                    <text x="168" y="78" fill="#ddd" font-size="11">T</text>
+                    <text x="28" y="96" fill="#ddd" font-size="11">D</text>
+                    <text x="216" y="188" fill="#ddd" font-size="11">P</text>
+                    <text x="212" y="76" fill="#ddd" font-size="11">Q</text>
+                    <text x="139" y="102" fill="#ddd" font-size="11">O₁</text>
+                    <text x="219" y="88" fill="#999" font-size="11">σ</text>
+                    <text x="244" y="196" fill="#999" font-size="11">ℓ</text>
+                    <text x="141" y="47" fill="#999" font-size="11">α</text>
+                    <text x="111" y="110" fill="#999" font-size="11">γ</text>
+                    <text x="162" y="146" fill="#ffd700" font-size="10">PF</text>
+                    <text x="195" y="129" fill="#7ee787" font-size="10">PT</text>
+                </svg>
+                <div class="th-row">Cross-section through the cone axis, perpendicular to the directrix: the sphere appears as the inscribed circle, touching the section line ℓ at F and the generators at T. σ is the plane of the contact circle; D = ℓ ∩ σ is the trace of the directrix, and PK = PD for P in this section.</div>
+                <div class="th-row">1. PF = PT — two tangent segments from P to the same sphere.</div>
+                <div class="th-row">2. Drop the auxiliary PQ ⟂ σ. Two right triangles share PQ: PQ = PT·cosα (generator at angle α to the axis) and PQ = PD·cosγ (ℓ at angle γ to the axis).</div>
+                <div class="th-row">3. Hence PT·cosα = PD·cosγ, so e = PF / PK = PT / PD = cosγ / cosα — constant for every P on the conic.</div>
+                <div class="th-row">γ &gt; α → e &lt; 1 ellipse (γ = 90°: e = 0 circle) · γ = α → e = 1 parabola · γ &lt; α → e &gt; 1 hyperbola</div>
+                <svg class="acc-fig" viewBox="0 0 264 274">
+                    <line x1="132" y1="10" x2="132" y2="262" stroke="#777" stroke-width="1"/>
+                    <line x1="132" y1="49" x2="32.7" y2="262" stroke="#888" stroke-width="1.5"/>
+                    <line x1="132" y1="49" x2="231.3" y2="262" stroke="#888" stroke-width="1.5"/>
+                    <circle cx="132" cy="99.4" r="21.3" stroke="#ff6666" fill="rgba(255,102,102,0.12)" stroke-width="1.5"/>
+                    <circle cx="132" cy="195.5" r="61.9" stroke="#66aaff" fill="rgba(102,170,255,0.10)" stroke-width="1.5"/>
+                    <line x1="80" y1="94" x2="262" y2="199" stroke="#ccc" stroke-width="1.5"/>
+                    <line x1="132" y1="99.4" x2="132" y2="195.5" stroke="#ffd700" stroke-width="3" opacity="0.85"/>
+                    <line x1="121.4" y1="117.9" x2="163" y2="141.9" stroke="#ffd700" stroke-width="3" opacity="0.85"/>
+                    <line x1="151.3" y1="90.4" x2="188.1" y2="169.3" stroke="#7ee787" stroke-width="3" opacity="0.85"/>
+                    <path d="M132,71 A22,22 0 0 0 141.3,68.9" stroke="#999" fill="none"/>
+                    <path d="M132,100 A24,24 0 0 0 111.2,112" stroke="#999" fill="none"/>
+                    <circle cx="121.4" cy="117.9" r="3" fill="#ff6666"/>
+                    <circle cx="163" cy="141.9" r="3" fill="#ff6666"/>
+                    <circle cx="151.3" cy="90.4" r="3" fill="#ffaa66"/>
+                    <circle cx="188.1" cy="169.3" r="3" fill="#ffaa66"/>
+                    <circle cx="132" cy="99.4" r="2" fill="#ff6666"/>
+                    <circle cx="132" cy="195.5" r="2" fill="#66aaff"/>
+                    <text x="108" y="114" fill="#ddd" font-size="11">F₁</text>
+                    <text x="170" y="147" fill="#ddd" font-size="11">F₂</text>
+                    <text x="157" y="84" fill="#ddd" font-size="11">T₁</text>
+                    <text x="195" y="176" fill="#ddd" font-size="11">T₂</text>
+                    <text x="139" y="103" fill="#ddd" font-size="11">O₁</text>
+                    <text x="139" y="199" fill="#ddd" font-size="11">O₂</text>
+                    <text x="143" y="76" fill="#999" font-size="11">α</text>
+                    <text x="108" y="104" fill="#999" font-size="11">γ</text>
+                    <text x="122" y="152" fill="#ffd700" font-size="10">Δ</text>
+                    <text x="148" y="115" fill="#ffd700" font-size="10">2c</text>
+                    <text x="176" y="126" fill="#7ee787" font-size="10">2a</text>
+                    <text x="238" y="180" fill="#999" font-size="11">ℓ</text>
+                </svg>
+                <div class="th-row">Same section, both spheres: the axial gap Δ = O₁O₂ projects onto ℓ as F₁F₂ (×cosγ) and onto the generator as T₁T₂ (×cosα). With 2c = F₁F₂ and 2a = T₁T₂ = PF₁ + PF₂: c / a = cosγ / cosα = e.</div>
+            </div>
+        </div>
+        <div class="acc-sec">
+            <div class="acc-head">Directrix equations<span class="acc-arrow">▾</span></div>
+            <div class="acc-body">
+                <div class="th-row">The directrix is π ∩ σ (cutting plane × contact plane), perpendicular to the focal axis. Its position follows from PF = e·PK evaluated at a vertex V — write K′ for V's own foot on the directrix (where the axis meets it), and use e = c/a from the panel above.</div>
+                <svg class="acc-fig" viewBox="0 0 264 150">
+                    <ellipse cx="108" cy="75" rx="70" ry="44" stroke="#ccc" stroke-width="1.5" fill="none"/>
+                    <line x1="18" y1="75" x2="250" y2="75" stroke="#777" stroke-width="1"/>
+                    <line x1="225" y1="12" x2="225" y2="138" stroke="#4dd0c4" stroke-width="1.5" stroke-dasharray="5,4"/>
+                    <line x1="150" y1="75" x2="178" y2="75" stroke="#ffd700" stroke-width="3"/>
+                    <line x1="178" y1="75" x2="225" y2="75" stroke="#4dd0c4" stroke-width="2" stroke-dasharray="4,3"/>
+                    <line x1="63" y1="41" x2="150" y2="75" stroke="#999" stroke-width="1"/>
+                    <line x1="63" y1="41" x2="225" y2="41" stroke="#4dd0c4" stroke-width="1" stroke-dasharray="4,3"/>
+                    <line x1="178" y1="98" x2="178" y2="106" stroke="#999"/>
+                    <line x1="225" y1="98" x2="225" y2="106" stroke="#999"/>
+                    <line x1="178" y1="102" x2="225" y2="102" stroke="#999"/>
+                    <circle cx="150" cy="75" r="3" fill="#ff6666"/>
+                    <circle cx="178" cy="75" r="3" fill="#ccc"/>
+                    <circle cx="108" cy="75" r="2" fill="#999"/>
+                    <circle cx="63" cy="41" r="3" fill="#7ee787"/>
+                    <circle cx="225" cy="41" r="2.5" fill="#4dd0c4"/>
+                    <circle cx="225" cy="75" r="2.5" fill="#4dd0c4"/>
+                    <text x="104" y="92" fill="#ddd" font-size="11">O</text>
+                    <text x="146" y="92" fill="#ddd" font-size="11">F</text>
+                    <text x="174" y="92" fill="#ddd" font-size="11">V</text>
+                    <text x="56" y="34" fill="#ddd" font-size="11">P</text>
+                    <text x="230" y="44" fill="#4dd0c4" font-size="11">K</text>
+                    <text x="230" y="92" fill="#4dd0c4" font-size="11">K′</text>
+                    <text x="225" y="10" fill="#4dd0c4" font-size="10" text-anchor="middle">x = a²/c</text>
+                    <text x="164" y="68" fill="#ffd700" font-size="10" text-anchor="middle">a−c</text>
+                    <text x="201" y="116" fill="#999" font-size="10" text-anchor="middle">(a−c)/e</text>
+                </svg>
+                <div class="th-row">Ellipse: VF = a − c, so VK′ = (a−c)/e and OK′ = a + (a−c)/e = a/e = a²/c. Directrices: x = ±a²/c.</div>
+                <svg class="acc-fig" viewBox="0 0 264 150">
+                    <path d="M197.9,1.2 L181.4,26.9 L168.1,53.6 L164,75 L168.1,96.4 L181.4,123.1 L197.9,148.8" stroke="#ccc" stroke-width="1.5" fill="none"/>
+                    <path d="M66.1,1.2 L82.6,26.9 L95.9,53.6 L100,75 L95.9,96.4 L82.6,123.1 L66.1,148.8" stroke="#ccc" stroke-width="1.5" fill="none"/>
+                    <line x1="16" y1="75" x2="250" y2="75" stroke="#777" stroke-width="1"/>
+                    <line x1="112.3" y1="10" x2="112.3" y2="140" stroke="#4dd0c4" stroke-width="1.5" stroke-dasharray="5,4"/>
+                    <line x1="151.7" y1="10" x2="151.7" y2="140" stroke="#4dd0c4" stroke-width="1.5" stroke-dasharray="5,4"/>
+                    <line x1="164" y1="75" x2="184" y2="75" stroke="#ffd700" stroke-width="3"/>
+                    <line x1="151.7" y1="75" x2="164" y2="75" stroke="#4dd0c4" stroke-width="2" stroke-dasharray="4,3"/>
+                    <line x1="174.8" y1="38.6" x2="184" y2="75" stroke="#999" stroke-width="1"/>
+                    <line x1="174.8" y1="38.6" x2="151.7" y2="38.6" stroke="#4dd0c4" stroke-width="1" stroke-dasharray="4,3"/>
+                    <line x1="151.7" y1="92" x2="151.7" y2="100" stroke="#999"/>
+                    <line x1="164" y1="92" x2="164" y2="100" stroke="#999"/>
+                    <line x1="151.7" y1="96" x2="164" y2="96" stroke="#999"/>
+                    <circle cx="184" cy="75" r="3" fill="#ff6666"/>
+                    <circle cx="80" cy="75" r="2.5" fill="#ff6666"/>
+                    <circle cx="164" cy="75" r="3" fill="#ccc"/>
+                    <circle cx="100" cy="75" r="2.5" fill="#ccc"/>
+                    <circle cx="132" cy="75" r="2" fill="#999"/>
+                    <circle cx="174.8" cy="38.6" r="3" fill="#7ee787"/>
+                    <circle cx="151.7" cy="38.6" r="2.5" fill="#4dd0c4"/>
+                    <circle cx="151.7" cy="75" r="2.5" fill="#4dd0c4"/>
+                    <text x="128" y="92" fill="#ddd" font-size="11">O</text>
+                    <text x="181" y="92" fill="#ddd" font-size="11">F</text>
+                    <text x="160" y="92" fill="#ddd" font-size="11">V</text>
+                    <text x="182" y="34" fill="#ddd" font-size="11">P</text>
+                    <text x="142" y="34" fill="#4dd0c4" font-size="11">K</text>
+                    <text x="146" y="92" fill="#4dd0c4" font-size="11" text-anchor="end">K′</text>
+                    <text x="152" y="10" fill="#4dd0c4" font-size="10" text-anchor="middle">x = a²/c</text>
+                    <text x="174" y="68" fill="#ffd700" font-size="10" text-anchor="middle">c−a</text>
+                    <text x="158" y="110" fill="#999" font-size="10" text-anchor="middle">(c−a)/e</text>
+                </svg>
+                <div class="th-row">Hyperbola: VF = c − a, so VK′ = (c−a)/e and OK′ = a − (c−a)/e = a/e = a²/c — the directrix lies between O and V. Directrices: x = ±a²/c.</div>
+                <svg class="acc-fig" viewBox="0 0 264 150">
+                    <path d="M136.8,5 L116.8,25 L103.5,45 L97.9,60 L96,75 L97.9,90 L103.5,105 L116.8,125 L136.8,145" stroke="#ccc" stroke-width="1.5" fill="none"/>
+                    <line x1="16" y1="75" x2="244" y2="75" stroke="#777" stroke-width="1"/>
+                    <line x1="66" y1="12" x2="66" y2="138" stroke="#4dd0c4" stroke-width="1.5" stroke-dasharray="5,4"/>
+                    <line x1="96" y1="75" x2="126" y2="75" stroke="#ffd700" stroke-width="3"/>
+                    <line x1="66" y1="75" x2="96" y2="75" stroke="#4dd0c4" stroke-width="2" stroke-dasharray="4,3"/>
+                    <line x1="116.8" y1="25" x2="126" y2="75" stroke="#999" stroke-width="1"/>
+                    <line x1="116.8" y1="25" x2="66" y2="25" stroke="#4dd0c4" stroke-width="1" stroke-dasharray="4,3"/>
+                    <line x1="117.5" y1="50.7" x2="125.3" y2="49.3" stroke="#999" stroke-width="1.5"/>
+                    <line x1="91.4" y1="21" x2="91.4" y2="29" stroke="#4dd0c4" stroke-width="1.5"/>
+                    <circle cx="126" cy="75" r="3" fill="#ff6666"/>
+                    <circle cx="96" cy="75" r="3" fill="#ccc"/>
+                    <circle cx="116.8" cy="25" r="3" fill="#7ee787"/>
+                    <circle cx="66" cy="25" r="2.5" fill="#4dd0c4"/>
+                    <circle cx="66" cy="75" r="2.5" fill="#4dd0c4"/>
+                    <text x="122" y="92" fill="#ddd" font-size="11">F</text>
+                    <text x="92" y="92" fill="#ddd" font-size="11">V</text>
+                    <text x="124" y="20" fill="#ddd" font-size="11">P</text>
+                    <text x="58" y="34" fill="#4dd0c4" font-size="11">K</text>
+                    <text x="62" y="92" fill="#4dd0c4" font-size="11" text-anchor="end">K′</text>
+                    <text x="66" y="10" fill="#4dd0c4" font-size="10" text-anchor="middle">x = −p/2</text>
+                    <text x="111" y="68" fill="#ffd700" font-size="10" text-anchor="middle">p/2</text>
+                    <text x="81" y="68" fill="#4dd0c4" font-size="10" text-anchor="middle">p/2</text>
+                </svg>
+                <div class="th-row">Parabola: e = 1 gives PF = PK everywhere; at the vertex VF = VK′ = p/2 (p = focus-to-directrix distance). With the vertex at the origin: directrix x = −p/2, matching y² = 2px.</div>
+            </div>
+        </div>
+        <div class="acc-sec">
+            <div class="acc-head">Pascal &amp; Pappus — how to operate<span class="acc-arrow">▾</span></div>
+            <div class="acc-body">
+                <div class="th-title">Pascal's theorem</div>
+                <div class="th-row">For six points A B C a b c on a conic, the three intersections P₁ P₂ P₃ of the cross-joined lines Ab×aB, Bc×bC, Ca×cA are collinear (the white dashed line in the scene).</div>
+                <div class="th-title">Pappus's theorem</div>
+                <div class="th-row">As γ→0 the section degenerates into two generators through the apex (a broken angle); the six points split 3+3 onto the two lines, and the three intersections stay collinear — Pappus is the limiting case of Pascal.</div>
+                <div class="th-title">Ratios in this figure</div>
+                <div class="th-row">· At the fold vertex O: Ab∥aB ⟺ OA·Oa = OB·Ob; all three products equal ⟺ all three cross-joined pairs parallel (parallel Pappus — the intersections are collinear on the line at infinity).</div>
+                <div class="th-row">· Circle section (γ = 90°): the six points form a regular inscribed hexagon; P₁A·P₁b = P₁B·P₁a (intersecting-chords theorem; on a general conic this becomes the power of a point with respect to the curve).</div>
+                <div class="th-row">· Cross-ratio: projecting four points from any point of the conic gives a pencil of constant cross-ratio — the projective root of the P₁P₂P₃ collinearity.</div>
+                <div class="th-title">How to operate</div>
+                <div class="th-row">1. Press <span class="op-p">Pascal·Sym</span> (gold when on): the six points A B C a b c, the six cross-joined lines, and the white dashed Pascal line through P₁ P₂ P₃ appear. You can drag any of the six points directly on the cone to reshape this mirror-symmetric configuration.</div>
+                <div class="th-row">2. With Pascal·Sym on, press <span class="op-h">Pascal·Eq</span> (pink when on): switch to the equal-product configuration OA·Oa = OB·Ob = OC·Oc — then drag γ down to 0 and the three cross-joined pairs become parallel (parallel Pappus). Press Pascal·Eq again to return to your own Sym configuration.</div>
+                <div class="th-row">3. Drag the <span class="op-s">γ slider</span> — or nudge with <span class="op-s">− / +</span> — to morph the section: circle → ellipse → parabola → hyperbola → two lines. The gold <span class="op-p">1°/0.1°/0.01°</span> button sets the step. With Pascal·Sym on, the teal <span class="op-g">◀ ⏸ ▶</span> buttons light up: automatic reverse-play / pause / forward-play of γ at the current step size, pausing by itself at 0° and 90°.</div>
+                <div class="th-row">4. With Pascal·Sym off, <span class="op-play">▶ Play</span> (blue) lights up: it sends the green point P traveling around the section curve. The <span class="op-s">P slider</span> sets its position, <span class="op-s">Speed</span> its rate.</div>
+                <div class="th-row">5. <span class="op-s">↻</span> resets the camera and all parameters; <span class="op-s">📊</span> (top right) toggles the live PF / PT readout.</div>
+            </div>
+        </div>
+    </div>
     <div class="controls-panel">
         <div class="controls-row">
             <span id="tan-display" class="slider-value-tan">e=cosγ/cosα=0.000</span>
             <button id="btn-play">▶</button>
-            <button id="btn-p" class="btn-p" title="显示/隐藏六等分点">P</button>
-            <button id="btn-refresh">H</button>
+            <span class="slider-label">Speed</span>
+            <input type="range" id="speed-slider" min="1" max="10" value="3" step="1">
+            <span id="speed-value" class="slider-value">3</span>
+            <span class="slider-label">P</span>
+            <input type="range" id="p-slider" min="0" max="360" value="0" step="1">
+            <span id="p-value" class="slider-value">0°</span>
+            <span class="ctl-sep"></span>
+            <button id="btn-p" class="btn-p" title="Pascal·Sym：镜像对称六点位形（可拖动六点）">Pascal·Sym</button>
+            <button id="btn-refresh" title="Pascal·Eq：等积位形，γ→0 时三对交叉线平行（需先开 Pascal·Sym）">Pascal·Eq</button>
+            <button id="btn-reset" title="重置视角与参数">↻</button>
             <span id="status-hint" class="status-hint"></span>
         </div>
         <div class="controls-row">
-            <button id="btn-reset" title="重置视角与参数" style="color:#888888;font-size:16px;margin-right:4px;">↻</button>
             <span class="slider-label">α</span>
             <input type="range" id="alpha-slider" min="12" max="48" value="22" step="1">
             <span id="alpha-angle" class="slider-value">22.00°</span>
-        </div>
-        <div class="controls-row">
+            <span class="ctl-sep"></span>
             <span class="slider-label">γ</span>
             <button id="gamma-minus" class="btn-micro">−</button>
             <input type="range" id="gamma-slider" min="0" max="90" value="68" step="1">
             <button id="gamma-plus" class="btn-micro">+</button>
-            <button id="gamma-step" class="btn-micro" title="步进切换" style="color:#ffd700;font-size:11px;min-width:36px;">1°</button>
+            <button id="gamma-step" class="btn-micro" title="步进切换（兼作播放速度）" style="color:#ffd700;font-size:11px;min-width:36px;">1°</button>
+            <span class="gplay-group">
+                <button id="gamma-rev" class="btn-micro btn-gplay" title="倒播 γ（Pascal·Sym 激活时可用）" disabled>◀</button>
+                <button id="gamma-pause" class="btn-micro btn-gplay" title="暂停" disabled>⏸</button>
+                <button id="gamma-fwd" class="btn-micro btn-gplay" title="顺播 γ（Pascal·Sym 激活时可用）" disabled>▶</button>
+            </span>
             <span id="gamma-angle" class="slider-value">68.00°</span>
-        </div>
-        <div class="controls-row">
-            <span class="slider-label">P</span>
-            <input type="range" id="p-slider" min="0" max="360" value="0" step="1">
-            <span id="p-value" class="slider-value">0°</span>
-            <span class="slider-label">Speed</span>
-            <input type="range" id="speed-slider" min="1" max="10" value="3" step="1">
-            <span id="speed-value" class="slider-value">3</span>
         </div>
     </div>
     <script type="module">
@@ -293,45 +519,80 @@
             return new THREE.Vector3();
         }
 
-        function getConicPointFromGenerator(params, theta) {
-            const apex = new THREE.Vector3(0, params.coneHeight, 0);
-            const sinA = Math.sin(params.alphaRad);
-            const cosA = Math.cos(params.alphaRad);
-            const dir = new THREE.Vector3(
-                Math.cos(theta) * sinA,
-                -cosA,
-                Math.sin(theta) * sinA
-            );
-            const P0 = new THREE.Vector3(0, INTERCEPT, 0);
-            const dirDotN = dir.dot(params.planeNormal);
-            if (Math.abs(dirDotN) < 1e-10) return null;
-            const s = P0.clone().sub(apex).dot(params.planeNormal) / dirDotN;
-            return apex.clone().addScaledVector(dir, s);
-        }
-
-        function adjustHexGeneratorsToRedBranch(params) {
-            if (!params.isHyperbola) return;
+        // 六点统一取点：由极限位置参数 {d, side, phi} 求截线上的点。
+        // (d, side) 路径：高度 y0 = H − d·cosA 处锥面圆与截平面求交，γ→0 精确收敛到
+        // apex + d·(0,−cosA,side·sinA)；该高度不可达且 γ>α 时切换到方位角路径：
+        // 从切换点的椭圆极端方位 smoothstep 转到目标方位 phi，γ→90° 时落到圆上 phi 处。
+        // 两路径在切换角 γ_c 处严格连续相接，点始终在截线上。
+        function pointFromLimit(params, lim) {
             const H = params.coneHeight;
             const h0 = INTERCEPT;
-            const sinA = Math.sin(params.alphaRad);
-            const cosA = Math.cos(params.alphaRad);
-            for (let i = 0; i < 6; i++) {
-                let theta = hexGenerators[i];
-                const dir = new THREE.Vector3(
-                    Math.cos(theta) * sinA,
-                    -cosA,
-                    Math.sin(theta) * sinA
-                );
-                const P0 = new THREE.Vector3(0, h0, 0);
-                const apex = new THREE.Vector3(0, H, 0);
-                const dirDotN = dir.dot(params.planeNormal);
-                if (Math.abs(dirDotN) < 1e-10) continue;
-                const s = P0.clone().sub(apex).dot(params.planeNormal) / dirDotN;
-                // s <= 0 表示交点在蓝球支（上支），反方向母线 theta + π 必打到红球支（下支）
-                if (s <= 0) {
-                    hexGenerators[i] = theta + Math.PI;
-                }
+            const alpha = params.alphaRad;
+            const cosA = Math.cos(alpha), tanA = Math.tan(alpha);
+            // planeNormal = (cosγ, −sinγ, 0)，反推 γ
+            const gammaRad = Math.atan2(-params.planeNormal.y, params.planeNormal.x);
+            const tanG = Math.tan(gammaRad);
+            const d = lim.d, side = lim.side;
+            const phi = (lim.phi === undefined) ? side * Math.PI / 2 : lim.phi;
+
+            const y0 = H - d * cosA;
+            const xA = tanG * (y0 - h0);
+            const rA = (H - y0) * tanA;
+            if (xA * xA <= rA * rA) {
+                const z = side * Math.sqrt(Math.max(0, rA * rA - xA * xA));
+                return new THREE.Vector3(xA, y0, z);
             }
+            if (tanG > tanA) {
+                // 方位角路径（高 γ 椭圆/圆）
+                const tanGc = rA / Math.max(Math.abs(y0 - h0), 1e-9);
+                const gammaC = Math.atan(tanGc);
+                const phiC = (y0 >= h0) ? 0 : Math.PI; // 切换点方位：椭圆前/后极端
+                let t = (gammaRad - gammaC) / (Math.PI / 2 - gammaC);
+                t = t * t * (3 - 2 * t); // smoothstep
+                // 最短弧插值：方位差归一到 (−π, π]，避免绕远路（如 φ_c=0°、phi=330° 应转 −30° 而非 +330°）
+                let dPhi = phi - phiC;
+                while (dPhi > Math.PI) dPhi -= 2 * Math.PI;
+                while (dPhi < -Math.PI) dPhi += 2 * Math.PI;
+                const psi = phiC + dPhi * t;
+                let y;
+                if (!isFinite(tanG)) y = h0;
+                else y = (tanG * h0 + tanA * H * Math.cos(psi)) / (tanG + tanA * Math.cos(psi));
+                const r = (H - y) * tanA;
+                return new THREE.Vector3(r * Math.cos(psi), y, r * Math.sin(psi));
+            }
+            // 抛物线/双曲线的不可达区：钳到最近的截线端点（保持在截线上）
+            const y1 = (tanG * h0 + tanA * H) / (tanG + tanA);
+            let y = y0;
+            if (tanG < tanA - 1e-9) {
+                const y2 = (tanG * h0 - tanA * H) / (tanG - tanA);
+                if (y > y1 && y < y2) y = (y - y1 <= y2 - y) ? y1 : y2;
+            } else {
+                if (y > y1) y = y1;
+            }
+            const x = tanG * (y - h0);
+            const r = (H - y) * tanA;
+            return new THREE.Vector3(x, y, side * Math.sqrt(Math.max(0, r * r - x * x)));
+        }
+
+        // 拖拽反推：射线与截平面求交，由交点高度得 d、由 z 符号得 side
+        function limitFromScreen(clientX, clientY, idx) {
+            if (!currentParams) return null;
+            const rect = renderer.domElement.getBoundingClientRect();
+            const mx = ((clientX - rect.left) / rect.width) * 2 - 1;
+            const my = -((clientY - rect.top) / rect.height) * 2 + 1;
+            const ray = new THREE.Raycaster();
+            ray.setFromCamera(new THREE.Vector2(mx, my), camera);
+            const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(
+                currentParams.planeNormal, new THREE.Vector3(0, INTERCEPT, 0));
+            const target = new THREE.Vector3();
+            if (!ray.ray.intersectPlane(plane, target)) return null;
+            const cosA = Math.cos(currentParams.alphaRad);
+            let d = (currentParams.coneHeight - target.y) / cosA;
+            d = Math.min(Math.max(d, 1.5), 26.5);
+            let side = hexLimits[idx].side;
+            if (target.z > 1e-4) side = 1; else if (target.z < -1e-4) side = -1;
+            // 同时记下鼠标落点的方位角，作为高 γ（椭圆/圆）段的目标方位
+            return { d, side, phi: Math.atan2(target.z, target.x) };
         }
 
         function getGeneratorIntersections(params, P) {
@@ -397,10 +658,32 @@
 
         let paraSquare, pointH, labelH;
         let hexPoints = [], hexLabels = [];
-        let hexGenerators = [0, Math.PI/3, 2*Math.PI/3, Math.PI, 4*Math.PI/3, 5*Math.PI/3];
-let savedHexGenerators = null; // P 模式下的快照（存储母线角度）
-let hHexGenerators = null; // H 模式下最后一次快照（存储曲线参数）
-let savedHexMode = 'P'; // 标记 savedHexGenerators 的存储模式：'P' 或 'H' 
+        // 六点统一用「极限位置参数」{d, side, phi} 存储：
+        // d/side：γ→0 时收敛到 apex + d·(0,−cosA,side·sinA)；phi：γ→90°（水平圆）时的目标方位角。
+        // phi 配合切换点方位（高度被挤出时，高于截面中心从方位 0° 离开、低于则从 180° 离开）取小偏移，
+        // 同对镜像点对称摊开、z 符号全程不变；两构型终点集合同为 {±30°, 180°±15°, 180°±75°}，最大转角 75°。
+        // P / H 两个按钮各自保存一份快照。
+        const HEX_DEFAULT_LIMITS = [
+            { d: 12.8, side: 1, phi: Math.PI/6 },      // A：φ_c=0°，转 +30°
+            { d: 14.4, side: 1, phi: 11*Math.PI/12 },  // B：φ_c=180°，转 −15°
+            { d: 16.0, side: 1, phi: 7*Math.PI/12 },   // C：φ_c=180°，转 −75°
+            { d: 12.8, side: -1, phi: -Math.PI/6 },    // a：φ_c=0°，转 −30°
+            { d: 14.4, side: -1, phi: 13*Math.PI/12 }, // b：φ_c=180°，转 +15°
+            { d: 16.0, side: -1, phi: 17*Math.PI/12 }  // c：φ_c=180°，转 +75°
+        ];
+        // H 构型：OA·Oa = OB·Ob = OC·Oc = 204，γ→0 时三对交叉连线两两平行（平行版 Pappus）
+        // 注意 H 的 a/b 高度低于截面中心（φ_c=180°）、c 高于中心（φ_c=0°），phi 分配与 P 不同
+        const H_DEFAULT_LIMITS = [
+            { d: 12.8, side: 1, phi: Math.PI/6 },
+            { d: 14.4, side: 1, phi: 11*Math.PI/12 },
+            { d: 16.0, side: 1, phi: 7*Math.PI/12 },
+            { d: 15.9375, side: -1, phi: 13*Math.PI/12 },        // a: 204/12.8
+            { d: 14.166666666666666, side: -1, phi: 17*Math.PI/12 }, // b: 204/14.4
+            { d: 12.75, side: -1, phi: -Math.PI/6 }              // c: 204/16
+        ];
+        let hexLimits = HEX_DEFAULT_LIMITS.map(o => ({ ...o }));
+        let savedHexLimits = null; // P 模式快照
+        let hHexLimits = null;     // H 模式快照 
         const HEX_NAMES = ['A','B','C','a','b','c'];
         const HEX_COLORS = [0xff4444, 0xffdd44, 0x4488ff, 0xff4444, 0xffdd44, 0x4488ff];
         let hexVisible = false;
@@ -508,7 +791,7 @@ let savedHexMode = 'P'; // 标记 savedHexGenerators 的存储模式：'P' 或 '
                     extHeight = topY - CONE_H;
                     R_ext = extHeight * Math.tan(alphaRad);
                 }
-                const coneGeo2 = new THREE.CylinderGeometry(0, R_ext, extHeight, 64, 8, true);
+                const coneGeo2 = new THREE.CylinderGeometry(R_ext, 0, extHeight, 64, 8, true); // 对顶锥：锥顶朝下（与主锥共顶点），向上张开
                 coneMesh2 = new THREE.Mesh(coneGeo2, new THREE.MeshPhongMaterial({ color: 0x998888, transparent: true, opacity: 0.08, side: THREE.DoubleSide, depthWrite: false }));
                 coneMesh2.position.y = CONE_H + extHeight / 2;
                 scene.add(coneMesh2);
@@ -793,52 +1076,14 @@ let savedHexMode = 'P'; // 标记 savedHexGenerators 的存储模式：'P' 或 '
                 conicLine.geometry = new THREE.BufferGeometry().setFromPoints(pts);
             }
 
-            const hBtnActive = document.getElementById('btn-refresh')?.classList.contains('active') || false;
-
-            if (params.isHyperbola && !hBtnActive) {
-                adjustHexGeneratorsToRedBranch(params);
-            }
-
             if (hexPoints.length === 6) {
-                if (params.isHyperbola && hBtnActive) {
-                    // H 激活时 hexGenerators 存储的是曲线参数，用 getConicPoint 指定红球支（下支，branch=1）
-                    for (let i = 0; i < 6; i++) {
-                        const Pt = getConicPoint(params, hexGenerators[i], 1);
-                        if (Pt) { hexPoints[i].position.copy(Pt); hexLabels[i].position.copy(Pt); }
-                    }
-                } else {
-                    if (params.isHyperbola) {
-                        // P 模式下双曲线：hexGenerators 是母线角度，先用 getConicPointFromGenerator 得到点
-                        // 如果点在蓝球支，需要修正母线角度到红球支
-                        for (let i = 0; i < 6; i++) {
-                            const Pt = getConicPointFromGenerator(params, hexGenerators[i]);
-                            if (Pt) {
-                                // 检查点是否在红球支（下支）：与红球中心 O2 的 y 坐标比较
-                                // 红球支的点 y 应该接近 O2.y，蓝球支的点 y 应该接近 O1.y
-                                if (Pt.y > params.O2.y - 1) {
-                                    // 点在蓝球支（上支），修正母线角度
-                                    hexGenerators[i] += Math.PI;
-                                    const Pt2 = getConicPointFromGenerator(params, hexGenerators[i]);
-                                    if (Pt2) {
-                                        hexPoints[i].position.copy(Pt2);
-                                        hexLabels[i].position.copy(Pt2);
-                                    }
-                                } else {
-                                    hexPoints[i].position.copy(Pt);
-                                    hexLabels[i].position.copy(Pt);
-                                }
-                            }
-                        }
-                    } else {
-                        for (let i = 0; i < 6; i++) {
-                            const Pt = getConicPointFromGenerator(params, hexGenerators[i]);
-                            if (Pt) { hexPoints[i].position.copy(Pt); hexLabels[i].position.copy(Pt); }
-                        }
-                    }
+                for (let i = 0; i < 6; i++) {
+                    const Pt = pointFromLimit(params, hexLimits[i]);
+                    if (Pt) { hexPoints[i].position.copy(Pt); hexLabels[i].position.copy(Pt); }
                 }
             }
 
-            const showHex = hexVisible && !params.isDegenerate;
+            const showHex = hexVisible;
             [lineAb, lineBa, lineBc, lineCb, lineCa, lineAc].forEach(l => { if(l) l.visible = showHex; });
             if (showHex && hexPoints.length === 6) {
                 const A = hexPoints[0].position, B = hexPoints[1].position, C = hexPoints[2].position;
@@ -1011,7 +1256,7 @@ let savedHexMode = 'P'; // 标记 savedHexGenerators 的存储模式：'P' 或 '
                 if (interLine.geometry) interLine.geometry.dispose();
                 interLine.geometry = new THREE.BufferGeometry().setFromPoints([start, end]);
                 interLine.computeLineDistances();
-                interLine.visible = hexVisible && currentParams && !currentParams.isDegenerate;
+                interLine.visible = hexVisible && !!currentParams;
             } else {
                 interLine.visible = false;
             }
@@ -1026,6 +1271,35 @@ let savedHexMode = 'P'; // 标记 savedHexGenerators 的存储模式：'P' 或 '
             mesh.geometry = new THREE.BufferGeometry();
             mesh.geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array([p1.x, p1.y, p1.z, p2.x, p2.y, p2.z, p3.x, p3.y, p3.z]), 3));
             mesh.geometry.setIndex([0,1,2]); mesh.geometry.computeVertexNormals();
+        }
+
+        // 六条线 + 三个交点 + 交点连线刷新（γ=0 退化时也照常工作）
+        function refreshHexConnections() {
+            if (!hexVisible || hexPoints.length !== 6 || !currentParams) return;
+            if (!lineAb) return;
+            const A = hexPoints[0].position, B = hexPoints[1].position, C = hexPoints[2].position;
+            const a = hexPoints[3].position, b = hexPoints[4].position, c = hexPoints[5].position;
+            updateHexLine(lineAb, A, b); updateHexLine(lineBa, B, a);
+            updateHexLine(lineBc, B, c); updateHexLine(lineCb, C, b);
+            updateHexLine(lineCa, C, a); updateHexLine(lineAc, A, c);
+            function lineIntersect(p1, p2, p3, p4) {
+                const d1 = new THREE.Vector3().subVectors(p2, p1);
+                const d2 = new THREE.Vector3().subVectors(p4, p3);
+                const diff = new THREE.Vector3().subVectors(p3, p1);
+                const crossD = new THREE.Vector3().crossVectors(d1, d2);
+                const crossDiff = new THREE.Vector3().crossVectors(diff, d2);
+                const lenSq = crossD.lengthSq();
+                if (lenSq < 1e-8) return null;
+                const t = crossDiff.dot(crossD) / lenSq;
+                return p1.clone().addScaledVector(d1, t);
+            }
+            const iAB = lineIntersect(A, b, B, a);
+            const iBC = lineIntersect(B, c, C, b);
+            const iCA = lineIntersect(C, a, A, c);
+            if (iAB) { interAB.position.copy(iAB); interAB.visible = true; } else { interAB.visible = false; }
+            if (iBC) { interBC.position.copy(iBC); interBC.visible = true; } else { interBC.visible = false; }
+            if (iCA) { interCA.position.copy(iCA); interCA.visible = true; } else { interCA.visible = false; }
+            updateInterLine();
         }
 
         function updateScene(angle) {
@@ -1089,6 +1363,7 @@ let savedHexMode = 'P'; // 标记 savedHexGenerators 的存储模式：'P' 或 '
                         genDir.multiplyScalar(40 / genLen);
                         setLine(lineGenerator, apex, apex.clone().add(genDir));
                     }
+                    refreshHexConnections();
                     return;
                 }
                 const { A, B, dir } = getGeneratorIntersections(currentParams, P);
@@ -1171,35 +1446,12 @@ let savedHexMode = 'P'; // 标记 savedHexGenerators 的存储模式：'P' 或 '
                 document.getElementById('p-value').textContent = angle.toFixed(0) + '°';
 
                 if (draggingHexIdx >= 0 && hexPoints.length === 6) {
-                    const Pt = getConicPointFromGenerator(currentParams, hexGenerators[draggingHexIdx]);
+                    const lim = hexLimits[draggingHexIdx];
+                    const Pt = pointFromLimit(currentParams, lim);
                     if (Pt) { hexPoints[draggingHexIdx].position.copy(Pt); hexLabels[draggingHexIdx].position.copy(Pt); }
                 }
 
-                if (hexVisible && hexPoints.length === 6 && !currentParams.isDegenerate) {
-                    const A = hexPoints[0].position, B = hexPoints[1].position, C = hexPoints[2].position;
-                    const a = hexPoints[3].position, b = hexPoints[4].position, c = hexPoints[5].position;
-                    updateHexLine(lineAb, A, b); updateHexLine(lineBa, B, a);
-                    updateHexLine(lineBc, B, c); updateHexLine(lineCb, C, b);
-                    updateHexLine(lineCa, C, a); updateHexLine(lineAc, A, c);
-                    function lineIntersect(p1, p2, p3, p4) {
-                        const d1 = new THREE.Vector3().subVectors(p2, p1);
-                        const d2 = new THREE.Vector3().subVectors(p4, p3);
-                        const diff = new THREE.Vector3().subVectors(p3, p1);
-                        const crossD = new THREE.Vector3().crossVectors(d1, d2);
-                        const crossDiff = new THREE.Vector3().crossVectors(diff, d2);
-                        const lenSq = crossD.lengthSq();
-                        if (lenSq < 1e-8) return null;
-                        const t = crossDiff.dot(crossD) / lenSq;
-                        return p1.clone().addScaledVector(d1, t);
-                    }
-                    const iAB = lineIntersect(A, b, B, a);
-                    const iBC = lineIntersect(B, c, C, b);
-                    const iCA = lineIntersect(C, a, A, c);
-                    if (iAB) { interAB.position.copy(iAB); interAB.visible = true; } else { interAB.visible = false; }
-                    if (iBC) { interBC.position.copy(iBC); interBC.visible = true; } else { interBC.visible = false; }
-                    if (iCA) { interCA.position.copy(iCA); interCA.visible = true; } else { interCA.visible = false; }
-                    updateInterLine();
-                }
+                refreshHexConnections();
 
                 const distPF1 = P.distanceTo(currentParams.F1);
                 const distPF2 = currentParams.lowerValid ? P.distanceTo(currentParams.F2) : 0;
@@ -1269,13 +1521,14 @@ let savedHexMode = 'P'; // 标记 savedHexGenerators 的存储模式：'P' 或 '
         }
 
         document.getElementById('alpha-slider').addEventListener('input', e => updateAlpha(parseFloat(e.target.value)));
-        document.getElementById('gamma-slider').addEventListener('input', e => updateGamma(parseFloat(e.target.value)));
+        document.getElementById('gamma-slider').addEventListener('input', e => { stopGammaPlay(); updateGamma(parseFloat(e.target.value)); });
 
         let repeatTimer = null;
         let gammaStep = 1;
         const GAMMA_STEPS = [0.01, 0.1, 1];
         let gammaStepIndex = 2;
         function startRepeat(change) {
+            stopGammaPlay(); // 手动微调时停掉自动播放，避免抢控制
             if (repeatTimer) clearInterval(repeatTimer);
             repeatTimer = setInterval(() => {
                 let newVal = currentGammaDeg + change * gammaStep;
@@ -1304,16 +1557,43 @@ let savedHexMode = 'P'; // 标记 savedHexGenerators 的存储模式：'P' 或 '
             document.getElementById('gamma-minus').addEventListener(evt, stopRepeat);
         });
 
+        // γ 自动播放（仅 P 激活时点亮）：倒播 ◀ / 暂停 ⏸ / 顺播 ▶，步进档即速度，到 0°/90° 自动暂停
+        let gammaPlayTimer = null, gammaPlayDir = 0;
+        const gRevBtn = document.getElementById('gamma-rev');
+        const gPauseBtn = document.getElementById('gamma-pause');
+        const gFwdBtn = document.getElementById('gamma-fwd');
+        function stopGammaPlay() {
+            if (gammaPlayTimer) { clearInterval(gammaPlayTimer); gammaPlayTimer = null; }
+            gammaPlayDir = 0;
+            gRevBtn.classList.remove('on');
+            gFwdBtn.classList.remove('on');
+        }
+        function startGammaPlay(dir) {
+            stopGammaPlay();
+            gammaPlayDir = dir;
+            (dir > 0 ? gFwdBtn : gRevBtn).classList.add('on');
+            gammaPlayTimer = setInterval(() => {
+                let newVal = currentGammaDeg + dir * gammaStep;
+                if (newVal <= 0) { updateGamma(0); stopGammaPlay(); return; }
+                if (newVal >= 90) { updateGamma(90); stopGammaPlay(); return; }
+                updateGamma(newVal);
+            }, 100);
+        }
+        gRevBtn.addEventListener('click', () => { if (gammaPlayDir === -1) stopGammaPlay(); else startGammaPlay(-1); });
+        gFwdBtn.addEventListener('click', () => { if (gammaPlayDir === 1) stopGammaPlay(); else startGammaPlay(1); });
+        gPauseBtn.addEventListener('click', stopGammaPlay);
+        function setGammaPlayEnabled(en) {
+            gRevBtn.disabled = gPauseBtn.disabled = gFwdBtn.disabled = !en;
+            if (!en) stopGammaPlay();
+        }
+
         let isProgrammatic = false;
         document.getElementById('p-slider').addEventListener('input', e => {
             if (isProgrammatic) return;
             currentAngle = parseFloat(e.target.value);
             updateScene(currentAngle);
             if (isPlaying) {
-                isPlaying = false;
-                const btn = document.getElementById('btn-play');
-                btn.textContent = '▶'; btn.style.color = '#00bfff';
-                cancelAnimationFrame(animationId);
+                stopPlay();
             }
         });
         document.getElementById('speed-slider').addEventListener('input', e => document.getElementById('speed-value').textContent = e.target.value);
@@ -1323,121 +1603,25 @@ let savedHexMode = 'P'; // 标记 savedHexGenerators 的存储模式：'P' 或 '
             const isActive = hBtn.classList.contains('active');
 
             if (isActive) {
-                // H 取消激活：保存当前 H 状态快照，切换到 P 存储
-                hHexGenerators = hexGenerators.slice();
+                // H 取消激活：保存 H 快照，恢复 P 快照
+                hHexLimits = hexLimits.map(o => ({ ...o }));
                 hBtn.classList.remove('active');
                 hBtn.style.color = '#888888';
-                // 恢复 P 存储的最后一次快照
-                if (savedHexGenerators) {
-                    for (let i = 0; i < 6; i++) {
-                        hexGenerators[i] = savedHexGenerators[i];
-                    }
-                    // 根据 P 存储的模式选择正确的计算函数
-                    if (currentParams && !currentParams.isDegenerate) {
-                        if (savedHexMode === 'P') {
-                            for (let i = 0; i < 6; i++) {
-                                const Pt = getConicPointFromGenerator(currentParams, hexGenerators[i]);
-                                if (Pt) { hexPoints[i].position.copy(Pt); hexLabels[i].position.copy(Pt); }
-                            }
-                        } else {
-                            let branch = 0;
-                            if (currentParams.isHyperbola) branch = 1;
-                            for (let i = 0; i < 6; i++) {
-                                const Pt = getConicPoint(currentParams, hexGenerators[i], branch);
-                                if (Pt) { hexPoints[i].position.copy(Pt); hexLabels[i].position.copy(Pt); }
-                            }
-                        }
-                        const A = hexPoints[0].position, B = hexPoints[1].position, C = hexPoints[2].position;
-                        const a = hexPoints[3].position, b = hexPoints[4].position, c = hexPoints[5].position;
-                        updateHexLine(lineAb, A, b); updateHexLine(lineBa, B, a);
-                        updateHexLine(lineBc, B, c); updateHexLine(lineCb, C, b);
-                        updateHexLine(lineCa, C, a); updateHexLine(lineAc, A, c);
-                        function lineIntersect(p1, p2, p3, p4) {
-                            const d1 = new THREE.Vector3().subVectors(p2, p1);
-                            const d2 = new THREE.Vector3().subVectors(p4, p3);
-                            const diff = new THREE.Vector3().subVectors(p3, p1);
-                            const crossD = new THREE.Vector3().crossVectors(d1, d2);
-                            const crossDiff = new THREE.Vector3().crossVectors(diff, d2);
-                            const lenSq = crossD.lengthSq();
-                            if (lenSq < 1e-8) return null;
-                            const t = crossDiff.dot(crossD) / lenSq;
-                            return p1.clone().addScaledVector(d1, t);
-                        }
-                        const iAB = lineIntersect(A, b, B, a);
-                        const iBC = lineIntersect(B, c, C, b);
-                        const iCA = lineIntersect(C, a, A, c);
-                        if (iAB) { interAB.position.copy(iAB); interAB.visible = true; } else { interAB.visible = false; }
-                        if (iBC) { interBC.position.copy(iBC); interBC.visible = true; } else { interBC.visible = false; }
-                        if (iCA) { interCA.position.copy(iCA); interCA.visible = true; } else { interCA.visible = false; }
-                        updateInterLine();
-                    }
-                }
+                if (savedHexLimits) hexLimits = savedHexLimits.map(o => ({ ...o }));
             } else {
-                // H 激活：保存当前 P 状态快照（标记为 P 模式），切换到 H 存储
-                savedHexGenerators = hexGenerators.slice();
-                savedHexMode = 'P';
+                // H 激活：保存 P 快照，恢复（首次则初始化）H 快照
+                savedHexLimits = hexLimits.map(o => ({ ...o }));
                 hBtn.classList.add('active');
                 hBtn.style.color = '#ff69b4';
-                // 初始化 H 存储（首次使用默认 Pascal 排列）
-                if (!hHexGenerators) {
-                    if (!currentParams || currentParams.isDegenerate) return;
-                    let base, step;
-                    if (currentParams.isEllipse) {
-                        base = 0; step = Math.PI / 3;
-                    } else if (currentParams.isHyperbola) {
-                        base = -2.5; step = 1.0;
-                    } else if (currentParams.isParabola) {
-                        base = -5.0; step = 2.0;
-                    } else {
-                        return;
-                    }
-                    hHexGenerators = new Array(6);
-                    hHexGenerators[0] = base;
-                    hHexGenerators[5] = base + step;
-                    hHexGenerators[1] = base + 2 * step;
-                    hHexGenerators[3] = base + 3 * step;
-                    hHexGenerators[2] = base + 4 * step;
-                    hHexGenerators[4] = base + 5 * step;
-                }
-                // 恢复 H 存储的最后一次快照
+                if (!hHexLimits) hHexLimits = H_DEFAULT_LIMITS.map(o => ({ ...o }));
+                hexLimits = hHexLimits.map(o => ({ ...o }));
+            }
+            if (currentParams && hexPoints.length === 6) {
                 for (let i = 0; i < 6; i++) {
-                    hexGenerators[i] = hHexGenerators[i];
+                    const Pt = pointFromLimit(currentParams, hexLimits[i]);
+                    if (Pt) { hexPoints[i].position.copy(Pt); hexLabels[i].position.copy(Pt); }
                 }
-                if (!currentParams || currentParams.isDegenerate) return;
-                let branch = 0;
-                if (currentParams.isHyperbola) {
-                    branch = 1; // 红球支（下支）
-                }
-                for (let i = 0; i < 6; i++) {
-                    const Pt = getConicPoint(currentParams, hexGenerators[i], branch);
-                    if (Pt) {
-                        hexPoints[i].position.copy(Pt);
-                        hexLabels[i].position.copy(Pt);
-                    }
-                }
-                const A = hexPoints[0].position, B = hexPoints[1].position, C = hexPoints[2].position;
-                const a = hexPoints[3].position, b = hexPoints[4].position, c = hexPoints[5].position;
-                updateHexLine(lineAb, A, b); updateHexLine(lineBa, B, a);
-                updateHexLine(lineBc, B, c); updateHexLine(lineCb, C, b);
-                updateHexLine(lineCa, C, a); updateHexLine(lineAc, A, c);
-                function lineIntersect(p1, p2, p3, p4) {
-                    const d1 = new THREE.Vector3().subVectors(p2, p1);
-                    const d2 = new THREE.Vector3().subVectors(p4, p3);
-                    const diff = new THREE.Vector3().subVectors(p3, p1);
-                    const crossD = new THREE.Vector3().crossVectors(d1, d2);
-                    const crossDiff = new THREE.Vector3().crossVectors(diff, d2);
-                    const lenSq = crossD.lengthSq();
-                    if (lenSq < 1e-8) return null;
-                    const t = crossDiff.dot(crossD) / lenSq;
-                    return p1.clone().addScaledVector(d1, t);
-                }
-                const iAB = lineIntersect(A, b, B, a);
-                const iBC = lineIntersect(B, c, C, b);
-                const iCA = lineIntersect(C, a, A, c);
-                if (iAB) { interAB.position.copy(iAB); interAB.visible = true; } else { interAB.visible = false; }
-                if (iBC) { interBC.position.copy(iBC); interBC.visible = true; } else { interBC.visible = false; }
-                if (iCA) { interCA.position.copy(iCA); interCA.visible = true; } else { interCA.visible = false; }
-                updateInterLine();
+                refreshHexConnections();
             }
         });
 
@@ -1447,41 +1631,14 @@ let savedHexMode = 'P'; // 标记 savedHexGenerators 的存储模式：'P' 或 '
             hBtn.classList.remove('active');
             hBtn.style.color = '#888888';
             // 清空 P 和 H 的独立存储
-            savedHexGenerators = null;
-            hHexGenerators = null;
-            savedHexMode = 'P';
+            savedHexLimits = null;
+            hHexLimits = null;
 
-            // 重置六个点到默认值（根据曲线类型）
-            if (currentParams && (currentParams.isParabola || currentParams.isHyperbola)) {
-                // P 模式：使用与 H 模式 Pascal 排列对应的母线角度
-                // 先计算 H 模式 Pascal 参数对应的点，再反推母线角度
-                let pascalParams, branch;
-                if (currentParams.isParabola) {
-                    pascalParams = [-5.0, -3.0, -1.0, 1.0, 3.0, 5.0];
-                    branch = 0;
-                } else {
-                    // 双曲线 H 模式参数：[-2.5, -1.5, -0.5, 0.5, 1.5, 2.5]，红球支 branch=1
-                    pascalParams = [-2.5, -1.5, -0.5, 0.5, 1.5, 2.5];
-                    branch = 1;
-                }
-                for (let i = 0; i < 6; i++) {
-                    const Pt = getConicPoint(currentParams, pascalParams[i], branch);
-                    if (Pt) {
-                        // 反推母线角度：从顶点出发的射线方向
-                        const apex = new THREE.Vector3(0, currentParams.coneHeight, 0);
-                        const dir = new THREE.Vector3().subVectors(Pt, apex).normalize();
-                        // dir = (cos(theta)*sinA, -cosA, sin(theta)*sinA)
-                        // theta = atan2(dir.z, dir.x)
-                        let theta = Math.atan2(dir.z, dir.x);
-                        hexGenerators[i] = theta;
-                    }
-                }
-            } else {
-                hexGenerators = [0, Math.PI/3, 2*Math.PI/3, Math.PI, 4*Math.PI/3, 5*Math.PI/3];
-            }
+            // 六个点回到默认的 Pappus 对称位置（对所有曲线类型通用）
+            hexLimits = HEX_DEFAULT_LIMITS.map(o => ({ ...o }));
             if (hexPoints.length === 6 && currentParams) {
                 for (let i = 0; i < 6; i++) {
-                    const Pt = getConicPointFromGenerator(currentParams, hexGenerators[i]);
+                    const Pt = pointFromLimit(currentParams, hexLimits[i]);
                     if (Pt) { hexPoints[i].position.copy(Pt); hexLabels[i].position.copy(Pt); }
                 }
             }
@@ -1561,12 +1718,37 @@ let savedHexMode = 'P'; // 标记 savedHexGenerators 的存储模式：'P' 或 '
             infoToggle.style.opacity = infoVisible ? '1' : '0.6';
         });
 
+        const theoremPanel = document.getElementById('theorem-panel');
+        const theoremBtn = document.getElementById('btn-theorem');
+        let theoremVisible = false;
+        theoremBtn.addEventListener('click', () => {
+            theoremVisible = !theoremVisible;
+            theoremPanel.style.display = theoremVisible ? 'flex' : 'none';
+            theoremBtn.style.opacity = theoremVisible ? '1' : '0.6';
+        });
+        theoremBtn.style.opacity = '0.6';
+        // 手风琴：点击小节标题展开/收起
+        theoremPanel.querySelectorAll('.acc-head').forEach(h => {
+            h.addEventListener('click', () => h.parentElement.classList.toggle('open'));
+        });
+
         let isPlaying = false, animationId = null;
         const playBtn = document.getElementById('btn-play');
+        function stopPlay() {
+            isPlaying = false;
+            playBtn.textContent = '▶';
+            playBtn.style.color = ''; // 清掉内联色，交给 CSS（启用时 #00bfff / 禁用时灰）
+            cancelAnimationFrame(animationId);
+        }
+        function setPlayEnabled(en) {
+            playBtn.disabled = !en;
+            if (!en) stopPlay();
+            else playBtn.style.color = '#00bfff';
+        }
         playBtn.addEventListener('click', () => {
             isPlaying = !isPlaying;
             if (isPlaying) { playBtn.textContent = '⏸'; playBtn.style.color = '#ff8c00'; animate(); }
-            else { playBtn.textContent = '▶'; playBtn.style.color = '#00bfff'; cancelAnimationFrame(animationId); }
+            else { stopPlay(); }
         });
 
         function getHexScreenPos(idx) {
@@ -1592,109 +1774,20 @@ let savedHexMode = 'P'; // 标记 savedHexGenerators 的存储模式：'P' 或 '
             return -1;
         }
 
-        function tFromScreen(clientX, clientY, idx) {
-            if (!currentParams) return null;
-            const rect = renderer.domElement.getBoundingClientRect();
-            const mx = ((clientX - rect.left) / rect.width) * 2 - 1;
-            const my = -((clientY - rect.top) / rect.height) * 2 + 1;
-            const ray = new THREE.Raycaster();
-            ray.setFromCamera(new THREE.Vector2(mx, my), camera);
-            let planePoint;
-            if (currentParams.isEllipse || currentParams.isHyperbola) {
-                planePoint = currentParams.center;
-            } else if (currentParams.isParabola) {
-                planePoint = currentParams.vertex;
-            } else {
-                return null;
-            }
-            if (!planePoint) return null;
-            const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(currentParams.planeNormal, planePoint);
-            const target = new THREE.Vector3();
-            ray.ray.intersectPlane(plane, target);
-            if (!target) return null;
-
-            // 将 target 投影到曲线参数空间
-            const toCenter = new THREE.Vector3().subVectors(target, planePoint);
-            if (currentParams.isEllipse) {
-                const cos_t = toCenter.dot(currentParams.uDir) / currentParams.aLen;
-                const sin_t = toCenter.dot(currentParams.vDir) / currentParams.bLen;
-                let t = Math.atan2(sin_t, cos_t);
-                const currentT = hexGenerators[idx];
-                const diff = t - currentT;
-                if (diff > Math.PI) t -= 2 * Math.PI;
-                else if (diff < -Math.PI) t += 2 * Math.PI;
-                return t;
-            } else if (currentParams.isHyperbola) {
-                const x = toCenter.dot(currentParams.uDir) / currentParams.aLen;
-                const y = toCenter.dot(currentParams.vDir) / currentParams.bLen;
-                // 强制红球支（下支，branch=1）：x = cosh(t), y = sinh(t)
-                // 如果鼠标点在蓝球支（x < 0），取反得到红球支对应参数
-                let t;
-                if (x >= 0) {
-                    t = Math.asinh(y);
-                } else {
-                    t = Math.asinh(-y);
-                }
-                const currentT = hexGenerators[idx];
-                const diff = t - currentT;
-                if (diff > 2.5) t -= 5.0;
-                else if (diff < -2.5) t += 5.0;
-                return t;
-            } else if (currentParams.isParabola) {
-                const x = toCenter.dot(currentParams.uDir);
-                const y = toCenter.dot(currentParams.vDir);
-                // y = x^2 / (2p), so x = t, t = x
-                let t = x;
-                const currentT = hexGenerators[idx];
-                const diff = t - currentT;
-                if (diff > 10) t -= 20;
-                else if (diff < -10) t += 20;
-                return t;
-            }
-            return null;
-        }
-
-        function angleFromScreen(clientX, clientY, idx) {
-            const rect = renderer.domElement.getBoundingClientRect();
-            const mx = ((clientX - rect.left) / rect.width) * 2 - 1;
-            const my = -((clientY - rect.top) / rect.height) * 2 + 1;
-            const ray = new THREE.Raycaster();
-            ray.setFromCamera(new THREE.Vector2(mx, my), camera);
-            let planePoint;
-            if (currentParams.isEllipse || currentParams.isHyperbola) {
-                planePoint = currentParams.center;
-            } else if (currentParams.isParabola) {
-                planePoint = currentParams.vertex;
-            } else if (currentParams.isDegenerate) {
-                planePoint = new THREE.Vector3(0, currentParams.coneHeight, 0);
-            }
-            if (!planePoint) return hexGenerators[idx];
-            const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(currentParams.planeNormal, planePoint);
-            const target = new THREE.Vector3();
-            ray.ray.intersectPlane(plane, target);
-            if (!target) return hexGenerators[idx];
-            const apex = new THREE.Vector3(0, currentParams.coneHeight, 0);
-            const dx = target.x - apex.x;
-            const dz = target.z - apex.z;
-            let theta = Math.atan2(dz, dx);
-            const currentTheta = hexGenerators[idx];
-            const diff = theta - currentTheta;
-            if (diff > Math.PI) theta -= 2 * Math.PI;
-            else if (diff < -Math.PI) theta += 2 * Math.PI;
-            return theta;
-        }
-
         const btnP = document.getElementById('btn-p');
 
         function applyHexVisibility() {
-            const showHex = hexVisible && currentParams && !currentParams.isDegenerate;
+            const showHex = hexVisible && !!currentParams;
             const showOthers = !hexVisible;
+            // 退化（γ=0）时丹德林球缩没于锥顶：与 updateGeometry 的 showUpper/showLower 保持一致
+            const notDeg = !!currentParams && !currentParams.isDegenerate;
+            const showLow = !!currentParams && currentParams.lowerValid && !currentParams.isDegenerate;
 
             hexPoints.forEach(p => { if(p) p.visible = hexVisible; });
             hexLabels.forEach(l => { if(l) l.visible = hexVisible; });
             [lineAb, lineBa, lineBc, lineCb, lineCa, lineAc].forEach(l => { if(l) l.visible = showHex; });
             [interAB, interBC, interCA].forEach(p => { if(p) p.visible = showHex; });
-            if (showHex && hexPoints.length === 6 && currentParams && !currentParams.isDegenerate) {
+            if (showHex && hexPoints.length === 6) {
                 const A = hexPoints[0].position, B = hexPoints[1].position, C = hexPoints[2].position;
                 const a = hexPoints[3].position, b = hexPoints[4].position, c = hexPoints[5].position;
                 updateHexLine(lineAb, A, b); updateHexLine(lineBa, B, a);
@@ -1732,10 +1825,10 @@ let savedHexMode = 'P'; // 标记 savedHexGenerators 的存储模式：'P' 或 '
             if (labelO2) labelO2.visible = showOthers;
             if (labelF1) labelF1.visible = showOthers;
             if (labelF2) labelF2.visible = showOthers;
-            if (focus1) focus1.visible = showOthers;
-            if (focus2) focus2.visible = showOthers;
-            if (center1) center1.visible = showOthers;
-            if (center2) center2.visible = showOthers;
+            if (focus1) focus1.visible = showOthers && notDeg;
+            if (focus2) focus2.visible = showOthers && showLow;
+            if (center1) center1.visible = showOthers && notDeg;
+            if (center2) center2.visible = showOthers && showLow;
             if (lineAP) lineAP.visible = showOthers;
             if (lineBP) lineBP.visible = showOthers;
             if (linePF1) linePF1.visible = showOthers;
@@ -1772,12 +1865,12 @@ let savedHexMode = 'P'; // 标记 savedHexGenerators 的存储模式：'P' 或 '
             if (lineHT1) lineHT1.visible = showOthers;
             if (triKHP) triKHP.visible = showOthers;
             if (triT1HP) triT1HP.visible = showOthers;
-            if (sphere1) sphere1.visible = true;
-            if (sphereEdges1) sphereEdges1.visible = true;
-            if (sphere2) sphere2.visible = currentParams && currentParams.lowerValid;
-            if (sphereEdges2) sphereEdges2.visible = currentParams && currentParams.lowerValid;
-            if (circle1) circle1.visible = true;
-            if (circle2) circle2.visible = currentParams && currentParams.lowerValid;
+            if (sphere1) sphere1.visible = notDeg;
+            if (sphereEdges1) sphereEdges1.visible = notDeg;
+            if (sphere2) sphere2.visible = showLow;
+            if (sphereEdges2) sphereEdges2.visible = showLow;
+            if (circle1) circle1.visible = notDeg;
+            if (circle2) circle2.visible = showLow;
             if (conicLine) conicLine.visible = true;
             if (conicLine2) conicLine2.visible = true;
             if (planeMesh) planeMesh.visible = true;
@@ -1788,16 +1881,14 @@ let savedHexMode = 'P'; // 标记 savedHexGenerators 的存储模式：'P' 或 '
                     hBtn.textContent = 'H';
                     // P 激活时：如果 H 未激活，保存当前 P 状态快照
                     if (!hBtn.classList.contains('active')) {
-                        savedHexGenerators = hexGenerators.slice();
-                        savedHexMode = 'P';
+                        savedHexLimits = hexLimits.map(o => ({ ...o }));
                     }
                 } else {
                     // P 不激活时：H 强制变灰且不激活，保存当前 P 状态
                     hBtn.textContent = 'H';
                     hBtn.classList.remove('active');
                     hBtn.style.color = '#888888';
-                    savedHexGenerators = hexGenerators.slice();
-                    savedHexMode = 'P';
+                    savedHexLimits = hexLimits.map(o => ({ ...o }));
                 }
             }
         }
@@ -1805,6 +1896,8 @@ let savedHexMode = 'P'; // 标记 savedHexGenerators 的存储模式：'P' 或 '
         btnP.addEventListener('click', () => {
             hexVisible = !hexVisible;
             btnP.classList.toggle('active', hexVisible);
+            setPlayEnabled(!hexVisible);      // P 亮则 Play 灰（播放中先停），P 灭则 Play 亮
+            setGammaPlayEnabled(hexVisible);  // γ 播放组只在 P 亮时可用
             applyHexVisibility();
         });
 
@@ -1825,61 +1918,21 @@ let savedHexMode = 'P'; // 标记 savedHexGenerators 的存储模式：'P' 或 '
 
         function onPointerMove(e) {
             if (draggingHexIdx < 0) return;
-            const hBtnActive = document.getElementById('btn-refresh').classList.contains('active');
             const clientX = e.clientX || (e.touches && e.touches[0].clientX);
             const clientY = e.clientY || (e.touches && e.touches[0].clientY);
 
-            if (hBtnActive) {
-                // H 激活时：hexGenerators 存储曲线参数，用鼠标在平面上的位置反推曲线参数
-                const newT = tFromScreen(clientX, clientY, draggingHexIdx);
-                if (newT !== null) {
-                    hexGenerators[draggingHexIdx] = newT;
-                    let branch = 0;
-                    if (currentParams.isHyperbola) branch = 1;
-                    const Pt = getConicPoint(currentParams, hexGenerators[draggingHexIdx], branch);
-                    if (Pt) {
-                        hexPoints[draggingHexIdx].position.copy(Pt);
-                        hexLabels[draggingHexIdx].position.copy(Pt);
-                    }
-                }
-            } else {
-                // P 模式时：hexGenerators 存储母线角度
-                const newTheta = angleFromScreen(clientX, clientY, draggingHexIdx);
-                if (newTheta !== null) {
-                    hexGenerators[draggingHexIdx] = newTheta;
-                    const Pt = getConicPointFromGenerator(currentParams, hexGenerators[draggingHexIdx]);
-                    if (Pt) {
-                        hexPoints[draggingHexIdx].position.copy(Pt);
-                        hexLabels[draggingHexIdx].position.copy(Pt);
-                    }
+            // 统一用极限位置参数：由鼠标在截平面上的位置反推 (d, side, phi)
+            const nl = limitFromScreen(clientX, clientY, draggingHexIdx);
+            if (nl) {
+                hexLimits[draggingHexIdx] = nl;
+                const Pt = pointFromLimit(currentParams, nl);
+                if (Pt) {
+                    hexPoints[draggingHexIdx].position.copy(Pt);
+                    hexLabels[draggingHexIdx].position.copy(Pt);
                 }
             }
 
-            if (hexVisible && hexPoints.length === 6 && currentParams && !currentParams.isDegenerate) {
-                const A = hexPoints[0].position, B = hexPoints[1].position, C = hexPoints[2].position;
-                const a = hexPoints[3].position, b = hexPoints[4].position, c = hexPoints[5].position;
-                updateHexLine(lineAb, A, b); updateHexLine(lineBa, B, a);
-                updateHexLine(lineBc, B, c); updateHexLine(lineCb, C, b);
-                updateHexLine(lineCa, C, a); updateHexLine(lineAc, A, c);
-                function lineIntersect(p1, p2, p3, p4) {
-                    const d1 = new THREE.Vector3().subVectors(p2, p1);
-                    const d2 = new THREE.Vector3().subVectors(p4, p3);
-                    const diff = new THREE.Vector3().subVectors(p3, p1);
-                    const crossD = new THREE.Vector3().crossVectors(d1, d2);
-                    const crossDiff = new THREE.Vector3().crossVectors(diff, d2);
-                    const lenSq = crossD.lengthSq();
-                    if (lenSq < 1e-8) return null;
-                    const t = crossDiff.dot(crossD) / lenSq;
-                    return p1.clone().addScaledVector(d1, t);
-                }
-                const iAB = lineIntersect(A, b, B, a);
-                const iBC = lineIntersect(B, c, C, b);
-                const iCA = lineIntersect(C, a, A, c);
-                if (iAB) { interAB.position.copy(iAB); interAB.visible = true; } else { interAB.visible = false; }
-                if (iBC) { interBC.position.copy(iBC); interBC.visible = true; } else { interBC.visible = false; }
-                if (iCA) { interCA.position.copy(iCA); interCA.visible = true; } else { interCA.visible = false; }
-                updateInterLine();
-            }
+            refreshHexConnections();
             e.preventDefault();
             e.stopPropagation();
         }
