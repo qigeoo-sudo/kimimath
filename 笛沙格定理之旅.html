@@ -1145,6 +1145,55 @@
             transition: opacity 0.3s ease;
         }
 
+        /* 左上角定理说明按钮与面板 */
+        #btn-theorem-des {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 100;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: rgba(15, 23, 42, 0.92);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(148, 163, 184, 0.25);
+            color: #93c5fd;
+            font-size: 17px;
+            cursor: pointer;
+            transition: transform 0.15s ease, border-color 0.15s ease;
+        }
+        #btn-theorem-des:hover { transform: scale(1.08); border-color: rgba(147, 197, 253, 0.6); }
+        #btn-theorem-des.hidden-ui, #theorem-panel-des.hidden-ui { opacity: 0; pointer-events: none; }
+
+        #theorem-panel-des {
+            position: absolute;
+            top: 56px;
+            left: 10px;
+            width: 332px;
+            max-height: calc(100vh - 80px);
+            overflow-y: auto;
+            background: rgba(15, 23, 42, 0.94);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 10px;
+            padding: 12px 16px;
+            z-index: 90;
+            font-size: 12px;
+            line-height: 1.75;
+            color: #cbd5e1;
+            display: none;
+            transition: opacity 0.3s ease;
+        }
+        #theorem-panel-des.open { display: block; }
+        #theorem-panel-des::-webkit-scrollbar { width: 4px; }
+        #theorem-panel-des::-webkit-scrollbar-track { background: transparent; }
+        #theorem-panel-des::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.3); border-radius: 2px; }
+        #theorem-panel-des h3 { font-size: 13px; color: #93c5fd; margin: 12px 0 4px; }
+        #theorem-panel-des h3:first-child { margin-top: 0; }
+        #theorem-panel-des p { margin: 4px 0; }
+        #theorem-panel-des ol { margin: 4px 0 4px 18px; }
+        #theorem-panel-des li { margin: 3px 0; }
+
         .float-panel.hidden-ui {
             opacity: 0;
             pointer-events: none;
@@ -1161,8 +1210,8 @@
 
         #stats-panel {
             position: absolute;
-            bottom: 60px;
-            left: 10px;
+            top: 10px;
+            right: 150px;
             background: rgba(15, 23, 42, 0.92);
             backdrop-filter: blur(12px);
             border: 1px solid rgba(148, 163, 184, 0.2);
@@ -1170,6 +1219,8 @@
             padding: 10px 14px;
             z-index: 10;
             width: auto;
+            font-size: 12px;
+            line-height: 1.75;
             transition: all 0.3s ease;
         }
 
@@ -1215,61 +1266,6 @@
             transform: rotate(-90deg);
         }
 
-        #legend-panel {
-            position: absolute;
-            bottom: 10px;
-            left: 10px;
-            background: rgba(15, 23, 42, 0.92);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(148, 163, 184, 0.2);
-            border-radius: 10px;
-            padding: 10px 14px;
-            z-index: 10;
-            transition: all 0.3s ease;
-        }
-
-        #legend-panel.collapsed {
-            padding: 6px 12px;
-            background: transparent;
-            border: none;
-            backdrop-filter: none;
-        }
-        #legend-panel.collapsed .legend-toggle {
-            background: rgba(15, 23, 42, 0.92);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(148, 163, 184, 0.2);
-            border-radius: 10px;
-            padding: 6px 12px;
-        }
-
-        #legend-panel.collapsed .legend-content {
-            display: none;
-        }
-
-        #legend-panel.hidden-ui {
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .legend-toggle {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            cursor: pointer;
-            user-select: none;
-        }
-
-        .legend-arrow {
-            transition: transform 0.3s ease;
-            font-size: 11px;
-            color: #94a3b8;
-            margin-left: 8px;
-        }
-
-        #legend-panel.collapsed .legend-arrow {
-            transform: rotate(-90deg);
-        }
-
         /* ===== Circle of Fifths ===== */
         #circle-of-fifths {
             position: absolute;
@@ -1287,6 +1283,46 @@
             opacity: 1;
             pointer-events: auto;
             transform: scale(1);
+        }
+
+        /* 音量条：与五度圈同显隐，位于其正上方 */
+        #volume-control {
+            position: absolute;
+            bottom: 219px;
+            right: 10px;
+            width: 199px;
+            box-sizing: border-box;
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 10px;
+            background: rgba(15, 23, 42, 0.92);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(148, 163, 184, 0.25);
+            border-radius: 10px;
+            color: #cbd5e1;
+            font-size: 11px;
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.9);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+        #volume-control.visible {
+            opacity: 1;
+            pointer-events: auto;
+            transform: scale(1);
+        }
+        #volume-control input[type="range"] {
+            flex: 1;
+            min-width: 0;
+            cursor: pointer;
+        }
+        #val-volume {
+            color: #4ade80;
+            font-family: monospace;
+            min-width: 32px;
+            text-align: right;
         }
         #circle-of-fifths svg {
             width: 100%;
@@ -1414,39 +1450,59 @@
     </div>
 
     <!-- 悬浮面板 -->
-    <div id="title-panel" class="float-panel" style="top: 10px; left: 10px;">
+    <button id="btn-theorem-des" title="Desargues' theorem: statement & proof">ⓘ</button>
+    <div id="theorem-panel-des">
+        <h3>Desargues' Theorem</h3>
+        <p>Two triangles ABC and A′B′C′ are <i>in perspective from a point</i> S — the lines AA′, BB′, CC′ all pass through S — if and only if they are <i>in perspective from a line</i>: the intersections of corresponding sides, P = AB∩A′B′, Q = BC∩B′C′, R = CA∩C′A′, all lie on one straight line ℓ, the <b>perspective axis</b> (shown in green).</p>
+
+        <h3>Legend — what you are looking at</h3>
+        <p style="line-height: 2;">
+            <span class="label-tag" style="background: rgba(239,68,68,0.3); color: #fca5a5;">A,B,C</span>Base Triangle (in base plane π)<br>
+            <span class="label-tag" style="background: rgba(234,179,8,0.3); color: #fde047;">A′,B′,C′</span>Section Triangle (in cutting plane π′)<br>
+            <span class="label-tag" style="background: rgba(168,85,247,0.3); color: #d8b4fe;">S</span>Apex — the perspective center<br>
+            <span class="label-tag" style="background: rgba(6,182,212,0.3); color: #67e8f9;">P,Q,R</span>Intersections of corresponding sides<br>
+            <span class="label-tag" style="background: rgba(16,185,129,0.3); color: #6ee7b7;">——</span>Perspective axis ℓ = π∩π′
+        </p>
+
+        <h3>The spatial proof — what you are watching</h3>
+        <p>The scene realizes the two triangles in space: ABC (red) lies in the base plane π, and A′B′C′ (yellow) is the section of the same pyramid S·ABC cut by a plane π′, so AA′, BB′, CC′ automatically concur at the apex S.</p>
+        <ol>
+            <li>AB and A′B′ both lie in the plane SAB, so they meet at a point P (unless parallel).</li>
+            <li>P lies on AB ⊂ π and on A′B′ ⊂ π′, hence on ℓ = π∩π′.</li>
+            <li>The same argument gives Q, R ∈ ℓ — so P, Q, R are collinear. The green axis is nothing but the intersection line of the two planes.</li>
+        </ol>
+        <p>Tilt the cutting plane or press ▶ Animate: P, Q, R slide along, but never leave the axis. The 📽️ Project button flattens the whole spatial configuration onto the paper plane σ — that is the planar picture of the theorem, with collinearity preserved.</p>
+
+        <h3>Why 3D beats 2D</h3>
+        <p>In space there is almost nothing to do: the axis ℓ = π∩π′ exists for free, and each pair of corresponding sides is forced to meet on it because both are trapped in a single plane through S. The whole proof is three short sentences. A purely planar proof receives no such gift — you must manufacture auxiliary points and chase length ratios (classically via Menelaus' theorem applied several times), which is long and delicate.</p>
+
+        <h3>The catch: the embedding is assumed, not guaranteed</h3>
+        <p>The spatial argument proves the theorem only for configurations that <i>can</i> be embedded in 3D — two triangles realized as sections of one and the same pyramid. Given an abstract plane with a perspective configuration drawn in it, nothing in this proof guarantees that the picture can actually be lifted into such a spatial structure. That liftability is an extra structural assumption on the plane, essentially equivalent to Desargues' theorem itself: planes where it fails (non-Desarguesian planes) genuinely exist, and there the theorem is simply false. The short proof buys its simplicity by presupposing the very embedding structure it relies on.</p>
+    </div>
+
+    <div id="title-panel" class="float-panel" style="top: 10px; left: 56px;">
         <div style="font-size: 15px; font-weight: 700; color: #fff; white-space: nowrap;">Desargues Theorem</div>
         <div style="font-size: 10px; color: #94a3b8; margin-top: 2px;">Triangular Pyramid Section · Perspective Axis</div>
     </div>
 
-    <div id="legend-panel" class="collapsed" style="position: absolute; bottom: 10px; left: 10px;">
-        <div class="legend-toggle" id="legend-toggle">
-            <div style="font-size: 11px; font-weight: 600; color: #fff;">📐 Legend</div>
-            <span class="legend-arrow" id="legend-arrow">▶</span>
-        </div>
-        <div class="legend-content" style="margin-top: 6px;">
-            <div style="line-height: 1.6;">
-                <div><span class="label-tag" style="background: rgba(239,68,68,0.3); color: #fca5a5;">A,B,C</span><span style="color: #cbd5e1;">Base Triangle</span></div>
-                <div><span class="label-tag" style="background: rgba(234,179,8,0.3); color: #fde047;">A',B',C'</span><span style="color: #cbd5e1;">Section Triangle</span></div>
-                <div><span class="label-tag" style="background: rgba(168,85,247,0.3); color: #d8b4fe;">S</span><span style="color: #cbd5e1;">Apex (Center)</span></div>
-                <div><span class="label-tag" style="background: rgba(6,182,212,0.3); color: #67e8f9;">P,Q,R</span><span style="color: #cbd5e1;">Intersections</span></div>
-                <div><span class="label-tag" style="background: rgba(16,185,129,0.3); color: #6ee7b7;">——</span><span style="color: #cbd5e1;">Perspective Axis</span></div>
-            </div>
-        </div>
-    </div>
-
     <div id="stats-panel" class="collapsed">
         <div class="stats-toggle" id="stats-toggle">
-            <div style="font-size: 11px; font-weight: 600; color: #fff;">📊 Live Data</div>
+            <div style="font-size: 13px; color: #fff;">📊</div>
             <span class="stats-arrow" id="stats-arrow">▶</span>
         </div>
         <div class="stats-content" style="margin-top: 6px;">
-            <div style="line-height: 1.6;">
+            <div style="line-height: 1.75;">
                 <div style="display: flex; justify-content: space-between;"><span style="color: #94a3b8;">P = AB∩A'B'</span><span id="coord-P" style="color: #67e8f9; font-family: monospace;">--</span></div>
                 <div style="display: flex; justify-content: space-between;"><span style="color: #94a3b8;">Q = BC∩B'C'</span><span id="coord-Q" style="color: #67e8f9; font-family: monospace;">--</span></div>
                 <div style="display: flex; justify-content: space-between;"><span style="color: #94a3b8;">R = CA∩C'A'</span><span id="coord-R" style="color: #67e8f9; font-family: monospace;">--</span></div>
                 <div style="border-top: 1px solid #334155; padding-top: 4px; margin-top: 4px; display: flex; justify-content: space-between;">
-                    <span style="color: #94a3b8;">Collinearity</span><span id="collinearity" style="color: #4ade80; font-family: monospace; font-weight: 700;">--</span>
+                    <span style="color: #94a3b8;">k(PQ)</span><span id="slope-pq" style="color: #4ade80; font-family: monospace; font-weight: 700;">--</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="color: #94a3b8;">k(QR)</span><span id="slope-qr" style="color: #4ade80; font-family: monospace; font-weight: 700;">--</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="color: #94a3b8;">k(RP)</span><span id="slope-rp" style="color: #4ade80; font-family: monospace; font-weight: 700;">--</span>
                 </div>
             </div>
         </div>
@@ -1461,6 +1517,12 @@
         <div class="cof-corner-btn" data-timbre="flute" style="top:3px;left:3px;" title="Flute">🪈<span class="timbre-label">Flute</span></div>
         <div class="cof-corner-btn" data-timbre="organ" style="bottom:3px;right:3px;" title="Organ">🎹<span class="timbre-label">Organ</span></div>
         <div class="cof-corner-btn" data-timbre="bee" style="bottom:3px;left:3px;" title="Bee">🐝<span class="timbre-label">Bee</span></div>
+    </div>
+
+    <div id="volume-control">
+        <span>🔊</span>
+        <input type="range" id="volume" min="0" max="100" step="1" value="80" title="Volume">
+        <span id="val-volume">80%</span>
     </div>
 
     <script>
@@ -1526,11 +1588,26 @@
             return new THREE.Vector3(p1.x + t1 * dx1, p1.y + t1 * dy1, p1.z + t1 * dz1);
         }
 
-        function pointToLineDistance(point, lineStart, lineEnd) {
-            const line = Vec3.sub(lineEnd, lineStart);
-            const toPoint = Vec3.sub(point, lineStart);
-            const cross = Vec3.cross(line, toPoint);
-            return Vec3.len(cross) / Vec3.len(line);
+        // 统计面板：P、Q、R 总在同一水平平面内（底面 y=0 或纸面 y=sigmaY），
+        // 因此统一用平面二维坐标 (x,z)，斜率 k = Δz/Δx，不引用三维信息
+        function updateStats(P, Q, R) {
+            const ids = ['coord-P', 'coord-Q', 'coord-R', 'slope-pq', 'slope-qr', 'slope-rp'];
+            if (!P || !Q || !R) {
+                ids.forEach(id => document.getElementById(id).textContent = '--');
+                return;
+            }
+            document.getElementById('coord-P').textContent = `(${P.x.toFixed(2)}, ${P.z.toFixed(2)})`;
+            document.getElementById('coord-Q').textContent = `(${Q.x.toFixed(2)}, ${Q.z.toFixed(2)})`;
+            document.getElementById('coord-R').textContent = `(${R.x.toFixed(2)}, ${R.z.toFixed(2)})`;
+            const slope = (a, b) => {
+                const dx = b.x - a.x;
+                if (Math.abs(dx) < 1e-9) return '∞';
+                const k = (b.z - a.z) / dx;
+                return (Math.abs(k) < 0.005 ? 0 : k).toFixed(2);
+            };
+            document.getElementById('slope-pq').textContent = slope(P, Q);
+            document.getElementById('slope-qr').textContent = slope(Q, R);
+            document.getElementById('slope-rp').textContent = slope(R, P);
         }
 
         function projectToSigma(P, O_center, sigma_y) {
@@ -1582,6 +1659,8 @@
         let currentTonality = { root: 'C', mode: 'major', rootIndex: 0 };
         let currentTimbre = 'cello';
         let noiseGainNode = null;
+        let outputGainNode = null;  // 总输出音量（用户滑条控制）
+        let audioVolume = 0.8;
 
         // 多振荡器音色定义
         // oscs: [{type, detune, gain}]  detune单位:音分(cents)  gain:相对增益0~1
@@ -1652,6 +1731,9 @@
         function initAudio() {
             if (audioCtx) return;
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            outputGainNode = audioCtx.createGain();
+            outputGainNode.gain.value = audioVolume;
+            outputGainNode.connect(audioCtx.destination);
             applyTimbre(TIMBRES[currentTimbre]);
         }
 
@@ -1720,12 +1802,12 @@
 
                 noise.connect(noiseFilter);
                 noiseFilter.connect(noiseGainNode);
-                noiseGainNode.connect(audioCtx.destination);
+                noiseGainNode.connect(outputGainNode);
                 noise.start();
             }
 
             filterNode.connect(masterGainNode);
-            masterGainNode.connect(audioCtx.destination);
+            masterGainNode.connect(outputGainNode);
 
             // 兼容旧变量名
             celloOsc = oscNodes[0];
@@ -2025,9 +2107,17 @@
                 if (ip) secPts.push(ip);
             });
 
-            if (secPts.length < 3) return;
+            if (secPts.length < 3) {
+                updateStats(null, null, null);
+                return;
+            }
 
             const Ap = secPts[0], Bp = secPts[1], Cp = secPts[2];
+
+            // Intersection points（无论是否隐藏主构型都要计算，供统计面板实时读数）
+            const P = lineIntersection3D(A, B, Ap, Bp);
+            const Q = lineIntersection3D(B, C, Bp, Cp);
+            const R = lineIntersection3D(C, A, Cp, Ap);
 
             // Base Triangle
             if (!hideOthersMode || !projectionMode) {
@@ -2088,10 +2178,6 @@
                 drawExtension(Cp, Ap, 0x00aaff);
 
                 // Intersection points
-                const P = lineIntersection3D(A, B, Ap, Bp);
-                const Q = lineIntersection3D(B, C, Bp, Cp);
-                const R = lineIntersection3D(C, A, Cp, Ap);
-
                 if (P && Q && R) {
                     mainGroup.add(createPointMesh(P, 0x00ffcc, 0.1));
                     mainGroup.add(createPointMesh(Q, 0x00ffcc, 0.1));
@@ -2107,26 +2193,10 @@
                     const desLine = createLine(d1, d2, 0x00ff88, 1);
                     desLine.material.linewidth = 2; // Note: linewidth only works on some browsers
                     desarguesLineGroup.add(desLine);
-
-                    // Update live data
-                    document.getElementById('coord-P').textContent = `(${P.x.toFixed(2)},${P.y.toFixed(2)},${P.z.toFixed(2)})`;
-                    document.getElementById('coord-Q').textContent = `(${Q.x.toFixed(2)},${Q.y.toFixed(2)},${Q.z.toFixed(2)})`;
-                    document.getElementById('coord-R').textContent = `(${R.x.toFixed(2)},${R.y.toFixed(2)},${R.z.toFixed(2)})`;
-
-                    const distR = pointToLineDistance(R, P, Q);
-                    const maxC = Math.max(Math.abs(P.x), Math.abs(P.y), Math.abs(P.z), Math.abs(Q.x), Math.abs(Q.y), Math.abs(Q.z), Math.abs(R.x), Math.abs(R.y), Math.abs(R.z));
-                    const relErr = maxC > 0.001 ? distR / maxC : distR;
-
-                    const colEl = document.getElementById('collinearity');
-                    if (relErr < 0.01) {
-                        colEl.textContent = '<0.01';
-                        colEl.style.color = '#4ade80';
-                    } else {
-                        colEl.textContent = relErr.toFixed(4);
-                        colEl.style.color = '#f87171';
-                    }
                 }
             }
+
+            updateStats(P, Q, R);
 
             // 中心Project模式
             if (projectionMode) {
@@ -2212,6 +2282,9 @@
                     projectionGroup.add(pLine);
                 }
 
+                // Project 模式下改用纸面投影点实时读数（覆盖上面的三维读数）
+                updateStats(projP, projQ, projR);
+
                 // Point O（hideOthersMode 时隐藏）
                 if (!hideOthersMode) {
                     projectionGroup.add(createPointMesh(O, 0x000000, 0.14));
@@ -2234,6 +2307,16 @@
             });
         });
 
+        // 音量滑条：只控制总输出增益，不影响音高与音色
+        const volumeSlider = document.getElementById('volume');
+        volumeSlider.addEventListener('input', () => {
+            audioVolume = parseInt(volumeSlider.value, 10) / 100;
+            document.getElementById('val-volume').textContent = volumeSlider.value + '%';
+            if (audioCtx && outputGainNode) {
+                outputGainNode.gain.setTargetAtTime(audioVolume, audioCtx.currentTime, 0.03);
+            }
+        });
+
         document.getElementById('btn-reset').addEventListener('click', () => {
             document.getElementById('tiltX').value = 15;
             document.getElementById('tiltY').value = 10;
@@ -2253,10 +2336,9 @@
                 document.getElementById('stats-panel').classList.contains('collapsed') ? '▶' : '▼';
         });
 
-        document.getElementById('legend-toggle').addEventListener('click', () => {
-            document.getElementById('legend-panel').classList.toggle('collapsed');
-            document.getElementById('legend-arrow').textContent = 
-                document.getElementById('legend-panel').classList.contains('collapsed') ? '▶' : '▼';
+        // 定理说明面板开关
+        document.getElementById('btn-theorem-des').addEventListener('click', () => {
+            document.getElementById('theorem-panel-des').classList.toggle('open');
         });
 
         // Timbre switcher - event delegation on circle-of-fifths
@@ -2269,15 +2351,17 @@
         function hideAllUI() {
             document.getElementById('title-panel').classList.add('hidden-ui');
             document.getElementById('stats-panel').classList.add('hidden-ui');
-            document.getElementById('legend-panel').classList.add('hidden-ui');
             document.getElementById('control-panel').classList.add('hidden-ui');
+            document.getElementById('btn-theorem-des').classList.add('hidden-ui');
+            document.getElementById('theorem-panel-des').classList.add('hidden-ui');
         }
 
         function showAllUI() {
             document.getElementById('title-panel').classList.remove('hidden-ui');
             document.getElementById('stats-panel').classList.remove('hidden-ui');
-            document.getElementById('legend-panel').classList.remove('hidden-ui');
             document.getElementById('control-panel').classList.remove('hidden-ui');
+            document.getElementById('btn-theorem-des').classList.remove('hidden-ui');
+            document.getElementById('theorem-panel-des').classList.remove('hidden-ui');
         }
 
         // Control panel hide/show
@@ -2508,12 +2592,14 @@
         function showCircleOfFifths() {
             createCircleOfFifths();
             document.getElementById('circle-of-fifths').classList.add('visible');
+            document.getElementById('volume-control').classList.add('visible');
             // corner buttons show via CSS parent selector
             updateTimbreButtons();
         }
 
         function hideCircleOfFifths() {
             document.getElementById('circle-of-fifths').classList.remove('visible');
+            document.getElementById('volume-control').classList.remove('visible');
             // corner buttons hide via CSS parent selector
         }
 
